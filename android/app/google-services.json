@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "975656862720",
+    "project_id": "fitness-app-spal",
+    "storage_bucket": "fitness-app-spal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:975656862720:android:3884b543878737dde084e5",
+        "android_client_info": {
+          "package_name": "com.example.dart_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4N0-YwjZGUHYM3oAklj_CPbcWuQ3gDo0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:975656862720:android:0829f526683ef9fce084e5",
+        "android_client_info": {
+          "package_name": "com.spal.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4N0-YwjZGUHYM3oAklj_CPbcWuQ3gDo0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

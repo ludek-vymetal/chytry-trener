@@ -1,0 +1,41 @@
+name: dart_application_1
+description: Moje fitness aplikace pro firmu.
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  flutter_riverpod: ^2.5.1
+  path: ^1.9.0
+  fl_chart: ^0.68.0
+  shared_preferences: ^2.3.2
+  share_plus: ^10.1.0
+  pdf: ^3.11.1
+  printing: ^5.13.4
+  file_selector: ^1.0.3
+  firebase_core: ^4.6.0
+  firebase_auth: ^6.3.0
+  cloud_firestore: ^6.2.0
+  uuid: ^4.4.0
+  flutter_launcher_icons: ^0.14.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"
+
+  assets:
+    - assets/fonts/

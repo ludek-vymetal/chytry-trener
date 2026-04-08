@@ -1,0 +1,1 @@
+export '../../core/food/food_strategy_adapter.dart';
