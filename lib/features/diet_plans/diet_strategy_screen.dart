@@ -16,6 +16,7 @@ class DietStrategyScreen extends ConsumerWidget {
     final profile = ref.read(userProfileProvider);
     if (profile == null) return;
 
+    final colorScheme = Theme.of(context).colorScheme;
     final messenger = ScaffoldMessenger.of(context);
 
     final selectedHours = await showDialog<int>(
@@ -65,16 +66,18 @@ class DietStrategyScreen extends ConsumerWidget {
           content: Text(
             'Nastaveno $selectedHours h půstu od ${picked.format(context)}',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: colorScheme.primary,
         ),
       );
     }
   }
 
   Widget _fastingOption(BuildContext context, int hours, String label) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListTile(
       title: Text(label),
-      leading: const Icon(Icons.timer_outlined, color: Colors.indigo),
+      leading: Icon(Icons.timer_outlined, color: colorScheme.secondary),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.pop(context, hours),
     );
@@ -100,6 +103,7 @@ class DietStrategyScreen extends ConsumerWidget {
                       .read(excludedIngredientsProvider.notifier)
                       .toggleIngredient('Losos'),
                   title: const Text('Losos (nemám rád ryby)'),
+                  contentPadding: EdgeInsets.zero,
                 ),
                 CheckboxListTile(
                   value: currentExcluded.contains('Vejce'),
@@ -107,6 +111,7 @@ class DietStrategyScreen extends ConsumerWidget {
                       .read(excludedIngredientsProvider.notifier)
                       .toggleIngredient('Vejce'),
                   title: const Text('Vejce'),
+                  contentPadding: EdgeInsets.zero,
                 ),
                 CheckboxListTile(
                   value: currentExcluded.contains('Hovězí maso'),
@@ -114,6 +119,7 @@ class DietStrategyScreen extends ConsumerWidget {
                       .read(excludedIngredientsProvider.notifier)
                       .toggleIngredient('Hovězí maso'),
                   title: const Text('Hovězí maso'),
+                  contentPadding: EdgeInsets.zero,
                 ),
               ],
             ),
@@ -150,8 +156,37 @@ class DietStrategyScreen extends ConsumerWidget {
     );
   }
 
+  void _activateLinearPlan(BuildContext context, WidgetRef ref) {
+    final current = ref.read(userProfileProvider);
+    if (current == null) return;
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    ref.read(userProfileProvider.notifier).updateProfile(
+          current.copyWith(selectedPlan: 'Linear'),
+        );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Konstantní plán byl aktivován.'),
+        backgroundColor: colorScheme.primary,
+      ),
+    );
+  }
+
+  void _activateKetoPlan(BuildContext context, WidgetRef ref) {
+    final current = ref.read(userProfileProvider);
+    if (current != null) {
+      ref.read(userProfileProvider.notifier).updateProfile(
+            current.copyWith(selectedPlan: 'Keto'),
+          );
+    }
+    _showIngredientCheck(context, ref);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
     final isFastingSelected = profile?.selectedPlan == 'Fasting';
 
@@ -169,21 +204,18 @@ class DietStrategyScreen extends ConsumerWidget {
                 'Každý den stejná makra. Nejjednodušší cesta pro stabilní růst svalů.',
             icon: Icons.horizontal_rule,
             isActive: profile?.selectedPlan == 'Linear',
-            actionButton: ElevatedButton(
-              onPressed: () {
-                final current = ref.read(userProfileProvider);
-                if (current != null) {
-                  ref.read(userProfileProvider.notifier).updateProfile(
-                        current.copyWith(selectedPlan: 'Linear'),
-                      );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
-                foregroundColor: Colors.white,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton(
+                  onPressed: () => _activateLinearPlan(context, ref),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.secondaryContainer,
+                    foregroundColor: colorScheme.onSecondaryContainer,
+                  ),
+                  child: const Text('AKTIVOVAT KONSTANTNÍ PLÁN'),
+                ),
               ),
-              child: const Text('AKTIVOVAT KONSTANTNÍ PLÁN'),
-            ),
+            ],
           ),
           const SizedBox(height: 16),
           _StrategyCard(
@@ -192,21 +224,25 @@ class DietStrategyScreen extends ConsumerWidget {
             icon: Icons.show_chart,
             isActive: profile?.selectedPlan == 'Vlny',
             isNew: true,
-            actionButton: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CarbCyclingSurveyScreen(),
+            actions: [
+              _fullWidthButton(
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CarbCyclingSurveyScreen(),
+                      ),
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.tertiaryContainer,
+                    foregroundColor: colorScheme.onTertiaryContainer,
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
+                  child: const Text('SPUSTIT ANALÝZU A VLNY'),
+                ),
               ),
-              child: const Text('SPUSTIT ANALÝZU A VLNY'),
-            ),
+            ],
           ),
           const SizedBox(height: 16),
           _StrategyCard(
@@ -215,22 +251,18 @@ class DietStrategyScreen extends ConsumerWidget {
             icon: Icons.ac_unit,
             isActive: profile?.selectedPlan == 'Keto',
             isNew: true,
-            actionButton: ElevatedButton(
-              onPressed: () {
-                final current = ref.read(userProfileProvider);
-                if (current != null) {
-                  ref.read(userProfileProvider.notifier).updateProfile(
-                        current.copyWith(selectedPlan: 'Keto'),
-                      );
-                }
-                _showIngredientCheck(context, ref);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                foregroundColor: Colors.white,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton(
+                  onPressed: () => _activateKetoPlan(context, ref),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                  ),
+                  child: const Text('VYBRAT KETO A UPRAVIT CHUTĚ'),
+                ),
               ),
-              child: const Text('VYBRAT KETO A UPRAVIT CHUTĚ'),
-            ),
+            ],
           ),
           const SizedBox(height: 16),
           _StrategyCard(
@@ -239,15 +271,17 @@ class DietStrategyScreen extends ConsumerWidget {
                 'Časově omezené okno pro jídlo. Zlepšuje regeneraci.',
             icon: Icons.timer,
             isActive: isFastingSelected,
-            actionButton: Column(
-              children: [
-                ElevatedButton(
+            actions: [
+              _fullWidthButton(
+                child: FilledButton(
                   onPressed: () => _selectStartTime(context, ref),
-                  style: ElevatedButton.styleFrom(
+                  style: FilledButton.styleFrom(
                     backgroundColor: isFastingSelected
-                        ? Colors.green
-                        : Colors.indigo[300],
-                    foregroundColor: Colors.white,
+                        ? colorScheme.primaryContainer
+                        : colorScheme.secondaryContainer,
+                    foregroundColor: isFastingSelected
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSecondaryContainer,
                   ),
                   child: Text(
                     profile?.fastingStartTime != null
@@ -255,9 +289,11 @@ class DietStrategyScreen extends ConsumerWidget {
                         : 'NASTAVIT ČASY JÍDLA',
                   ),
                 ),
-                if (isFastingSelected && profile?.fastingStartTime != null) ...[
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
+              ),
+              if (isFastingSelected && profile?.fastingStartTime != null) ...[
+                const SizedBox(height: 12),
+                _fullWidthButton(
+                  child: FilledButton.icon(
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -267,22 +303,25 @@ class DietStrategyScreen extends ConsumerWidget {
                       );
                     },
                     icon: const Icon(Icons.restaurant_menu),
-                    label: const Text('VSTOUPIT DO JÍDELNÍČKU'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo[900],
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 20,
-                      ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colorScheme.inverseSurface,
+                      foregroundColor: colorScheme.onInverseSurface,
                     ),
+                    label: const Text('VSTOUPIT DO JÍDELNÍČKU'),
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _fullWidthButton({required Widget child}) {
+    return SizedBox(
+      width: double.infinity,
+      child: child,
     );
   }
 }
@@ -293,7 +332,7 @@ class _StrategyCard extends StatelessWidget {
   final IconData icon;
   final bool isActive;
   final bool isNew;
-  final Widget? actionButton;
+  final List<Widget> actions;
 
   const _StrategyCard({
     required this.title,
@@ -301,18 +340,22 @@ class _StrategyCard extends StatelessWidget {
     required this.icon,
     this.isActive = false,
     this.isNew = false,
-    this.actionButton,
+    this.actions = const [],
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
-      elevation: isActive ? 4 : 1,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isActive ? Colors.orange : Colors.transparent,
-          width: 2,
+          color: isActive
+              ? colorScheme.primary
+              : colorScheme.outlineVariant,
+          width: isActive ? 1.6 : 1,
         ),
       ),
       child: Padding(
@@ -325,34 +368,37 @@ class _StrategyCard extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 40,
-                  color: isActive ? Colors.orange : Colors.blueGrey,
+                  size: 32,
+                  color: isActive
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 6,
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
                             ),
                           ),
-                          if (isNew) ...[
-                            const SizedBox(width: 8),
-                            _newBadge(),
-                          ],
+                          if (isNew) _newBadge(context),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         description,
                         style: TextStyle(
-                          color: Colors.grey[700],
+                          color: colorScheme.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -361,12 +407,9 @@ class _StrategyCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (actionButton != null) ...[
+            if (actions.isNotEmpty) ...[
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: actionButton,
-              ),
+              ...actions,
             ],
           ],
         ),
@@ -374,17 +417,19 @@ class _StrategyCard extends StatelessWidget {
     );
   }
 
-  Widget _newBadge() {
+  Widget _newBadge(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.green,
-        borderRadius: BorderRadius.circular(4),
+        color: colorScheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(6),
       ),
-      child: const Text(
+      child: Text(
         'NOVINKA',
         style: TextStyle(
-          color: Colors.white,
+          color: colorScheme.onTertiaryContainer,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),

@@ -57,6 +57,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (_changingExportFolder) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     setState(() {
       _changingExportFolder = true;
@@ -84,9 +85,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       });
 
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Exportní složka byla uložena.'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: const Text('Exportní složka byla uložena.'),
+          backgroundColor: colorScheme.primary,
         ),
       );
     } catch (e) {
@@ -94,7 +95,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Nepodařilo se vybrat složku: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: colorScheme.error,
         ),
       );
     } finally {
@@ -108,6 +109,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Future<void> _clearExportFolder() async {
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     await LocalStorageService.clearClientExportFolderPath();
 
@@ -117,17 +119,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
 
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text(
+      SnackBar(
+        content: const Text(
           'Vlastní exportní složka byla smazána. Použije se výchozí Documents/Klienti.',
         ),
-        backgroundColor: Colors.orange,
+        backgroundColor: colorScheme.tertiary,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
     final activeCoachClientAsync = ref.watch(activeCoachClientProvider);
     final activeCoachClient = activeCoachClientAsync.asData?.value;
@@ -210,8 +213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Změnit cíl'),
           content: const Text(
-            'Opravdu chceš změnit cíl? '
-            'Při změně cíle se může upravit strategie, fáze a doporučení.',
+            'Opravdu chceš změnit cíl? Při změně cíle se může upravit strategie, fáze a doporučení.',
           ),
           actions: [
             TextButton(
@@ -260,10 +262,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           TextButton.icon(
             onPressed: () => forceRestart(ref, context),
-            icon: const Icon(Icons.swap_horiz, color: Colors.brown),
-            label: const Text(
+            icon: Icon(Icons.swap_horiz, color: colorScheme.primary),
+            label: Text(
               'Změnit režim',
-              style: TextStyle(color: Colors.brown),
+              style: TextStyle(color: colorScheme.primary),
             ),
           ),
         ],
@@ -297,7 +299,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Text(
                   macro.rationale,
-                  style: TextStyle(color: Colors.grey[700]),
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
                 ),
               ),
             ),
@@ -371,7 +373,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: ElevatedButton.icon(
+              child: FilledButton.icon(
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -385,10 +387,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   'STYL JÍDELNÍHO PLÁNU',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orangeAccent,
-                  foregroundColor: Colors.white,
-                  elevation: 4,
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.tertiaryContainer,
+                  foregroundColor: colorScheme.onTertiaryContainer,
                 ),
               ),
             ),
@@ -417,7 +418,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   builder: (_) => const PhaseTestScreen(),
                 ),
               ),
-              color: Colors.orange,
+              backgroundColor: colorScheme.secondaryContainer,
+              foregroundColor: colorScheme.onSecondaryContainer,
             ),
             const SizedBox(height: 40),
           ],
@@ -430,7 +432,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     BuildContext context,
     String label,
     VoidCallback onPressed, {
-    Color? color,
+    Color? backgroundColor,
+    Color? foregroundColor,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -438,10 +441,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         width: double.infinity,
         height: 45,
         child: ElevatedButton(
-          style: color != null
+          style: (backgroundColor != null || foregroundColor != null)
               ? ElevatedButton.styleFrom(
-                  backgroundColor: color,
-                  foregroundColor: Colors.white,
+                  backgroundColor: backgroundColor,
+                  foregroundColor: foregroundColor,
                 )
               : null,
           onPressed: onPressed,
@@ -469,6 +472,7 @@ class _ExportFolderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final hasCustomPath = currentPath != null && currentPath!.trim().isNotEmpty;
 
     return Card(
@@ -477,9 +481,12 @@ class _ExportFolderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Archivace klientů',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -488,7 +495,7 @@ class _ExportFolderCard extends StatelessWidget {
                   : hasCustomPath
                       ? 'Aktuální exportní složka:\n$currentPath'
                       : 'Není vybraná vlastní exportní složka.\nPoužije se výchozí Documents/Klienti.',
-              style: TextStyle(color: Colors.grey[700]),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
             Row(
@@ -497,10 +504,13 @@ class _ExportFolderCard extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: isBusy ? null : onPickFolder,
                     icon: isBusy
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onPrimary,
+                            ),
                           )
                         : const Icon(Icons.folder_open),
                     label: const Text('Vybrat exportní složku'),
@@ -535,6 +545,8 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -543,21 +555,26 @@ class _MetricCard extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
-            Text(subtitle),
+            Text(
+              subtitle,
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
           ],
         ),
       ),
@@ -582,15 +599,25 @@ class _MacroDebugCard extends StatelessWidget {
 
   String _kg(double v) => '${v.toStringAsFixed(1)} kg';
 
-  Widget _row(String left, String right) {
+  Widget _row(BuildContext context, String left, String right) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Expanded(child: Text(left)),
+          Expanded(
+            child: Text(
+              left,
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+          ),
           Text(
             right,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
           ),
         ],
       ),
@@ -599,30 +626,36 @@ class _MacroDebugCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Debug – z jaké váhy se počítá',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            _row('Aktuální váha', _kg(currentKg)),
+            _row(context, 'Aktuální váha', _kg(currentKg)),
             _row(
+              context,
               'Cílová váha',
               targetKg == null ? 'nenastaveno' : _kg(targetKg!),
             ),
-            const Divider(height: 18),
-            _row('Váha pro kalorie', _kg(weightForCaloriesKg)),
-            _row('Váha pro protein', _kg(weightForProteinKg)),
-            const Divider(height: 18),
-            _row('Fáze', macro.phaseLabel),
-            _row('Režim', macro.planModeLabel),
-            _row('Týdny do cíle', '${macro.weeksToTarget}'),
-            _row('Strategie', macro.strategyLabel),
+            Divider(height: 18, color: colorScheme.outlineVariant),
+            _row(context, 'Váha pro kalorie', _kg(weightForCaloriesKg)),
+            _row(context, 'Váha pro protein', _kg(weightForProteinKg)),
+            Divider(height: 18, color: colorScheme.outlineVariant),
+            _row(context, 'Fáze', macro.phaseLabel),
+            _row(context, 'Režim', macro.planModeLabel),
+            _row(context, 'Týdny do cíle', '${macro.weeksToTarget}'),
+            _row(context, 'Strategie', macro.strategyLabel),
           ],
         ),
       ),

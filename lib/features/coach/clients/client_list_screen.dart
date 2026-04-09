@@ -1,5 +1,6 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/coach/active_client_provider.dart';
@@ -20,44 +21,50 @@ class ClientListScreen extends ConsumerStatefulWidget {
 class _ClientListScreenState extends ConsumerState<ClientListScreen> {
   Future<void> _setActiveClient(String clientId) async {
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     await ref.read(activeClientIdProvider.notifier).setActive(clientId);
 
     if (!mounted) return;
     messenger.showSnackBar(
-      SnackBar(content: Text('Aktivní klient nastaven: $clientId')),
+      SnackBar(
+        content: Text('Aktivní klient nastaven: $clientId'),
+        backgroundColor: colorScheme.primary,
+      ),
     );
   }
 
   Future<void> _copyEmails(List<CoachClientWithStats> clients) async {
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final rawClients = clients.map((e) => e.client).toList();
 
     final emailsText = ClientsExportService.buildEmailsString(rawClients);
     if (emailsText.trim().isEmpty) {
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Žádný klient zatím nemá vyplněný email.'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Žádný klient zatím nemá vyplněný email.'),
+          backgroundColor: colorScheme.tertiary,
         ),
       );
       return;
     }
 
-    await ClientsExportService.copyEmails(rawClients);
+    await Clipboard.setData(ClipboardData(text: emailsText));
 
     if (!mounted) return;
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Emaily byly zkopírovány do schránky.'),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: const Text('Emaily byly zkopírovány do schránky.'),
+        backgroundColor: colorScheme.primary,
       ),
     );
   }
 
   Future<void> _exportCsv(List<CoachClientWithStats> clients) async {
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final rawClients = clients.map((e) => e.client).toList();
 
     final path = await ClientsExportService.exportClientsCsv(rawClients);
@@ -66,9 +73,9 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
 
     if (path == null) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Export CSV byl zrušen.'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('Export CSV byl zrušen.'),
+          backgroundColor: colorScheme.tertiary,
         ),
       );
       return;
@@ -77,28 +84,30 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: Text('CSV bylo uloženo: $path'),
-        backgroundColor: Colors.green,
+        backgroundColor: colorScheme.primary,
       ),
     );
   }
 
   Future<void> _exportPdf(List<CoachClientWithStats> clients) async {
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final rawClients = clients.map((e) => e.client).toList();
 
     await ClientsExportService.exportClientsPdf(rawClients);
 
     if (!mounted) return;
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text('PDF export byl otevřen pro tisk / uložení.'),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: const Text('PDF export byl otevřen pro tisk / uložení.'),
+        backgroundColor: colorScheme.primary,
       ),
     );
   }
 
   Future<void> _importClientFromJsonFile() async {
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     try {
       const typeGroup = XTypeGroup(
@@ -134,7 +143,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                 ? 'Klient "${preview.clientDisplayName}" byl importován jako nový klient.'
                 : 'Klient "${preview.clientDisplayName}" byl úspěšně importován.',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: colorScheme.primary,
         ),
       );
     } catch (e) {
@@ -142,7 +151,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Import ze souboru selhal: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: colorScheme.error,
         ),
       );
     }
@@ -150,6 +159,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
 
   Future<void> _restoreClientFromArchiveFolder() async {
     final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     try {
       final folderPath = await getDirectoryPath(
@@ -181,7 +191,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                 ? 'Klient "${preview.clientDisplayName}" byl obnoven jako nový klient.'
                 : 'Klient "${preview.clientDisplayName}" byl úspěšně obnoven z archivu.',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: colorScheme.primary,
         ),
       );
     } catch (e) {
@@ -189,7 +199,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text('Obnova z archivní složky selhala: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: colorScheme.error,
         ),
       );
     }
@@ -206,8 +216,6 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
           '${d.hour.toString().padLeft(2, '0')}:'
           '${d.minute.toString().padLeft(2, '0')}';
     }
-
-   
 
     Widget labeledPreviewRow(String label, String value) {
       return Padding(
@@ -231,93 +239,104 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
 
     return showDialog<ClientImportMode?>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Náhled před importem'),
-        content: SizedBox(
-          width: 620,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                labeledPreviewRow('Zdroj', preview.sourceLabel),
-                labeledPreviewRow('Klient', preview.clientDisplayName),
-                labeledPreviewRow('Původní ID', preview.originalClientId),
-                labeledPreviewRow('Exportováno', fmtDate(preview.exportedAt)),
-                labeledPreviewRow('Cesta', preview.sourcePath),
-                const SizedBox(height: 12),
-                const Text(
-                  'Obsah archivu',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                labeledPreviewRow('Poznámky', '${preview.notesCount}'),
-                labeledPreviewRow('InBody', '${preview.inbodyCount}'),
-                labeledPreviewRow('Obvody', '${preview.circumferencesCount}'),
-                labeledPreviewRow('Výkony', '${preview.performancesCount}'),
-                labeledPreviewRow('Plány', '${preview.customPlansCount}'),
-                labeledPreviewRow('Sessions', '${preview.sessionsCount}'),
-                if (preview.conflictExists) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Detekován konflikt klienta',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'V systému už existuje klient se stejným ID: '
-                          '${preview.originalClientId}'
-                          '${preview.conflictingClientDisplayName == null ? '' : ' (${preview.conflictingClientDisplayName})'}.',
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'V této bezpečné verzi se import při konfliktu provede pouze jako nový klient s novým import ID.',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+
+        return AlertDialog(
+          title: const Text('Náhled před importem'),
+          content: SizedBox(
+            width: 620,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  labeledPreviewRow('Zdroj', preview.sourceLabel),
+                  labeledPreviewRow('Klient', preview.clientDisplayName),
+                  labeledPreviewRow('Původní ID', preview.originalClientId),
+                  labeledPreviewRow('Exportováno', fmtDate(preview.exportedAt)),
+                  labeledPreviewRow('Cesta', preview.sourcePath),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Obsah archivu',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  const SizedBox(height: 8),
+                  labeledPreviewRow('Poznámky', '${preview.notesCount}'),
+                  labeledPreviewRow('InBody', '${preview.inbodyCount}'),
+                  labeledPreviewRow('Obvody', '${preview.circumferencesCount}'),
+                  labeledPreviewRow('Výkony', '${preview.performancesCount}'),
+                  labeledPreviewRow('Plány', '${preview.customPlansCount}'),
+                  labeledPreviewRow('Sessions', '${preview.sessionsCount}'),
+                  if (preview.conflictExists) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.tertiaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: colorScheme.outlineVariant),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Detekován konflikt klienta',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onTertiaryContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'V systému už existuje klient se stejným ID: '
+                            '${preview.originalClientId}'
+                            '${preview.conflictingClientDisplayName == null ? '' : ' (${preview.conflictingClientDisplayName})'}.',
+                            style: TextStyle(
+                              color: colorScheme.onTertiaryContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'V této bezpečné verzi se import při konfliktu provede pouze jako nový klient s novým import ID.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.onTertiaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(null),
-            child: const Text('Zrušit'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.of(dialogContext).pop(
-              ClientImportMode.importAsNewIfConflict,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(null),
+              child: const Text('Zrušit'),
             ),
-            icon: const Icon(Icons.download),
-            label: Text(
-              preview.conflictExists
-                  ? 'Importovat jako nový klient'
-                  : 'Potvrdit import',
+            ElevatedButton.icon(
+              onPressed: () => Navigator.of(dialogContext).pop(
+                ClientImportMode.importAsNewIfConflict,
+              ),
+              icon: const Icon(Icons.download),
+              label: Text(
+                preview.conflictExists
+                    ? 'Importovat jako nový klient'
+                    : 'Potvrdit import',
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final clientsAsync = ref.watch(coachClientsControllerProvider);
 
     return clientsAsync.when(
@@ -413,14 +432,27 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: clients.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: colorScheme.outlineVariant,
+                      ),
                       itemBuilder: (context, i) {
                         final c = clients[i];
                         final name = c.client.displayName;
                         final email = c.client.email.trim();
 
                         return ListTile(
-                          title: Text('$name (${c.client.clientId})'),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 6,
+                          ),
+                          title: Text(
+                            '$name (${c.client.clientId})',
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -428,10 +460,16 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                                 '7d compliance: ${(c.compliance7d * 100).round()}% • '
                                 'Věk: ${c.client.age}, ${c.client.heightCm} cm'
                                 '${c.client.isEatingDisorderSupport ? '' : ', ${c.client.weightKg.toStringAsFixed(1)} kg'}',
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 email.isEmpty ? 'Email: —' : 'Email: $email',
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
@@ -439,8 +477,14 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (c.client.isEatingDisorderSupport)
-                                const Icon(Icons.shield),
-                              const Icon(Icons.chevron_right),
+                                Icon(
+                                  Icons.shield,
+                                  color: colorScheme.tertiary,
+                                ),
+                              Icon(
+                                Icons.chevron_right,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ],
                           ),
                           onTap: () async {

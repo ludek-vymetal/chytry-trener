@@ -131,13 +131,14 @@ class _ClientMonthlyReportScreenState
         padding: const EdgeInsets.all(16),
         children: [
           _section(
+            context,
             'Klient a období',
             [
-              _row('Jméno', _clientName(widget.client)),
-              _row('Věk', '${widget.client.age} let'),
-              _row('Výška', '${widget.client.heightCm} cm'),
-              _row('Pohlaví', _genderLabel(widget.client.gender)),
-              _row('Registrován', _fmtDate(widget.client.linkedAt)),
+              _row(context, 'Jméno', _clientName(widget.client)),
+              _row(context, 'Věk', '${widget.client.age} let'),
+              _row(context, 'Výška', '${widget.client.heightCm} cm'),
+              _row(context, 'Pohlaví', _genderLabel(widget.client.gender)),
+              _row(context, 'Registrován', _fmtDate(widget.client.linkedAt)),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -163,19 +164,20 @@ class _ClientMonthlyReportScreenState
           const SizedBox(height: 16),
           inbodyAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => _errorCard('InBody / tělesná kompozice', e),
-            data: (items) => _buildInbodySection(items),
+            error: (e, _) => _errorCard(context, 'InBody / tělesná kompozice', e),
+            data: (items) => _buildInbodySection(context, items),
           ),
           const SizedBox(height: 16),
           circsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => _errorCard('Obvody těla', e),
-            data: (items) => _buildCircumferenceSection(items),
+            error: (e, _) => _errorCard(context, 'Obvody těla', e),
+            data: (items) => _buildCircumferenceSection(context, items),
           ),
           const SizedBox(height: 16),
-          _buildPerformanceSection(performances),
+          _buildPerformanceSection(context, performances),
           const SizedBox(height: 16),
           _section(
+            context,
             'Shrnutí pro trenéra',
             [
               Text(
@@ -192,11 +194,12 @@ class _ClientMonthlyReportScreenState
     );
   }
 
-  Widget _buildInbodySection(List<CoachInbodyEntry> items) {
+  Widget _buildInbodySection(BuildContext context, List<CoachInbodyEntry> items) {
     final filtered = _filterRange(items, (e) => e.date);
 
     if (filtered.isEmpty) {
       return _section(
+        context,
         'InBody / tělesná kompozice',
         const [
           Text('V tomto období nejsou žádná InBody data.'),
@@ -209,39 +212,45 @@ class _ClientMonthlyReportScreenState
     final hasProgress = filtered.length >= 2;
 
     return _section(
+      context,
       'InBody / tělesná kompozice',
       [
         if (!hasProgress) ...[
-          _row('Poslední váha', '${end.weightKg.toStringAsFixed(1)} kg'),
+          _row(context, 'Poslední váha', '${end.weightKg.toStringAsFixed(1)} kg'),
           _row(
+            context,
             'Poslední svaly',
             '${end.skeletalMuscleMassKg.toStringAsFixed(1)} kg',
           ),
           _row(
+            context,
             'Poslední tuk',
             '${end.percentBodyFat.toStringAsFixed(1)} %',
           ),
-          _row('BMI', end.bmi.toStringAsFixed(1)),
+          _row(context, 'BMI', end.bmi.toStringAsFixed(1)),
           const SizedBox(height: 12),
-          _smallInfo('V období je pouze 1 InBody měření.'),
+          _smallInfo(context, 'V období je pouze 1 InBody měření.'),
         ] else ...[
-          _comparisonRow('Váha', start.weightKg, end.weightKg, 'kg'),
+          _comparisonRow(context, 'Váha', start.weightKg, end.weightKg, 'kg'),
           _comparisonRow(
+            context,
             'Svaly',
             start.skeletalMuscleMassKg,
             end.skeletalMuscleMassKg,
             'kg',
           ),
           _comparisonRow(
+            context,
             'Tuk',
             start.percentBodyFat,
             end.percentBodyFat,
             '%',
           ),
-          _comparisonRow('BMI', start.bmi, end.bmi, ''),
+          _comparisonRow(context, 'BMI', start.bmi, end.bmi, ''),
           const SizedBox(height: 12),
-          _smallInfo('Počet InBody měření v období: ${filtered.length}'),
+          _smallInfo(context, 'Počet InBody měření v období: ${filtered.length}'),
           _smallInfo(
+            context,
             'Sledované období měření: ${_fmtDate(start.date)} -> ${_fmtDate(end.date)}',
           ),
         ],
@@ -249,11 +258,15 @@ class _ClientMonthlyReportScreenState
     );
   }
 
-  Widget _buildCircumferenceSection(List<CoachCircumferenceEntry> items) {
+  Widget _buildCircumferenceSection(
+    BuildContext context,
+    List<CoachCircumferenceEntry> items,
+  ) {
     final filtered = _filterRange(items, (e) => e.date);
 
     if (filtered.isEmpty) {
       return _section(
+        context,
         'Obvody těla',
         const [
           Text('V tomto období nejsou žádné obvody.'),
@@ -266,29 +279,34 @@ class _ClientMonthlyReportScreenState
     final hasProgress = filtered.length >= 2;
 
     return _section(
+      context,
       'Obvody těla',
       [
         if (!hasProgress) ...[
-          _row('Paže', '${end.armCm.toStringAsFixed(1)} cm'),
-          _row('Hrudník', '${end.chestCm.toStringAsFixed(1)} cm'),
-          _row('Pas', '${end.waistCm.toStringAsFixed(1)} cm'),
-          _row('Boky', '${end.hipsCm.toStringAsFixed(1)} cm'),
-          _row('Stehno', '${end.thighCm.toStringAsFixed(1)} cm'),
-          _row('Lýtko', '${end.calfCm.toStringAsFixed(1)} cm'),
-          _row('Krk', '${end.neckCm.toStringAsFixed(1)} cm'),
+          _row(context, 'Paže', '${end.armCm.toStringAsFixed(1)} cm'),
+          _row(context, 'Hrudník', '${end.chestCm.toStringAsFixed(1)} cm'),
+          _row(context, 'Pas', '${end.waistCm.toStringAsFixed(1)} cm'),
+          _row(context, 'Boky', '${end.hipsCm.toStringAsFixed(1)} cm'),
+          _row(context, 'Stehno', '${end.thighCm.toStringAsFixed(1)} cm'),
+          _row(context, 'Lýtko', '${end.calfCm.toStringAsFixed(1)} cm'),
+          _row(context, 'Krk', '${end.neckCm.toStringAsFixed(1)} cm'),
           const SizedBox(height: 12),
-          _smallInfo('V období je pouze 1 měření obvodů.'),
+          _smallInfo(context, 'V období je pouze 1 měření obvodů.'),
         ] else ...[
-          _comparisonRow('Paže', start.armCm, end.armCm, 'cm'),
-          _comparisonRow('Hrudník', start.chestCm, end.chestCm, 'cm'),
-          _comparisonRow('Pas', start.waistCm, end.waistCm, 'cm'),
-          _comparisonRow('Boky', start.hipsCm, end.hipsCm, 'cm'),
-          _comparisonRow('Stehno', start.thighCm, end.thighCm, 'cm'),
-          _comparisonRow('Lýtko', start.calfCm, end.calfCm, 'cm'),
-          _comparisonRow('Krk', start.neckCm, end.neckCm, 'cm'),
+          _comparisonRow(context, 'Paže', start.armCm, end.armCm, 'cm'),
+          _comparisonRow(context, 'Hrudník', start.chestCm, end.chestCm, 'cm'),
+          _comparisonRow(context, 'Pas', start.waistCm, end.waistCm, 'cm'),
+          _comparisonRow(context, 'Boky', start.hipsCm, end.hipsCm, 'cm'),
+          _comparisonRow(context, 'Stehno', start.thighCm, end.thighCm, 'cm'),
+          _comparisonRow(context, 'Lýtko', start.calfCm, end.calfCm, 'cm'),
+          _comparisonRow(context, 'Krk', start.neckCm, end.neckCm, 'cm'),
           const SizedBox(height: 12),
-          _smallInfo('Počet měření obvodů v období: ${filtered.length}'),
           _smallInfo(
+            context,
+            'Počet měření obvodů v období: ${filtered.length}',
+          ),
+          _smallInfo(
+            context,
             'Sledované období měření: ${_fmtDate(start.date)} -> ${_fmtDate(end.date)}',
           ),
         ],
@@ -296,7 +314,10 @@ class _ClientMonthlyReportScreenState
     );
   }
 
-  Widget _buildPerformanceSection(List<ExercisePerformance> performances) {
+  Widget _buildPerformanceSection(
+    BuildContext context,
+    List<ExercisePerformance> performances,
+  ) {
     final filtered = _filterRange(performances, (e) => e.date);
 
     final grouped = <String, List<ExercisePerformance>>{};
@@ -311,6 +332,7 @@ class _ClientMonthlyReportScreenState
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     return _section(
+      context,
       'Výkon cviků',
       [
         if (filtered.isEmpty)
@@ -337,36 +359,41 @@ class _ClientMonthlyReportScreenState
                       children: [
                         Text(
                           name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 8),
                         _row(
+                          context,
                           'První výkon',
                           '${first.weight.toStringAsFixed(1)} kg × ${first.reps}',
                         ),
                         _row(
+                          context,
                           'Poslední výkon',
                           '${last.weight.toStringAsFixed(1)} kg × ${last.reps}',
                         ),
                         _row(
+                          context,
                           'Nejlepší váha',
                           '${best.first.weight.toStringAsFixed(1)} kg × ${best.first.reps}',
                         ),
                         _row(
+                          context,
                           'Změna váhy',
                           _formatDelta(last.weight - first.weight, 'kg'),
                         ),
-                        _row('Počet záznamů', '${list.length}'),
+                        _row(context, 'Počet záznamů', '${list.length}'),
                       ],
                     ),
                   ),
                 );
               },
             ),
-          _smallInfo('Počet záznamů výkonu v období: ${filtered.length}'),
+          _smallInfo(context, 'Počet záznamů výkonu v období: ${filtered.length}'),
         ],
       ],
     );
@@ -475,7 +502,9 @@ class _ClientMonthlyReportScreenState
     return lines.join('\n');
   }
 
-  Widget _section(String title, List<Widget> children) {
+  Widget _section(BuildContext context, String title, List<Widget> children) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -484,9 +513,10 @@ class _ClientMonthlyReportScreenState
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -497,7 +527,9 @@ class _ClientMonthlyReportScreenState
     );
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -507,14 +539,17 @@ class _ClientMonthlyReportScreenState
             width: 120,
             child: Text(
               label,
-              style: TextStyle(color: Colors.grey[700]),
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
               textAlign: TextAlign.left,
             ),
           ),
@@ -524,13 +559,14 @@ class _ClientMonthlyReportScreenState
   }
 
   Widget _comparisonRow(
+    BuildContext context,
     String label,
     double? first,
     double? last,
     String unit,
   ) {
     if (first == null || last == null) {
-      return _row(label, '—');
+      return _row(context, label, '—');
     }
 
     final firstText = first.toStringAsFixed(1);
@@ -538,30 +574,34 @@ class _ClientMonthlyReportScreenState
     final unitSuffix = unit.isEmpty ? '' : ' $unit';
 
     if ((first - last).abs() < 0.0001) {
-      return _row(label, '$lastText$unitSuffix');
+      return _row(context, label, '$lastText$unitSuffix');
     }
 
     return _row(
+      context,
       label,
       '$firstText$unitSuffix -> $lastText$unitSuffix (${_formatDelta(last - first, unit)})',
     );
   }
 
-  Widget _smallInfo(String text) {
+  Widget _smallInfo(BuildContext context, String text) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Text(
         text,
         style: TextStyle(
-          color: Colors.grey[600],
+          color: colorScheme.onSurfaceVariant,
           fontSize: 12,
         ),
       ),
     );
   }
 
-  Widget _errorCard(String title, Object error) {
+  Widget _errorCard(BuildContext context, String title, Object error) {
     return _section(
+      context,
       title,
       [
         Text('Chyba: $error'),

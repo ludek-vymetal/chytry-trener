@@ -84,18 +84,21 @@ class TodayTrainingScreen extends ConsumerWidget {
   }
 
   Color _recommendationColor(BuildContext context, ProgressDecision decision) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     switch (decision.action) {
       case ProgressAction.increase:
-        return Colors.green;
+        return colorScheme.primary;
       case ProgressAction.keep:
-        return Colors.orange;
+        return colorScheme.tertiary;
       case ProgressAction.noData:
-        return Theme.of(context).textTheme.bodySmall?.color ?? Colors.grey;
+        return colorScheme.onSurfaceVariant;
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
     final slotSelections = ref.watch(slotSelectionProvider);
     final activeClientAsync = ref.watch(activeClientIdProvider);
@@ -113,26 +116,31 @@ class TodayTrainingScreen extends ConsumerWidget {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Než vygenerujeme dnešní trénink, vyplň prosím krátké nastavení.',
-                  textAlign: TextAlign.center,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Než vygenerujeme dnešní trénink, vyplň prosím krátké nastavení.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TrainingSetupScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text('Otevřít nastavení tréninku'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TrainingSetupScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Otevřít nastavení tréninku'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -216,28 +224,29 @@ class TodayTrainingScreen extends ConsumerWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.12),
+                        color: colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         'Vlastní plán: ${activeCustomPlan.name}',
-                        style: const TextStyle(
-                          color: Colors.green,
+                        style: TextStyle(
+                          color: colorScheme.onPrimaryContainer,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   Text(
                     '${day.dayLabel} – ${day.focus}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     'Datum: ${todaySession.date.day}.${todaySession.date.month}.${todaySession.date.year}',
-                    style: TextStyle(color: Colors.grey[700]),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -265,11 +274,20 @@ class TodayTrainingScreen extends ConsumerWidget {
 
             return Card(
               child: ListTile(
-                title: Text(e.name),
+                title: Text(
+                  e.name,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${e.sets} × ${e.reps} | RIR ${e.rir}'),
+                    Text(
+                      '${e.sets} × ${e.reps} | RIR ${e.rir}',
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       _inlineRecommendationText(decision),
@@ -289,11 +307,14 @@ class TodayTrainingScreen extends ConsumerWidget {
                         padding: const EdgeInsets.only(right: 10),
                         child: Text(
                           weightText,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     if (isLogged)
-                      const Icon(Icons.check_circle, color: Colors.green)
+                      Icon(Icons.check_circle, color: colorScheme.primary)
                     else
                       TextButton(
                         onPressed: () async {
@@ -314,11 +335,17 @@ class TodayTrainingScreen extends ConsumerWidget {
 
                           if (result is ProgressDecision) {
                             messenger.showSnackBar(
-                              SnackBar(content: Text(_decisionMessage(result))),
+                              SnackBar(
+                                content: Text(_decisionMessage(result)),
+                                backgroundColor: colorScheme.primary,
+                              ),
                             );
                           } else if (result == true) {
                             messenger.showSnackBar(
-                              const SnackBar(content: Text('Výkon uložen.')),
+                              SnackBar(
+                                content: const Text('Výkon uložen.'),
+                                backgroundColor: colorScheme.primary,
+                              ),
                             );
                           }
                         },
@@ -334,7 +361,10 @@ class TodayTrainingScreen extends ConsumerWidget {
             usingCustomPlan
                 ? 'Formát: série × opakování / čas | RIR'
                 : 'Formát: série × opakování | RIR | kg',
-            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 12),
           SizedBox(

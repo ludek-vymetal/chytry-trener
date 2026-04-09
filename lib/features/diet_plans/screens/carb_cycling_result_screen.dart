@@ -12,6 +12,8 @@ class CarbCyclingResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final days = [
       'Pondělí',
       'Úterý',
@@ -23,23 +25,24 @@ class CarbCyclingResultScreen extends StatelessWidget {
     ];
 
     final bool isKeto = plan.dailyCarbs.every((grams) => grams <= 50);
-    final Color themeColor = isKeto ? Colors.indigo : Colors.orange;
+
+    final accentColor = isKeto ? colorScheme.secondary : colorScheme.primary;
+    final summaryBackground =
+        isKeto ? colorScheme.secondaryContainer : colorScheme.primaryContainer;
+    final summaryForeground = isKeto
+        ? colorScheme.onSecondaryContainer
+        : colorScheme.onPrimaryContainer;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(isKeto ? 'Tvůj Keto jídelníček' : 'Tvůj plán vln'),
-        backgroundColor: themeColor,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Card(
-              color: isKeto ? Colors.indigo.shade50 : Colors.orange.shade50,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
+              color: summaryBackground,
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -51,26 +54,29 @@ class CarbCyclingResultScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: themeColor,
+                        color: summaryForeground,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '${(isKeto ? plan.dailyCarbs[0] : plan.weeklyBank).toStringAsFixed(0)} g',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.w900,
+                        color: summaryForeground,
                       ),
                     ),
-                    const Divider(),
+                    Divider(color: summaryForeground.withValues(alpha: 0.25)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         _macroMini(
+                          context,
                           'Bílkoviny',
                           '${plan.protein.toStringAsFixed(0)}g',
                         ),
                         _macroMini(
+                          context,
                           'Tuky',
                           '${plan.fats.toStringAsFixed(0)}g',
                         ),
@@ -81,21 +87,19 @@ class CarbCyclingResultScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[700],
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.tertiaryContainer,
+                foregroundColor: colorScheme.onTertiaryContainer,
                 minimumSize: const Size(double.infinity, 55),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: const Icon(Icons.shopping_basket, color: Colors.white),
+              icon: const Icon(Icons.shopping_basket),
               label: const Text(
                 'GENEROVAT NÁKUPNÍ SEZNAM',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               onPressed: () {
                 Navigator.push(
@@ -107,21 +111,19 @@ class CarbCyclingResultScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 12),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.secondaryContainer,
+                foregroundColor: colorScheme.onSecondaryContainer,
                 minimumSize: const Size(double.infinity, 55),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: const Icon(Icons.calendar_month, color: Colors.white),
+              icon: const Icon(Icons.calendar_month),
               label: const Text(
                 'ZOBRAZIT CELÝ TÝDENNÍ JÍDELNÍČEK',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               onPressed: () {
                 Navigator.push(
@@ -133,11 +135,15 @@ class CarbCyclingResultScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Rozpis a jídelníček na dny:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -156,11 +162,15 @@ class CarbCyclingResultScreen extends StatelessWidget {
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: isRefeed
-                              ? Colors.green
-                              : themeColor.withValues(alpha: 0.2),
+                              ? colorScheme.tertiaryContainer
+                              : accentColor.withValues(alpha: 0.18),
                           child: Text(
                             '${index + 1}',
-                            style: const TextStyle(color: Colors.black),
+                            style: TextStyle(
+                              color: isRefeed
+                                  ? colorScheme.onTertiaryContainer
+                                  : colorScheme.onSurface,
+                            ),
                           ),
                         ),
                         title: Text(
@@ -169,6 +179,7 @@ class CarbCyclingResultScreen extends StatelessWidget {
                             fontWeight: isRefeed
                                 ? FontWeight.bold
                                 : FontWeight.normal,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         trailing: Text(
@@ -176,15 +187,16 @@ class CarbCyclingResultScreen extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                            color: themeColor,
+                            color: accentColor,
                           ),
                         ),
                         subtitle: isRefeed
-                            ? const Text(
+                            ? Text(
                                 'REFEED DEN 🚀',
                                 style: TextStyle(
-                                  color: Colors.green,
+                                  color: colorScheme.tertiary,
                                   fontSize: 11,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               )
                             : null,
@@ -203,17 +215,15 @@ class CarbCyclingResultScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            FilledButton(
               onPressed: () =>
                   Navigator.popUntil(context, (route) => route.isFirst),
-              style: ElevatedButton.styleFrom(
+              style: FilledButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
-                backgroundColor: Colors.black87,
+                backgroundColor: colorScheme.inverseSurface,
+                foregroundColor: colorScheme.onInverseSurface,
               ),
-              child: const Text(
-                'ZAVŘÍT A AKTIVOVAT',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('ZAVŘÍT A AKTIVOVAT'),
             ),
             const SizedBox(height: 40),
           ],
@@ -222,16 +232,22 @@ class CarbCyclingResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _macroMini(String label, String value) {
+  Widget _macroMini(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
         ),
         Text(
           value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
       ],
     );

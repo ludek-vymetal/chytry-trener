@@ -49,6 +49,8 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
   Future<void> _pushToCloud() async {
     if (_syncBusy) return;
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     setState(() => _syncBusy = true);
 
     try {
@@ -64,6 +66,8 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                 : 'Záloha se nepodařila: ${report.warnings.join(' | ')}',
           ),
           duration: const Duration(seconds: 4),
+          backgroundColor:
+              report.success ? colorScheme.primary : colorScheme.error,
         ),
       );
     } catch (e) {
@@ -72,6 +76,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Chyba při záloze do cloudu: $e'),
+          backgroundColor: colorScheme.error,
         ),
       );
     } finally {
@@ -83,6 +88,8 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
 
   Future<void> _pullFromCloud() async {
     if (_syncBusy) return;
+
+    final colorScheme = Theme.of(context).colorScheme;
 
     setState(() => _syncBusy = true);
 
@@ -100,6 +107,8 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                 : 'Načtení z cloudu se nepodařilo: ${report.warnings.join(' | ')}',
           ),
           duration: const Duration(seconds: 4),
+          backgroundColor:
+              report.success ? colorScheme.primary : colorScheme.error,
         ),
       );
     } catch (e) {
@@ -108,6 +117,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Chyba při načítání z cloudu: $e'),
+          backgroundColor: colorScheme.error,
         ),
       );
     } finally {
@@ -119,6 +129,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final clientsAsync = ref.watch(coachClientsControllerProvider);
     final coachSetupAsync = ref.watch(coachSetupProvider);
 
@@ -141,7 +152,10 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('Chyba: $e'),
+            child: Text(
+              'Chyba: $e',
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
         data: (clients) {
@@ -154,7 +168,10 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                 coachFirstName != null && coachFirstName.isNotEmpty
                     ? 'Přehled trenéra $coachFirstName'
                     : 'Přehled',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 12),
               _StatCard(
@@ -167,9 +184,9 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                 title: 'Varování (7d compliance < 50%)',
                 value: warnings.toString(),
                 icon: Icons.warning_amber,
+                highlighted: warnings > 0,
               ),
               const SizedBox(height: 16),
-
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -178,11 +195,14 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                     children: [
                       Text(
                         'Cloud záloha',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
+                      Text(
                         'Ručně nahraje nebo stáhne data mezi zařízeními.',
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -192,11 +212,12 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                           ElevatedButton.icon(
                             onPressed: _syncBusy ? null : _pushToCloud,
                             icon: _syncBusy
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 16,
                                     height: 16,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
+                                      color: colorScheme.onPrimary,
                                     ),
                                   )
                                 : const Icon(Icons.cloud_upload),
@@ -213,24 +234,29 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Card(
                 child: ListTile(
                   title: const Text('Přidat sebe jako klienta (MVP)'),
-                  subtitle: const Text('Lokální demo bez backendu'),
-                  trailing: const Icon(Icons.add),
+                  subtitle: Text(
+                    'Lokální demo bez backendu',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                  trailing: Icon(
+                    Icons.add,
+                    color: colorScheme.primary,
+                  ),
                   onTap: () async {
                     final profile = ref.read(userProfileProvider);
 
                     if (profile == null) {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
+                        SnackBar(
+                          content: const Text(
                             'Nejdřív dokonči Client onboarding (věk/pohlaví/výška/váha), pak půjde přidat sebe jako klienta.',
                           ),
+                          backgroundColor: colorScheme.tertiary,
                         ),
                       );
                       return;
@@ -246,8 +272,9 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
 
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Klient přidán/aktualizován.'),
+                      SnackBar(
+                        content: const Text('Klient přidán/aktualizován.'),
+                        backgroundColor: colorScheme.primary,
                       ),
                     );
                   },
@@ -265,31 +292,47 @@ class _StatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
+  final bool highlighted;
 
   const _StatCard({
     required this.title,
     required this.value,
     required this.icon,
+    this.highlighted = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final backgroundColor =
+        highlighted ? colorScheme.errorContainer : colorScheme.surface;
+    final foregroundColor =
+        highlighted ? colorScheme.onErrorContainer : colorScheme.onSurface;
+
     return Card(
+      color: backgroundColor,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(icon, size: 28),
+            Icon(icon, size: 28, color: foregroundColor),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: foregroundColor,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ),
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: foregroundColor,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         ),

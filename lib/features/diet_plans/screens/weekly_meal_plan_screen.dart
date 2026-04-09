@@ -9,38 +9,73 @@ class WeeklyMealPlanScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dny = ["Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota", "Neděle"];
+    final colorScheme = Theme.of(context).colorScheme;
+    final dny = [
+      "Pondělí",
+      "Úterý",
+      "Středa",
+      "Čtvrtek",
+      "Pátek",
+      "Sobota",
+      "Neděle",
+    ];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Týdenní jídelníček"),
-        backgroundColor: Colors.orange,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(15),
         itemCount: 7,
         itemBuilder: (context, index) {
           final carbs = plan.dailyCarbs[index];
-          // ✅ Tady voláme tvůj generátor
-          final List<Map<String, dynamic>> meals = MealGenerator.generateMenu(carbs, plan.protein, plan.fats);
+          final List<Map<String, dynamic>> meals = MealGenerator.generateMenu(
+            carbs,
+            plan.protein,
+            plan.fats,
+          );
 
           return Card(
-            margin: const EdgeInsets.only(bottom: 20), // ✅ Opraveno z .bottom na .only
-            elevation: 4,
-            child: ExpansionTile(
-              initiallyExpanded: index == 0, // První den otevřený
-              title: Text(
-                "${dny[index]} - ${carbs.toStringAsFixed(0)}g S", 
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)
+            margin: const EdgeInsets.only(bottom: 20),
+            elevation: 0,
+            color: colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: colorScheme.outlineVariant),
+            ),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.transparent,
               ),
-              children: meals.map((meal) {
-                // ✅ Opravený přístup k datům v Mapě pomocí ['klíče']
-                return ListTile(
-                  leading: const Icon(Icons.fastfood, size: 20, color: Colors.orange),
-                  title: Text(meal['name'] ?? "Jídlo"),
-                  subtitle: Text(meal['content'] ?? ""),
-                );
-              }).toList(),
+              child: ExpansionTile(
+                initiallyExpanded: index == 0,
+                iconColor: colorScheme.primary,
+                collapsedIconColor: colorScheme.onSurfaceVariant,
+                title: Text(
+                  "${dny[index]} - ${carbs.toStringAsFixed(0)}g S",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                children: meals.map((meal) {
+                  return ListTile(
+                    leading: Icon(
+                      Icons.fastfood,
+                      size: 20,
+                      color: colorScheme.primary,
+                    ),
+                    title: Text(
+                      meal['name'] ?? "Jídlo",
+                      style: TextStyle(color: colorScheme.onSurface),
+                    ),
+                    subtitle: Text(
+                      meal['content'] ?? "",
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           );
         },

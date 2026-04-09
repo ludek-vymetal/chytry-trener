@@ -126,118 +126,122 @@ class ClientDetailScreen extends ConsumerWidget {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Archivace dokončena'),
-        content: SizedBox(
-          width: 650,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Archiv klienta byl úspěšně vytvořen.',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Cílová složka',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                SelectableText(result.clientDirectory.path),
-                const SizedBox(height: 14),
-                const Text(
-                  'Vytvořené soubory',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                fileRow(
-                  'Aktuální JSON',
-                  result.currentJsonFile.path.split(Platform.pathSeparator).last,
-                ),
-                fileRow(
-                  'Snapshot',
-                  result.historyJsonFile.path.split(Platform.pathSeparator).last,
-                ),
-                fileRow(
-                  'PDF report',
-                  result.reportPdfFile.path.split(Platform.pathSeparator).last,
-                ),
-                fileRow(
-                  'Manifest',
-                  result.manifestFile.path.split(Platform.pathSeparator).last,
-                ),
-                fileRow(
-                  'InBody CSV',
-                  result.inbodyCsvFile.path.split(Platform.pathSeparator).last,
-                ),
-                fileRow(
-                  'Obvody CSV',
-                  result.circumferencesCsvFile.path
-                      .split(Platform.pathSeparator)
-                      .last,
-                ),
-                fileRow(
-                  'Výkony CSV',
-                  result.performancesCsvFile.path
-                      .split(Platform.pathSeparator)
-                      .last,
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Období reportu: ${_fmtDate(result.reportFrom)} - ${_fmtDate(result.reportTo)}',
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
-              ],
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+
+        return AlertDialog(
+          title: const Text('Archivace dokončena'),
+          content: SizedBox(
+            width: 650,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Archiv klienta byl úspěšně vytvořen.',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Cílová složka',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  SelectableText(result.clientDirectory.path),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Vytvořené soubory',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  fileRow(
+                    'Aktuální JSON',
+                    result.currentJsonFile.path.split(Platform.pathSeparator).last,
+                  ),
+                  fileRow(
+                    'Snapshot',
+                    result.historyJsonFile.path.split(Platform.pathSeparator).last,
+                  ),
+                  fileRow(
+                    'PDF report',
+                    result.reportPdfFile.path.split(Platform.pathSeparator).last,
+                  ),
+                  fileRow(
+                    'Manifest',
+                    result.manifestFile.path.split(Platform.pathSeparator).last,
+                  ),
+                  fileRow(
+                    'InBody CSV',
+                    result.inbodyCsvFile.path.split(Platform.pathSeparator).last,
+                  ),
+                  fileRow(
+                    'Obvody CSV',
+                    result.circumferencesCsvFile.path
+                        .split(Platform.pathSeparator)
+                        .last,
+                  ),
+                  fileRow(
+                    'Výkony CSV',
+                    result.performancesCsvFile.path
+                        .split(Platform.pathSeparator)
+                        .last,
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Období reportu: ${_fmtDate(result.reportFrom)} - ${_fmtDate(result.reportTo)}',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Zavřít'),
-          ),
-          TextButton.icon(
-            onPressed: () async {
-              try {
-                await _openFilePath(result.reportPdfFile.path);
-              } catch (e) {
-                if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(
-                      content: Text('PDF se nepodařilo otevřít: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Zavřít'),
+            ),
+            TextButton.icon(
+              onPressed: () async {
+                try {
+                  await _openFilePath(result.reportPdfFile.path);
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text('PDF se nepodařilo otevřít: $e'),
+                        backgroundColor: colorScheme.error,
+                      ),
+                    );
+                  }
                 }
-              }
-            },
-            icon: const Icon(Icons.picture_as_pdf),
-            label: const Text('Otevřít PDF'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              try {
-                await _openDirectoryPath(result.clientDirectory.path);
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
+              },
+              icon: const Icon(Icons.picture_as_pdf),
+              label: const Text('Otevřít PDF'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  await _openDirectoryPath(result.clientDirectory.path);
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop();
+                  }
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Složku se nepodařilo otevřít: $e'),
+                        backgroundColor: colorScheme.error,
+                      ),
+                    );
+                  }
                 }
-              } catch (e) {
-                if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(
-                      content: Text('Složku se nepodařilo otevřít: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            icon: const Icon(Icons.folder_open),
-            label: const Text('Otevřít složku'),
-          ),
-        ],
-      ),
+              },
+              icon: const Icon(Icons.folder_open),
+              label: const Text('Otevřít složku'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -306,22 +310,23 @@ class ClientDetailScreen extends ConsumerWidget {
       await const ClientImportService().importClientFromJsonFile(file.path, ref);
 
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'Klient byl úspěšně importován ze souboru:\n${file.path}',
             ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
+            backgroundColor: colorScheme.primary,
           ),
         );
       }
     } catch (e) {
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Import ze souboru selhal: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -345,22 +350,24 @@ class ClientDetailScreen extends ConsumerWidget {
       );
 
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'Klient byl úspěšně obnoven z archivní složky:\n$folderPath',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: colorScheme.primary,
             duration: const Duration(seconds: 4),
           ),
         );
       }
     } catch (e) {
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Obnova z archivní složky selhala: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -373,12 +380,13 @@ class ClientDetailScreen extends ConsumerWidget {
 
       if (savedPath == null || savedPath.trim().isEmpty) {
         if (context.mounted) {
+          final colorScheme = Theme.of(context).colorScheme;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
+            SnackBar(
+              content: const Text(
                 'Není nastavena vlastní exportní složka. Nastav ji nejdřív v dashboardu.',
               ),
-              backgroundColor: Colors.orange,
+              backgroundColor: colorScheme.tertiary,
             ),
           );
         }
@@ -393,10 +401,11 @@ class ClientDetailScreen extends ConsumerWidget {
       await _openDirectoryPath(dir.path);
     } catch (e) {
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Složku se nepodařilo otevřít: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -483,6 +492,7 @@ class ClientDetailScreen extends ConsumerWidget {
 
       Navigator.of(context).pop();
 
+      final colorScheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -490,15 +500,17 @@ class ClientDetailScreen extends ConsumerWidget {
                 ? 'Klient byl archivován a smazán.'
                 : 'Klient byl smazán.',
           ),
-          backgroundColor: exportBeforeDelete ? Colors.green : Colors.orange,
+          backgroundColor:
+              exportBeforeDelete ? colorScheme.primary : colorScheme.tertiary,
         ),
       );
     } catch (e) {
       if (!context.mounted) return;
+      final colorScheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Chyba při mazání klienta: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: colorScheme.error,
         ),
       );
     }
@@ -506,6 +518,7 @@ class ClientDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final notesAsync = ref.watch(coachNotesForClientProvider(client.clientId));
     final detailsAsync =
         ref.watch(coachClientDetailsForClientProvider(client.clientId));
@@ -586,7 +599,7 @@ class ClientDetailScreen extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Chyba exportu: $e'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: colorScheme.error,
                     ),
                   );
                 }
@@ -595,7 +608,7 @@ class ClientDetailScreen extends ConsumerWidget {
           ),
           IconButton(
             tooltip: 'Archivovat a smazat klienta',
-            icon: const Icon(Icons.delete_forever, color: Colors.red),
+            icon: Icon(Icons.delete_forever, color: colorScheme.error),
             onPressed: () => _deleteClientFlow(
               context,
               ref,
@@ -651,8 +664,8 @@ class ClientDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _section(context, 'Základní informace', [
-            _row('Jméno', client.displayName),
-            _row('ID klienta', client.clientId),
+            _row(context, 'Jméno', client.displayName),
+            _row(context, 'ID klienta', client.clientId),
             _rowWithAction(
               context,
               label: 'Email',
@@ -668,31 +681,32 @@ class ClientDetailScreen extends ConsumerWidget {
                         );
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Email zkopírován do schránky.'),
-                            backgroundColor: Colors.green,
+                          SnackBar(
+                            content: const Text('Email zkopírován do schránky.'),
+                            backgroundColor: colorScheme.primary,
                           ),
                         );
                       },
                     ),
             ),
-            _row('Registrován', _fmtDate(client.linkedAt)),
-            _row('Pohlaví', _genderLabel(client.gender)),
-            _row('Věk', '${client.age} let'),
-            _row('Výška', '${client.heightCm} cm'),
+            _row(context, 'Registrován', _fmtDate(client.linkedAt)),
+            _row(context, 'Pohlaví', _genderLabel(client.gender)),
+            _row(context, 'Věk', '${client.age} let'),
+            _row(context, 'Výška', '${client.heightCm} cm'),
             if (!_sensitive)
-              _row('Váha', '${client.weightKg.toStringAsFixed(1)} kg'),
+              _row(context, 'Váha', '${client.weightKg.toStringAsFixed(1)} kg'),
             _row(
+              context,
               'Poslední trénink',
               lastSession == null ? '—' : _fmtDate(lastSession),
             ),
             if (!_sensitive)
-              _row('Plnění (7 dní)', '${(compliance7d * 100).round()} %'),
+              _row(context, 'Plnění (7 dní)', '${(compliance7d * 100).round()} %'),
           ]),
 
           if (_sensitive) ...[
             const SizedBox(height: 12),
-            _warningBox(),
+            _warningBox(context),
           ],
 
           const SizedBox(height: 16),
@@ -705,7 +719,7 @@ class ClientDetailScreen extends ConsumerWidget {
                     clientPlans.isEmpty
                         ? 'Klient zatím nemá žádný vlastní plán.'
                         : 'Počet plánů: ${clientPlans.length}',
-                    style: TextStyle(color: Colors.grey[700]),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
                 ),
                 ElevatedButton.icon(
@@ -737,9 +751,10 @@ class ClientDetailScreen extends ConsumerWidget {
               error: (e, _) => Text('Chyba: $e'),
               data: (d) => Column(
                 children: [
-                  _row('Aktivita', _cap(d.activityType)),
-                  _bigRow('Zranění', d.injuries),
+                  _row(context, 'Aktivita', _cap(d.activityType)),
+                  _bigRow(context, 'Zranění', d.injuries),
                   _bigRow(
+                    context,
                     'Alergie / Intolerance',
                     '${d.allergies} / ${d.intolerances}',
                   ),
@@ -762,14 +777,14 @@ class ClientDetailScreen extends ConsumerWidget {
                   final latest = items.first;
                   return Column(
                     children: [
-                      _row('Váha', '${latest.weightKg} kg'),
-                      _row('Tuk', '${latest.percentBodyFat} %'),
-                      _row('Svaly', '${latest.skeletalMuscleMassKg} kg'),
+                      _row(context, 'Váha', '${latest.weightKg} kg'),
+                      _row(context, 'Tuk', '${latest.percentBodyFat} %'),
+                      _row(context, 'Svaly', '${latest.skeletalMuscleMassKg} kg'),
                       const SizedBox(height: 10),
-                      _interpretationCard(latest),
+                      _interpretationCard(context, latest),
                       if (items.length > 1) ...[
                         const SizedBox(height: 10),
-                        _compareInbodyCard(latest, items[1]),
+                        _compareInbodyCard(context, latest, items[1]),
                       ],
                       const SizedBox(height: 10),
                       _inbodyTable(items.take(5).toList()),
@@ -835,10 +850,10 @@ class ClientDetailScreen extends ConsumerWidget {
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.tertiaryContainer,
+                foregroundColor: colorScheme.onTertiaryContainer,
                 minimumSize: const Size(double.infinity, 60),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -856,16 +871,19 @@ class ClientDetailScreen extends ConsumerWidget {
 
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Profil aktivován. Režim: Uživatel."),
-                        backgroundColor: Colors.green,
+                      SnackBar(
+                        content: const Text("Profil aktivován. Režim: Uživatel."),
+                        backgroundColor: colorScheme.primary,
                       ),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Chyba: $e")),
+                      SnackBar(
+                        content: Text("Chyba: $e"),
+                        backgroundColor: colorScheme.error,
+                      ),
                     );
                   }
                 }
@@ -1017,10 +1035,11 @@ class ClientDetailScreen extends ConsumerWidget {
 
     if (!_isValidEmail(email)) {
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Zadej prosím platný email.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Zadej prosím platný email.'),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -1033,10 +1052,11 @@ class ClientDetailScreen extends ConsumerWidget {
         height == null ||
         weight == null) {
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Zkontroluj prosím jméno, příjmení a číselná pole.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Zkontroluj prosím jméno, příjmení a číselná pole.'),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -1069,10 +1089,11 @@ class ClientDetailScreen extends ConsumerWidget {
     }
 
     if (context.mounted) {
+      final colorScheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Základní údaje klienta byly upraveny.'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: const Text('Základní údaje klienta byly upraveny.'),
+          backgroundColor: colorScheme.primary,
         ),
       );
     }
@@ -1123,19 +1144,21 @@ class ClientDetailScreen extends ConsumerWidget {
       await const ClientImportService().importClientFromJson(jsonString, ref);
 
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Klient byl úspěšně importován.'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Klient byl úspěšně importován.'),
+            backgroundColor: colorScheme.primary,
           ),
         );
       }
     } catch (e) {
       if (context.mounted) {
+        final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Import selhal: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -1143,11 +1166,14 @@ class ClientDetailScreen extends ConsumerWidget {
   }
 
   Widget _section(BuildContext context, String title, List<Widget> children) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       elevation: 0,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -1156,7 +1182,11 @@ class ClientDetailScreen extends ConsumerWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 12),
             ...children,
@@ -1166,14 +1196,31 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600])),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1185,6 +1232,8 @@ class ClientDetailScreen extends ConsumerWidget {
     required String value,
     Widget? trailing,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1192,7 +1241,10 @@ class ClientDetailScreen extends ConsumerWidget {
         children: [
           Expanded(
             flex: 4,
-            child: Text(label, style: TextStyle(color: Colors.grey[600])),
+            child: Text(
+              label,
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
           ),
           Expanded(
             flex: 6,
@@ -1204,7 +1256,10 @@ class ClientDetailScreen extends ConsumerWidget {
                     value,
                     textAlign: TextAlign.right,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
                 if (trailing != null) ...[
@@ -1219,7 +1274,9 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _bigRow(String label, String value) {
+  Widget _bigRow(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Column(
@@ -1227,35 +1284,49 @@ class ClientDetailScreen extends ConsumerWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-          Text(value.isEmpty ? '—' : value),
+          const SizedBox(height: 2),
+          Text(
+            value.isEmpty ? '—' : value,
+            style: TextStyle(color: colorScheme.onSurface),
+          ),
         ],
       ),
     );
   }
 
-  Widget _warningBox() {
+  Widget _warningBox(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: colorScheme.tertiaryContainer,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.warning, color: Colors.orange),
-          SizedBox(width: 10),
+          Icon(Icons.warning, color: colorScheme.onTertiaryContainer),
+          const SizedBox(width: 10),
           Text(
             'PPP / Recovery režim',
-            style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: colorScheme.onTertiaryContainer,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _interpretationCard(CoachInbodyEntry e) {
+  Widget _interpretationCard(BuildContext context, CoachInbodyEntry e) {
+    final colorScheme = Theme.of(context).colorScheme;
     final muscleRatio = e.skeletalMuscleMassKg / e.weightKg;
     final fatP = e.percentBodyFat;
     final lines = <String>[];
@@ -1275,32 +1346,57 @@ class ClientDetailScreen extends ConsumerWidget {
     }
 
     return Card(
-      color: Colors.blue.shade50,
       elevation: 0,
+      color: colorScheme.primaryContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Automatický výklad',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-            ),
-            const SizedBox(height: 8),
-            for (final t in lines)
-              Text('• $t', style: const TextStyle(fontSize: 13)),
-          ],
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: colorScheme.onPrimaryContainer),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Automatický výklad',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (final t in lines)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '• $t',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _compareInbodyCard(CoachInbodyEntry latest, CoachInbodyEntry prev) {
+  Widget _compareInbodyCard(
+    BuildContext context,
+    CoachInbodyEntry latest,
+    CoachInbodyEntry prev,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
     String fmt(double v) => (v >= 0 ? '+' : '') + v.toStringAsFixed(1);
+
     return Card(
       elevation: 0,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
@@ -1308,16 +1404,22 @@ class ClientDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Změna od posledně',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
-            _row('Hmotnost', '${fmt(latest.weightKg - prev.weightKg)} kg'),
+            const SizedBox(height: 8),
+            _row(context, 'Hmotnost', '${fmt(latest.weightKg - prev.weightKg)} kg'),
             _row(
+              context,
               'Tuk (%)',
               '${fmt(latest.percentBodyFat - prev.percentBodyFat)} %',
             ),
             _row(
+              context,
               'Svaly',
               '${fmt(latest.skeletalMuscleMassKg - prev.skeletalMuscleMassKg)} kg',
             ),
@@ -1390,12 +1492,20 @@ class ClientDetailScreen extends ConsumerWidget {
     String text,
     DateTime updatedAt,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(text),
+      title: Text(
+        text,
+        style: TextStyle(color: colorScheme.onSurface),
+      ),
       subtitle: Text(
         'Upraveno: ${_fmtDate(updatedAt)}',
-        style: const TextStyle(fontSize: 12),
+        style: TextStyle(
+          fontSize: 12,
+          color: colorScheme.onSurfaceVariant,
+        ),
       ),
       trailing: PopupMenuButton<String>(
         onSelected: (v) async {
@@ -1420,12 +1530,17 @@ class ClientDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     CustomTrainingPlan plan,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       elevation: 0,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         side: BorderSide(
-          color: plan.isActive ? Colors.green.shade300 : Colors.grey.shade200,
+          color: plan.isActive
+              ? colorScheme.primary
+              : colorScheme.outlineVariant,
         ),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -1436,20 +1551,23 @@ class ClientDetailScreen extends ConsumerWidget {
             Expanded(
               child: Text(
                 plan.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
             if (plan.isActive)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade100,
+                  color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
+                child: Text(
                   'Aktivní',
                   style: TextStyle(
-                    color: Colors.green,
+                    color: colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -1462,6 +1580,7 @@ class ClientDetailScreen extends ConsumerWidget {
           child: Text(
             'Počet dnů: ${plan.days.length}\n'
             'Vytvořeno: ${_fmtDate(plan.createdAt)}',
+            style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
         ),
         trailing: PopupMenuButton<String>(

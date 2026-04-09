@@ -18,13 +18,16 @@ class _CoachShellState extends ConsumerState<CoachShell> {
   int index = 0;
 
   Future<void> _signOut(BuildContext context) async {
+    final colorScheme = Theme.of(context).colorScheme;
+
     try {
       await ref.read(coachAuthControllerProvider.notifier).signOut();
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Trenér byl odhlášen.'),
+        SnackBar(
+          content: const Text('Trenér byl odhlášen.'),
+          backgroundColor: colorScheme.primary,
         ),
       );
     } catch (e) {
@@ -32,6 +35,7 @@ class _CoachShellState extends ConsumerState<CoachShell> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Odhlášení se nepodařilo: $e'),
+          backgroundColor: colorScheme.error,
         ),
       );
     }

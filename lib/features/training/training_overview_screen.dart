@@ -14,6 +14,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
@@ -28,26 +29,31 @@ class TrainingOverviewScreen extends ConsumerWidget {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Než vygenerujeme trénink, potřebuji krátké nastavení.',
-                  textAlign: TextAlign.center,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Než vygenerujeme trénink, potřebuji krátké nastavení.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TrainingSetupScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text('Otevřít nastavení tréninku'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TrainingSetupScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Otevřít nastavení tréninku'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -71,23 +77,22 @@ class TrainingOverviewScreen extends ConsumerWidget {
                   children: [
                     Text(
                       prescription.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       prescription.note,
-                      style: TextStyle(color: Colors.grey[700]),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
             _ParamCard(
               title: 'Opakování',
               value: prescription.reps,
@@ -103,9 +108,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
               value: prescription.rir,
               icon: Icons.speed,
             ),
-
             const SizedBox(height: 12),
-
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -120,27 +123,24 @@ class TrainingOverviewScreen extends ConsumerWidget {
                 child: const Text('Sestavit vlastní trénink'),
               ),
             ),
-
             const SizedBox(height: 16),
-
             if (prescription.deloadRecommended)
               _InfoBox(
                 text:
                     'Doporučení: deload – pokud cítíš únavu, sniž objem o 30–40 % na 1 týden.',
-                color: Colors.orangeAccent,
+                backgroundColor: colorScheme.tertiaryContainer,
+                foregroundColor: colorScheme.onTertiaryContainer,
                 icon: Icons.warning,
               ),
-
             if (prescription.peakMode)
               _InfoBox(
                 text:
                     'Režim vrcholu (peak): technika > objem, delší pauzy, nízké opakování.',
-                color: Colors.lightBlueAccent,
+                backgroundColor: colorScheme.secondaryContainer,
+                foregroundColor: colorScheme.onSecondaryContainer,
                 icon: Icons.trending_up,
               ),
-
             const SizedBox(height: 20),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -155,9 +155,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
                 child: const Text('Týdenní plán'),
               ),
             ),
-
             const SizedBox(height: 12),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -172,9 +170,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
                 child: const Text('Dnešní trénink'),
               ),
             ),
-
             const SizedBox(height: 12),
-
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -189,17 +185,20 @@ class TrainingOverviewScreen extends ConsumerWidget {
                 child: const Text('Změnit rozložení tréninků'),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            const Text(
+            Text(
               'Poznámka',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Plán se generuje automaticky podle cíle a času.\n'
               'Vlastní plán slouží pro klienty se specifickými potřebami, omezeními nebo individuálním rozpisem.',
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -221,11 +220,19 @@ class _ParamCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(value),
+        leading: Icon(icon, color: colorScheme.primary),
+        title: Text(
+          title,
+          style: TextStyle(color: colorScheme.onSurface),
+        ),
+        subtitle: Text(
+          value,
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
       ),
     );
   }
@@ -233,12 +240,14 @@ class _ParamCard extends StatelessWidget {
 
 class _InfoBox extends StatelessWidget {
   final String text;
-  final Color color;
+  final Color backgroundColor;
+  final Color foregroundColor;
   final IconData icon;
 
   const _InfoBox({
     required this.text,
-    required this.color,
+    required this.backgroundColor,
+    required this.foregroundColor,
     required this.icon,
   });
 
@@ -248,14 +257,19 @@ class _InfoBox extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          Icon(icon),
+          Icon(icon, color: foregroundColor),
           const SizedBox(width: 8),
-          Expanded(child: Text(text)),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: foregroundColor),
+            ),
+          ),
         ],
       ),
     );

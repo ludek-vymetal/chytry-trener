@@ -15,6 +15,7 @@ class DailyMenuScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
     final menuState = ref.watch(weeklyMenuProvider);
 
@@ -58,31 +59,34 @@ class DailyMenuScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tvůj jídelníček'),
-        backgroundColor:
-            isFastingActive ? Colors.indigo[700] : Colors.green[700],
       ),
       body: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            color: isFastingActive ? Colors.indigo[50] : Colors.green[50],
+            color: isFastingActive
+                ? colorScheme.secondaryContainer
+                : colorScheme.primaryContainer,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildMacroInfo(
+                  context,
                   'Bílkoviny',
                   '${isFastingActive ? fastingProtein.round() : plan.protein.round()}g',
-                  Colors.blue,
+                  colorScheme.primary,
                 ),
                 _buildMacroInfo(
+                  context,
                   'Tuky',
                   '${isFastingActive ? fastingFats.round() : plan.fats.round()}g',
-                  Colors.orange,
+                  colorScheme.tertiary,
                 ),
                 _buildMacroInfo(
+                  context,
                   'Sacharidy',
                   '${isFastingActive ? fastingCarbs.round() : plan.dailyCarbs[0].round()}g',
-                  Colors.red,
+                  colorScheme.error,
                 ),
               ],
             ),
@@ -96,17 +100,20 @@ class DailyMenuScreen extends ConsumerWidget {
                     label: Text(
                       'Režim: ${fastingDuration}h půst / ${eatingWindow}h jídlo (-300 kcal)',
                     ),
-                    backgroundColor: Colors.indigo[100],
-                    avatar: const Icon(
+                    backgroundColor: colorScheme.secondaryContainer,
+                    labelStyle: TextStyle(
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+                    avatar: Icon(
                       Icons.bolt,
                       size: 18,
-                      color: Colors.indigo,
+                      color: colorScheme.onSecondaryContainer,
                     ),
                   ),
                   Text(
                     'Okno jídla: ${_formatTime(startTime)} - ${_formatTime(startTime, addHours: eatingWindow)}',
                     style: TextStyle(
-                      color: Colors.indigo[900],
+                      color: colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -136,10 +143,6 @@ class DailyMenuScreen extends ConsumerWidget {
                 return Card(
                   margin:
                       const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -152,10 +155,11 @@ class DailyMenuScreen extends ConsumerWidget {
                             children: [
                               CircleAvatar(
                                 radius: 18,
-                                backgroundColor: _getMealColor(mealType),
-                                child: const Icon(
+                                backgroundColor:
+                                    _getMealColor(context, mealType),
+                                child: Icon(
                                   Icons.restaurant,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                   size: 18,
                                 ),
                               ),
@@ -164,10 +168,10 @@ class DailyMenuScreen extends ConsumerWidget {
                                 Text(
                                   mealTime,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.indigo,
+                                    color: colorScheme.secondary,
                                   ),
                                 ),
                               ],
@@ -181,24 +185,28 @@ class DailyMenuScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 '$mealType: $mealName',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 mealContent,
-                                style: const TextStyle(fontSize: 13),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.refresh,
-                            color: Colors.indigo,
+                            color: colorScheme.secondary,
                           ),
                           onPressed: () => _shuffleSingleMeal(ref, 0, index),
                         ),
@@ -234,8 +242,7 @@ class DailyMenuScreen extends ConsumerWidget {
         return {
           'label': _getLabel(mealIndex),
           'name': randomMeal.name,
-          'description':
-              'Bílkoviny: ${randomMeal.proteinPer100g}g | Tuky: ${randomMeal.fatsPer100g}g',
+          'description': _buildMealDescription(randomMeal),
           'ingredients': randomMeal.name,
         };
       });
@@ -255,13 +262,25 @@ class DailyMenuScreen extends ConsumerWidget {
     newDay[mealIndex] = {
       ...newDay[mealIndex],
       'name': newMeal.name,
-      'description':
-          'Bílkoviny: ${newMeal.proteinPer100g}g | Tuky: ${newMeal.fatsPer100g}g',
+      'description': _buildMealDescription(newMeal),
       'ingredients': newMeal.name,
     };
 
     newState[dayIndex] = newDay;
     ref.read(weeklyMenuProvider.notifier).state = newState;
+  }
+
+  String _buildMealDescription(dynamic meal) {
+    final calories = meal.caloriesPer100g;
+    final protein = meal.proteinPer100g;
+    final carbs = meal.carbsPer100g;
+    final fats = meal.fatsPer100g;
+    final grams = meal.defaultGrams;
+
+    return 'Porce: ${grams} g | kcal: $calories | '
+        'Bílkoviny: ${protein.toStringAsFixed(1)} g | '
+        'Sacharidy: ${carbs.toStringAsFixed(1)} g | '
+        'Tuky: ${fats.toStringAsFixed(1)} g';
   }
 
   String _getLabel(int i) {
@@ -328,10 +347,23 @@ class DailyMenuScreen extends ConsumerWidget {
     return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
   }
 
-  Widget _buildMacroInfo(String label, String value, Color color) {
+  Widget _buildMacroInfo(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
         Text(
           value,
           style: TextStyle(
@@ -344,13 +376,15 @@ class DailyMenuScreen extends ConsumerWidget {
     );
   }
 
-  Color _getMealColor(String type) {
+  Color _getMealColor(BuildContext context, String type) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (type.contains('První')) {
-      return Colors.orange;
+      return colorScheme.primary;
     }
     if (type.contains('Poslední')) {
-      return Colors.green;
+      return colorScheme.tertiary;
     }
-    return Colors.blueGrey;
+    return colorScheme.secondary;
   }
 }
