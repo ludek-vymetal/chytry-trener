@@ -10,6 +10,7 @@ import 'screens/carb_cycling_result_screen.dart';
 import 'screens/carb_cycling_survey_screen.dart';
 import 'screens/daily_menu_screen.dart';
 import 'screens/keto_result_screen.dart';
+import 'screens/saved_meal_plans_screen.dart';
 
 class DietStrategyScreen extends ConsumerWidget {
   const DietStrategyScreen({super.key});
@@ -216,6 +217,29 @@ class DietStrategyScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _StrategyCard(
+            title: 'Uložené jídelníčky',
+            description:
+                'Načti si vlastní kompletní týdenní nebo měsíční šablony a použij je znovu.',
+            icon: Icons.bookmarks_outlined,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SavedMealPlansScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.folder_open),
+                  label: const Text('OTEVŘÍT DATABANKU JÍDELNÍČKŮ'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           _StrategyCard(
             title: 'Konstantní příjem (Linear)',
             description:

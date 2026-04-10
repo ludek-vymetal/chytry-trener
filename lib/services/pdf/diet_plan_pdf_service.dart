@@ -7,8 +7,12 @@ import 'package:printing/printing.dart';
 import '../../features/diet_plans/models/carb_cycling_plan.dart';
 
 class DietPlanPdfService {
-  static Future<Uint8List> buildPdf(DietMealPlan plan) async {
+  static Future<Uint8List> buildPdf(
+    DietMealPlan plan, {
+    String? trainerNote,
+  }) async {
     final pdf = pw.Document();
+    final nextCheck = DateTime.now().add(const Duration(days: 30));
 
     pdf.addPage(
       pw.MultiPage(
@@ -134,6 +138,21 @@ class DietPlanPdfService {
                   )
                   .toList(),
             ),
+            pw.SizedBox(height: 18),
+            pw.Text(
+              'Doporučení trenéra',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Text(
+              (trainerNote == null || trainerNote.trim().isEmpty)
+                  ? 'Dodržuj plán po dobu 4 týdnů. Další kontrola a vážení za 1 měsíc (${_fmtDate(nextCheck)}).'
+                  : trainerNote.trim(),
+              style: const pw.TextStyle(fontSize: 10),
+            ),
           ];
         },
       ),
@@ -142,15 +161,21 @@ class DietPlanPdfService {
     return pdf.save();
   }
 
-  static Future<void> printPlan(DietMealPlan plan) async {
+  static Future<void> printPlan(
+    DietMealPlan plan, {
+    String? trainerNote,
+  }) async {
     await Printing.layoutPdf(
-      onLayout: (_) => buildPdf(plan),
+      onLayout: (_) => buildPdf(plan, trainerNote: trainerNote),
       name: _safeFileName(plan),
     );
   }
 
-  static Future<void> sharePlan(DietMealPlan plan) async {
-    final bytes = await buildPdf(plan);
+  static Future<void> sharePlan(
+    DietMealPlan plan, {
+    String? trainerNote,
+  }) async {
+    final bytes = await buildPdf(plan, trainerNote: trainerNote);
     await Printing.sharePdf(
       bytes: bytes,
       filename: '${_safeFileName(plan)}.pdf',
@@ -191,5 +216,11 @@ class DietPlanPdfService {
   static String _safeFileName(DietMealPlan plan) {
     final type = plan.planType.toLowerCase().replaceAll(' ', '-');
     return 'meal-plan-$type';
-    }
+  }
+
+  static String _fmtDate(DateTime d) {
+    return '${d.day.toString().padLeft(2, '0')}.'
+        '${d.month.toString().padLeft(2, '0')}.'
+        '${d.year}';
+  }
 }

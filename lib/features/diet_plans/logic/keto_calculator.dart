@@ -2,6 +2,7 @@ import '../../../data/keto_bank.dart';
 import '../../../models/meal.dart';
 import '../../../models/user_profile.dart';
 import '../models/carb_cycling_plan.dart';
+import 'diet_target_service.dart';
 
 class KetoCalculator {
   static const List<String> _days = [
@@ -15,7 +16,8 @@ class KetoCalculator {
   ];
 
   static Map<String, double> calculateMacros(UserProfile profile) {
-    final double targetCalories = profile.tdee * 0.9;
+    final target = DietTargetService.resolve(profile);
+    final double targetCalories = target.targetCalories;
     const double carbs = 30.0;
     final double protein = profile.weight * 2.0;
     final double fatCalories = targetCalories - (protein * 4) - (carbs * 4);
@@ -33,6 +35,7 @@ class KetoCalculator {
     required double fats,
     required double carbs,
     List<String> excludedFoods = const [],
+    String? noteOverride,
   }) {
     final days = List<PlannedDay>.generate(_days.length, (dayIndex) {
       return PlannedDay(
@@ -56,7 +59,8 @@ class KetoCalculator {
       protein: protein,
       carbs: carbs,
       fats: fats,
-      note: 'Keto režim s nízkým příjmem sacharidů a plným shopping listem.',
+      note: noteOverride ??
+          'Keto režim s nízkým příjmem sacharidů a plným shopping listem.',
     );
   }
 

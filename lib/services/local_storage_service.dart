@@ -2,15 +2,14 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../features/diet_plans/models/saved_meal_plan.dart';
 import 'coach/coach_storage_service.dart';
 
 class LocalStorageService {
   static const _foodBankKey = 'food_bank_v1';
   static const _clientExportFolderPathKey = 'client_export_folder_path_v1';
+  static const _savedMealPlansKey = 'saved_meal_plans_v1';
 
-  // --------------------------
-  // FOOD BANK
-  // --------------------------
   static Future<void> saveFoodBank(List<Map<String, dynamic>> meals) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonStr = jsonEncode(meals);
@@ -31,9 +30,6 @@ class LocalStorageService {
         .toList();
   }
 
-  // --------------------------
-  // DAILY HISTORY
-  // --------------------------
   static Future<void> saveDailyHistory(Map<String, dynamic> historyJson) async {
     final items = historyJson.entries.map((entry) {
       final intakeJson = entry.value is Map<String, dynamic>
@@ -74,9 +70,6 @@ class LocalStorageService {
     return result.isEmpty ? null : result;
   }
 
-  // --------------------------
-  // CLIENT EXPORT FOLDER
-  // --------------------------
   static Future<void> saveClientExportFolderPath(String path) async {
     final prefs = await SharedPreferences.getInstance();
     final normalized = path.trim();
@@ -103,5 +96,31 @@ class LocalStorageService {
   static Future<void> clearClientExportFolderPath() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_clientExportFolderPathKey);
+  }
+
+  static Future<List<SavedMealPlan>> loadSavedMealPlans() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_savedMealPlansKey);
+
+    if (jsonStr == null || jsonStr.isEmpty) {
+      return [];
+    }
+
+    final decoded = jsonDecode(jsonStr);
+    if (decoded is! List) {
+      return [];
+    }
+
+    return decoded
+        .whereType<Map>()
+        .map((e) => SavedMealPlan.fromJson(Map<String, dynamic>.from(e)))
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  }
+
+  static Future<void> saveSavedMealPlans(List<SavedMealPlan> plans) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = jsonEncode(plans.map((e) => e.toJson()).toList());
+    await prefs.setString(_savedMealPlansKey, jsonStr);
   }
 }

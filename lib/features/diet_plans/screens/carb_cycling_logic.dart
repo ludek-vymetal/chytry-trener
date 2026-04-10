@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:dart_application_1/features/diet_plans/models/carb_cycling_plan.dart';
+import 'package:dart_application_1/models/goal.dart';
 import 'package:dart_application_1/models/user_profile.dart';
 
 import '../../../data/sacharidove_vlny_bank.dart';
 import '../../../models/meal.dart';
+import '../logic/diet_target_service.dart';
 
 class CarbCyclingCalculator {
   static const List<String> _days = [
@@ -16,6 +18,8 @@ class CarbCyclingCalculator {
     'Neděle',
   ];
 
+  /// Sacharidové vlny mají vlastní logiku.
+  /// NENAPOJOVAT na centrální calorie target service.
   static CarbCyclingPlan calculate({required UserProfile profile}) {
     final double targetCalories = profile.tdee * 0.9;
     final double protein = profile.weight * 2.0;
@@ -58,10 +62,15 @@ class CarbCyclingCalculator {
     return provisional.copyWith(mealPlan: mealPlan);
   }
 
+  /// Linear může jet přes centrální target service.
   static CarbCyclingPlan createLinearPlan({required UserProfile profile}) {
-    final double targetCalories = profile.tdee * 0.9;
+    final target = DietTargetService.resolve(profile);
+    final double targetCalories = target.targetCalories;
     final double protein = profile.weight * 2.0;
-    const double dailyCarbs = 240.0;
+
+    final double dailyCarbs =
+        profile.goal?.phase == GoalPhase.build ? 260.0 : 240.0;
+
     final double fats = (targetCalories - (protein * 4) - (dailyCarbs * 4)) / 9;
 
     final provisional = CarbCyclingPlan(
@@ -74,6 +83,7 @@ class CarbCyclingCalculator {
     final mealPlan = generateWeeklyMealPlan(
       plan: provisional,
       planType: 'Linear',
+      noteOverride: 'Výpočet: ${target.sourceLabel}',
     );
 
     return provisional.copyWith(mealPlan: mealPlan);
@@ -83,6 +93,7 @@ class CarbCyclingCalculator {
     required CarbCyclingPlan plan,
     String planType = 'Vlny',
     List<String> excluded = const [],
+    String? noteOverride,
   }) {
     final days = List<PlannedDay>.generate(_days.length, (index) {
       return generateDayPlan(
@@ -104,17 +115,20 @@ class CarbCyclingCalculator {
       protein: plan.protein,
       carbs: avgCarbs,
       fats: plan.fats,
-      note: planType == 'Linear'
-          ? 'Stejná struktura makroživin každý den.'
-          : 'Sacharidy se cyklují podle jednotlivých dnů.',
+      note: noteOverride ??
+          (planType == 'Linear'
+              ? 'Stejná struktura makroživin každý den.'
+              : 'Sacharidy se cyklují podle jednotlivých dnů.'),
     );
   }
 
+  /// Fasting může jet přes centrální target service.
   static DietMealPlan generateFastingMealPlan({
     required UserProfile profile,
     List<String> excluded = const [],
   }) {
-    final targetCalories = profile.tdee - 300;
+    final target = DietTargetService.resolve(profile);
+    final targetCalories = target.targetCalories;
     final protein = profile.weight * 2.0;
     final fats = profile.weight * 0.8;
     final carbs = ((targetCalories - (protein * 4) - (fats * 9)) / 4)
@@ -145,7 +159,7 @@ class CarbCyclingCalculator {
       carbs: carbs,
       fats: fats,
       note:
-          'Okno jídla: ${_formatTime(startTime)} - ${_formatTime(startTime, addHours: eatingWindow)} | režim $fastingDuration:$eatingWindow',
+          'Výpočet: ${target.sourceLabel} | Okno jídla: ${_formatTime(startTime)} - ${_formatTime(startTime, addHours: eatingWindow)} | režim $fastingDuration:$eatingWindow',
     );
   }
 

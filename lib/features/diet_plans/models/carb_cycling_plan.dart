@@ -28,6 +28,30 @@ class CarbCyclingPlan {
       mealPlan: mealPlan ?? this.mealPlan,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'dailyCarbs': dailyCarbs,
+        'protein': protein,
+        'fats': fats,
+        'weeklyBank': weeklyBank,
+        'mealPlan': mealPlan?.toJson(),
+      };
+
+  factory CarbCyclingPlan.fromJson(Map<String, dynamic> json) {
+    return CarbCyclingPlan(
+      dailyCarbs: ((json['dailyCarbs'] as List?) ?? const [])
+          .map((e) => (e as num).toDouble())
+          .toList(),
+      protein: (json['protein'] as num?)?.toDouble() ?? 0,
+      fats: (json['fats'] as num?)?.toDouble() ?? 0,
+      weeklyBank: (json['weeklyBank'] as num?)?.toDouble() ?? 0,
+      mealPlan: json['mealPlan'] is Map<String, dynamic>
+          ? DietMealPlan.fromJson(
+              Map<String, dynamic>.from(json['mealPlan'] as Map),
+            )
+          : null,
+    );
+  }
 }
 
 class DietMealPlan {
@@ -50,6 +74,24 @@ class DietMealPlan {
   bool get isKeto => planType.toLowerCase() == 'keto';
   bool get isFasting => planType.toLowerCase() == 'fasting';
   bool get isLinear => planType.toLowerCase() == 'linear';
+
+  DietMealPlan copyWith({
+    String? planType,
+    List<PlannedDay>? days,
+    double? protein,
+    double? carbs,
+    double? fats,
+    String? note,
+  }) {
+    return DietMealPlan(
+      planType: planType ?? this.planType,
+      days: days ?? this.days,
+      protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fats: fats ?? this.fats,
+      note: note ?? this.note,
+    );
+  }
 
   List<ShoppingListItem> buildShoppingList() {
     final Map<String, ShoppingListItem> aggregated = {};
@@ -81,6 +123,30 @@ class DietMealPlan {
 
     return result;
   }
+
+  Map<String, dynamic> toJson() => {
+        'planType': planType,
+        'days': days.map((e) => e.toJson()).toList(),
+        'protein': protein,
+        'carbs': carbs,
+        'fats': fats,
+        'note': note,
+      };
+
+  factory DietMealPlan.fromJson(Map<String, dynamic> json) {
+    return DietMealPlan(
+      planType: (json['planType'] ?? '').toString(),
+      days: ((json['days'] as List?) ?? const [])
+          .map(
+            (e) => PlannedDay.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList(),
+      protein: (json['protein'] as num?)?.toDouble() ?? 0,
+      carbs: (json['carbs'] as num?)?.toDouble() ?? 0,
+      fats: (json['fats'] as num?)?.toDouble() ?? 0,
+      note: json['note'] as String?,
+    );
+  }
 }
 
 class PlannedDay {
@@ -97,6 +163,44 @@ class PlannedDay {
     required this.carbs,
     required this.fats,
   });
+
+  PlannedDay copyWith({
+    String? dayName,
+    List<PlannedMeal>? meals,
+    double? protein,
+    double? carbs,
+    double? fats,
+  }) {
+    return PlannedDay(
+      dayName: dayName ?? this.dayName,
+      meals: meals ?? this.meals,
+      protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fats: fats ?? this.fats,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'dayName': dayName,
+        'meals': meals.map((e) => e.toJson()).toList(),
+        'protein': protein,
+        'carbs': carbs,
+        'fats': fats,
+      };
+
+  factory PlannedDay.fromJson(Map<String, dynamic> json) {
+    return PlannedDay(
+      dayName: (json['dayName'] ?? '').toString(),
+      meals: ((json['meals'] as List?) ?? const [])
+          .map(
+            (e) => PlannedMeal.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList(),
+      protein: (json['protein'] as num?)?.toDouble() ?? 0,
+      carbs: (json['carbs'] as num?)?.toDouble() ?? 0,
+      fats: (json['fats'] as num?)?.toDouble() ?? 0,
+    );
+  }
 }
 
 class PlannedMeal {
@@ -124,7 +228,35 @@ class PlannedMeal {
     this.time,
   });
 
-  Map<String, dynamic> toMap() {
+  PlannedMeal copyWith({
+    String? label,
+    String? name,
+    String? description,
+    double? calories,
+    double? protein,
+    double? carbs,
+    double? fats,
+    int? grams,
+    String? time,
+    List<MealIngredient>? ingredients,
+  }) {
+    return PlannedMeal(
+      label: label ?? this.label,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      calories: calories ?? this.calories,
+      protein: protein ?? this.protein,
+      carbs: carbs ?? this.carbs,
+      fats: fats ?? this.fats,
+      grams: grams ?? this.grams,
+      time: time ?? this.time,
+      ingredients: ingredients ?? this.ingredients,
+    );
+  }
+
+  Map<String, dynamic> toMap() => toJson();
+
+  Map<String, dynamic> toJson() {
     return {
       'label': label,
       'name': name,
@@ -135,16 +267,27 @@ class PlannedMeal {
       'fats': fats,
       'grams': grams,
       'time': time,
-      'ingredients': ingredients
+      'ingredients': ingredients.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  factory PlannedMeal.fromJson(Map<String, dynamic> json) {
+    return PlannedMeal(
+      label: (json['label'] ?? '').toString(),
+      name: (json['name'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      calories: (json['calories'] as num?)?.toDouble(),
+      protein: (json['protein'] as num?)?.toDouble(),
+      carbs: (json['carbs'] as num?)?.toDouble(),
+      fats: (json['fats'] as num?)?.toDouble(),
+      grams: (json['grams'] as num?)?.toInt(),
+      time: json['time'] as String?,
+      ingredients: ((json['ingredients'] as List?) ?? const [])
           .map(
-            (e) => {
-              'name': e.name,
-              'amount': e.amount,
-              'unit': e.unit,
-            },
+            (e) => MealIngredient.fromJson(Map<String, dynamic>.from(e as Map)),
           )
           .toList(),
-    };
+    );
   }
 }
 
@@ -159,6 +302,18 @@ class MealIngredient {
     this.unit = 'g',
   });
 
+  MealIngredient copyWith({
+    String? name,
+    double? amount,
+    String? unit,
+  }) {
+    return MealIngredient(
+      name: name ?? this.name,
+      amount: amount ?? this.amount,
+      unit: unit ?? this.unit,
+    );
+  }
+
   String get formattedAmount {
     if (unit == 'ks') {
       return '${amount.round()} ks';
@@ -170,6 +325,20 @@ class MealIngredient {
       return '${(amount / 1000).toStringAsFixed(2)} kg';
     }
     return '${amount.round()} $unit';
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'amount': amount,
+        'unit': unit,
+      };
+
+  factory MealIngredient.fromJson(Map<String, dynamic> json) {
+    return MealIngredient(
+      name: (json['name'] ?? '').toString(),
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      unit: (json['unit'] ?? 'g').toString(),
+    );
   }
 }
 
@@ -207,5 +376,19 @@ class ShoppingListItem {
       return '${(amount / 1000).toStringAsFixed(2)} kg';
     }
     return '${amount.round()} $unit';
+  }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'amount': amount,
+        'unit': unit,
+      };
+
+  factory ShoppingListItem.fromJson(Map<String, dynamic> json) {
+    return ShoppingListItem(
+      name: (json['name'] ?? '').toString(),
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      unit: (json['unit'] ?? 'g').toString(),
+    );
   }
 }
