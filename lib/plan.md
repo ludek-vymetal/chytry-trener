@@ -1040,307 +1040,180 @@ Doplnili WeightCalculator.buildWarmupAndWorkSets() pro automatické dopočítán
 V plánu pro hlavní cviky začneme dosazovat plannedSets (např. bench).
 
 UI umí zobrazit konkrétní série pod cvikem.
-D:\FITNESS\DART_APPLICATION_1\LIB                          
-├───core
-│   ├───food
-│   ├───nav
-│   ├───nutrition
-│   ├───phase
-│   ├───time
-│   └───training
-│       ├───exercises
-│       ├───intake
-│       ├───loads
-│       ├───progression
-│       ├───sessions
-│       └───slots
-├───data
-├───features
-│   ├───body
-│   ├───coach
-│   │   ├───clients
-│   │   └───dashboard
-│   ├───dashboard
-│   ├───debug
-│   ├───diet_plans
-│   │   ├───logic
-│   │   ├───models
-│   │   ├───providers
-│   │   └───screens
-│   ├───food
-│   ├───nutrition
-│   ├───onboarding
-│   ├───paywall
-│   ├───performance
-│   ├───role
-│   └───training
-├───models
-│   ├───coach
-│   └───onboarding
-├───providers
-│   ├───coach
-│   └───subscription
-└───services
-    ├───coach
-    └───pdf
-PS D:\Fitness\dart_application_1>  tree lib /f
-Folder PATH listing
-Volume serial number is B808-6717
-D:\FITNESS\DART_APPLICATION_1\LIB
-│   app.dart
-│   main.dart
-│   plan.md
-│
-├───core
-│   ├───food
-│   │       food_strategy.dart
-│   │       food_strategy_adapter.dart
-│   │
-│   ├───nav
-│   │       active_client_profile_sync.dart
-│   │       switch_mode.dart
-│   │
-│   ├───nutrition
-│   │       calorie_calculator.dart
-│   │       weight_basis.dart
-│   │
-│   ├───phase
-│   │       phase.dart
-│   │       phase_plan.dart
-│   │       phase_planner_service.dart
-│   │       phase_resolver.dart
-│   │       plan_mode.dart
-│   │
-│   ├───time
-│   │       time_context.dart
-│   │
-│   └───training
-│       │   actual_set.dart
-│       │   training_plan_models.dart
-│       │   training_set.dart
-│       │   training_split.dart
-│       │   training_strategy.dart
-│       │   training_strategy_adapter.dart
-│       │
-│       ├───exercises
-│       │       exercise.dart
-│       │       exercise_catalog.dart
-│       │       exercise_db.dart
-│       │       exercise_presets.dart
-│       │       exercise_selector.dart
-│       │
-│       ├───intake
-│       │       training_intake.dart
-│       │
-│       ├───loads
-│       │       e1rm_calculator.dart
-│       │       weight_calculator.dart
-│       │
-│       ├───progression
-│       │       progression_service.dart
-│       │
-│       ├───sessions
-│       │       exercise_log_entry.dart
-│       │       training_session.dart
-│       │
-│       └───slots
-│               exercise_slot.dart
-│               exercise_slot_selector.dart
-│
-├───data
-│       food_bank_seed.dart
-│       food_combo_seed.dart
-│       keto_bank.dart
-│       sacharidove_vlny_bank.dart
-│
-├───features
-│   ├───body
-│   │       add_circumference_screen.dart
-│   │       add_measurement_screen.dart
-│   │       circumference_list_screen.dart
-│   │
-│   ├───coach
-│   │   │   coach_shell.dart
-│   │   │
-│   │   ├───clients
-│   │   │       add_circumference_entry_screen.dart
-│   │   │       add_client_screen.dart
-│   │   │       add_diagnostic_entry_screen.dart
-│   │   │       add_inbody_entry_screen.dart
-│   │   │       client_detail_screen.dart
-│   │   │       client_list_screen.dart
-│   │   │       client_monthly_report_screen.dart
-│   │   │       edit_client_details_screen.dart
-│   │   │
-│   │   └───dashboard
-│   │           coach_dashboard_screen.dart
-│   │
-│   ├───dashboard
-│   │       dashboard_screen.dart
-│   │       macros_screen.dart
-│   │
-│   ├───debug
-│   │       phase_test_screen.dart
-│   │
-│   ├───diet_plans
-│   │   │   diet_strategy_screen.dart
-│   │   │
-│   │   ├───logic
-│   │   │       fasting_logic.dart
-│   │   │       keto_calculator.dart
-│   │   │
-│   │   ├───models
-│   │   │       carb_cycling_food_logic.dart
-│   │   │       carb_cycling_plan.dart
-│   │   │       survey_result.dart
-│   │   │
-│   │   ├───providers
-│   │   │       diet_plan_provider.dart
-│   │   │       diet_settings_provider.dart
-│   │   │
-│   │   └───screens
-│   │           carb_cycling_logic.dart
-│   │           carb_cycling_result_screen.dart
-│   │           carb_cycling_survey_screen.dart
-│   │           daily_menu_screen.dart
-│   │           home_screen.dart
-│   │           keto_logic.dart
-│   │           keto_result_screen.dart
-│   │           meal_plan_view.dart
-│   │           shopping_list_screen.dart
-│   │           weekly_meal_plan_screen.dart
-│   │
-│   ├───food
-│   │       food_bank_screen.dart
-│   │       food_entry_screen.dart
-│   │       food_strategy.dart
-│   │       food_strategy_adapter.dart
-│   │       food_summary_screen.dart
-│   │       measurement_history_screen.dart
-│   │
-│   ├───nutrition
-│   │       today_food_screen.dart
-│   │
-│   ├───onboarding
-│   │       goal_detail_screen.dart
-│   │       onboarding_goal_screen.dart
-│   │       onboarding_link_client_screen.dart
-│   │       onboarding_profile_screen.dart
-│   │       onboarding_step1.dart
-│   │       onboarding_step2.dart
-│   │       onboarding_step3.dart
-│   │
-│   ├───paywall
-│   │       paywall_screen.dart
-│   │
-│   ├───performance
-│   │       add_performance_screen.dart
-│   │       performance_chart_screen.dart
-│   │       performance_detail_screen.dart
-│   │       performance_list_screen.dart
-│   │       performance_provider.dart
-│   │
-│   ├───role
-│   │       role_select_screen.dart
-│   │
-│   └───training
-│           custom_training_plan_screen.dart
-│           eating_support_setup_screen.dart
-│           exercise_picker_screen.dart
-│           log_training_screen.dart
-│           slot_plan_debug_screen.dart
-│           split_selector_screen.dart
-│           today_training_screen.dart
-│           training_log_screen.dart
-│           training_overview_screen.dart
-│           training_plan_screen.dart
-│           training_setup_screen.dart
-│
-├───models
-│   │   body_circumference.dart
-│   │   body_scan.dart
-│   │   circumferece_measument.dart
-│   │   coach_overrides.dart
-│   │   custom_training_plan.dart
-│   │   daily_intake.dart
-│   │   exercise_performance.dart
-│   │   food_combo.dart
-│   │   goal.dart
-│   │   macros.dart
-│   │   meal.dart
-│   │   measurement.dart
-│   │   user_profile.dart
-│   │
-│   ├───coach
-│   │       coach_body_diagnostic_entry.dart
-│   │       coach_circumference_entry.dart
-│   │       coach_client.dart
-│   │       coach_client_details.dart
-│   │       coach_goal.dart
-│   │       coach_inbody_entry.dart
-│   │       coach_note.dart
-│   │       coach_overrides.dart
-│   │
-│   └───onboarding
-│           onboarding_step1.dart
-│
-├───providers
-│   │   active_client_provider.dart
-│   │   daily_history_provider.dart
-│   │   daily_intake_provider.dart
-│   │   diet_settings_provider.dart
-│   │   food_bank_provider.dart
-│   │   food_combo_provider.dart
-│   │   performance_provider.dart
-│   │   slot_selection_provider.dart
-│   │   training_session_provider.dart
-│   │   user_profile_provider.dart
-│   │
-│   ├───coach
-│   │       active_client_data_providers.dart
-│   │       active_client_provider.dart
-│   │       active_goal_provider.dart
-│   │       app_role_provider.dart
-│   │       coach_circumference_controller.dart
-│   │       coach_clients_controller.dart
-│   │       coach_clients_provider.dart
-│   │       coach_client_details_controller.dart
-│   │       coach_diagnostic_controller.dart
-│   │       coach_goal_controller.dart
-│   │       coach_inbody_controller.dart
-│   │       coach_notes_controller.dart
-│   │       coach_notes_provider.dart
-│   │       custom_training_plan_provider.dart
-│   │
-│   └───subscription
-│           subscription_provider.dart
-│
-└───services
-    │   ai_engine.dart
-    │   body_scan_repository.dart
-    │   custom_training_plan_mapper.dart
-    │   food_combo_service.dart
-    │   local_storage_service.dart
-    │   macro_calculator_service.dart
-    │   macro_service.dart
-    │   meal_suggestion_service.dart
-    │   metabolism_service.dart
-    │   phase_service.dart
-    │   tm_adaptation_service.dart
-    │   today_training_service.dart
-    │   trainer_engine_service.dart
-    │   training_log_service.dart
-    │   training_plan_service.dart
-    │   training_service.dart
-    │   training_slot_plan_service.dart
-    │
-    ├───coach
-    │       active_client_service.dart
-    │       client_export_service.dart
-    │       coach_insights_service.dart
-    │       coach_metrics_service.dart
-    │       coach_storage_service.dart
-    │       id_service.dart
-    │
-    └───pdf
-            client_report_pdf_service.dart
+🧠 carb_cycling_plan.dart
+
+👉 Co to dělá:
+Drží základní plán sacharidových vln.
+
+👉 Lidsky:
+„Tady si ukládám, kolik mám jíst sacharidů každý den, plus kolik bílkovin a tuků.“
+
+👉 Použití:
+
+nastavíš plán na týden
+ostatní části aplikace z toho čerpají
+🍽️ meal_generator.dart
+
+👉 Co to dělá:
+Generuje jídelníček podle makroživin (B/S/T).
+
+👉 Lidsky:
+„Z makroživin mi vytvoří konkrétní jídla během dne (vejce, maso, rýže atd.).“
+
+👉 Navíc:
+
+umí vynechat potraviny (např. bez vajec)
+umí vytvořit nákupní seznam
+🥑 keto_calculator.dart (verze 1)
+
+👉 Co to dělá:
+Počítá makra pro keto dietu a generuje keto jídelníček.
+
+👉 Lidsky:
+„Spočítá mi kolik mám jíst tuků, bílkovin a minimum sacharidů + navrhne jídla.“
+
+👉 Navíc:
+
+generuje celý týden
+umí nákupní seznam
+🥓 keto_calculator.dart (verze 2)
+
+👉 Co to dělá:
+Jednodušší verze keto generátoru.
+
+👉 Lidsky:
+„Rychlá verze – jen rozdělí jídla a neřeší tolik detailů.“
+
+👉 Rozdíl:
+
+méně chytrá
+méně variability
+⏱️ fasting_logic.dart
+
+👉 Co to dělá:
+Počítá okno pro fasting (např. 16:8).
+
+👉 Lidsky:
+„Řekne mi, kdy mám jíst a kdy držet půst.“
+
+👉 Příklad:
+
+začneš v 10:00 → jíš do 18:00 → pak půst
+🧾 diet_plan_provider.dart
+
+👉 Co to dělá:
+Ukládá aktuální makra v aplikaci.
+
+👉 Lidsky:
+„Pamatuje si, kolik mám nastavené bílkoviny, sacharidy a tuky.“
+
+👉 Použití:
+
+UI → nastavíš makra
+appka je používá všude
+🚫 excluded_ingredients_provider.dart
+
+👉 Co to dělá:
+Seznam zakázaných potravin.
+
+👉 Lidsky:
+„Tady si ukládám, co nechci jíst (např. vejce).“
+
+👉 Použití:
+
+generátor jídel to respektuje
+🍗 meal.dart
+
+👉 Co to dělá:
+Definuje jednu potravinu a její hodnoty.
+
+👉 Lidsky:
+„Popis jídla – kolik má proteinů, sacharidů, tuků.“
+
+👉 Navíc:
+
+umí spočítat porci (např. 150g kuřete)
+📊 macros.dart
+
+👉 Co to dělá:
+Jednoduchá struktura pro makra.
+
+👉 Lidsky:
+„Krabička na kalorie, bílkoviny, sacharidy a tuky.“
+
+🏦 keto_bank.dart
+
+👉 Co to dělá:
+Seznam keto potravin.
+
+👉 Lidsky:
+„Databáze jídel pro keto (vejce, slanina, losos…).“
+
+👉 Použití:
+
+generátor z toho vybírá
+🍚 sacharidove_vlny_bank.dart
+
+👉 Co to dělá:
+Velká databáze jídel pro carb cycling.
+
+👉 Lidsky:
+„Seznam všech potravin – maso, přílohy, sladké, všechno.“
+
+👉 Použití:
+
+generování jídelníčku
+flexibilita
+📄 client_report_pdf_service.dart
+
+👉 Co to dělá:
+Generuje PDF report klienta.
+
+👉 Lidsky:
+„Vytvoří report pro trenéra – váha, výkon, obvody.“
+
+👉 Obsah:
+
+InBody
+obvody
+výkony
+shrnutí
+🧩 Celkový obrázek (velmi důležité)
+
+👉 Tvoje appka má 3 hlavní části:
+
+1. Výpočty
+keto_calculator
+carb_cycling_plan
+fasting_logic
+
+👉 „počítá co máš jíst“
+
+2. Generování jídel
+meal_generator
+keto_bank
+sacharidove_vlny_bank
+
+👉 „vymyslí co konkrétně jíst“
+
+3. Data + UI logika
+providers
+meal.dart
+macros.dart
+
+👉 „drží data a propojuje appku“
+
+4. Profi funkce
+PDF report
+
+👉 „výstup pro klienta“
+
+🔥 Shrnutí jednou větou
+
+👉 Máš systém, který:
+
+spočítá makra
+přetvoří je na jídelníček
+respektuje omezení
+vytvoří nákupní seznam
+a umí udělat report

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../providers/diet_settings_provider.dart';
+import '../../providers/user_profile_provider.dart';
 import 'logic/keto_calculator.dart';
+import 'providers/diet_plan_provider.dart';
+import 'screens/carb_cycling_logic.dart';
+import 'screens/carb_cycling_result_screen.dart';
 import 'screens/carb_cycling_survey_screen.dart';
 import 'screens/daily_menu_screen.dart';
 import 'screens/keto_result_screen.dart';
-
-import '../../providers/diet_settings_provider.dart';
-import '../../providers/user_profile_provider.dart';
 
 class DietStrategyScreen extends ConsumerWidget {
   const DietStrategyScreen({super.key});
@@ -49,14 +51,21 @@ class DietStrategyScreen extends ConsumerWidget {
     if (picked != null) {
       final currentProfile = ref.read(userProfileProvider);
       if (currentProfile != null) {
-        ref.read(userProfileProvider.notifier).updateProfile(
-              currentProfile.copyWith(
-                fastingStartTime: picked,
-                isFasting: true,
-                selectedPlan: 'Fasting',
-                fastingDuration: selectedHours,
-              ),
-            );
+        final updatedProfile = currentProfile.copyWith(
+          fastingStartTime: picked,
+          isFasting: true,
+          selectedPlan: 'Fasting',
+          fastingDuration: selectedHours,
+        );
+
+        ref.read(userProfileProvider.notifier).updateProfile(updatedProfile);
+
+        final fastingPlan = CarbCyclingCalculator.generateFastingMealPlan(
+          profile: updatedProfile,
+          excluded: ref.read(excludedIngredientsProvider),
+        );
+
+        ref.read(dietPlanProvider.notifier).state = fastingPlan;
       }
 
       if (!context.mounted) return;
@@ -137,11 +146,18 @@ class DietStrategyScreen extends ConsumerWidget {
                   }
 
                   final ketoMacros = KetoCalculator.calculateMacros(profile);
-                  final navigator = Navigator.of(dialogContext);
+                  final ketoPlan = KetoCalculator.generateWeeklyKetoMealPlan(
+                    protein: ketoMacros['protein'] ?? 0,
+                    fats: ketoMacros['fats'] ?? 0,
+                    carbs: ketoMacros['carbs'] ?? 30,
+                    excludedFoods: dialogRef.read(excludedIngredientsProvider),
+                  );
 
-                  navigator.pop();
+                  ref.read(dietPlanProvider.notifier).state = ketoPlan;
 
-                  navigator.push(
+                  Navigator.pop(dialogContext);
+                  Navigator.push(
+                    context,
                     MaterialPageRoute(
                       builder: (_) => KetoResultScreen(macros: ketoMacros),
                     ),
@@ -160,16 +176,18 @@ class DietStrategyScreen extends ConsumerWidget {
     final current = ref.read(userProfileProvider);
     if (current == null) return;
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final linearPlan = CarbCyclingCalculator.createLinearPlan(profile: current);
 
     ref.read(userProfileProvider.notifier).updateProfile(
           current.copyWith(selectedPlan: 'Linear'),
         );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Konstantní plán byl aktivován.'),
-        backgroundColor: colorScheme.primary,
+    ref.read(dietPlanProvider.notifier).state = linearPlan.mealPlan;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CarbCyclingResultScreen(plan: linearPlan),
       ),
     );
   }
@@ -212,7 +230,7 @@ class DietStrategyScreen extends ConsumerWidget {
                     backgroundColor: colorScheme.secondaryContainer,
                     foregroundColor: colorScheme.onSecondaryContainer,
                   ),
-                  child: const Text('AKTIVOVAT KONSTANTNÍ PLÁN'),
+                  child: const Text('AKTIVOVAT A OTEVŘÍT PLÁN'),
                 ),
               ),
             ],
@@ -352,9 +370,7 @@ class _StrategyCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isActive
-              ? colorScheme.primary
-              : colorScheme.outlineVariant,
+          color: isActive ? colorScheme.primary : colorScheme.outlineVariant,
           width: isActive ? 1.6 : 1,
         ),
       ),

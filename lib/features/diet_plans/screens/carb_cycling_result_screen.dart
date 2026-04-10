@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../services/pdf/diet_plan_pdf_service.dart';
 import '../models/carb_cycling_plan.dart';
 import 'meal_plan_view.dart';
 import 'shopping_list_screen.dart';
@@ -24,6 +25,7 @@ class CarbCyclingResultScreen extends StatelessWidget {
       'Neděle',
     ];
 
+    final resolvedMealPlan = plan.mealPlan;
     final bool isKeto = plan.dailyCarbs.every((grams) => grams <= 50);
 
     final accentColor = isKeto ? colorScheme.secondary : colorScheme.primary;
@@ -35,7 +37,21 @@ class CarbCyclingResultScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isKeto ? 'Tvůj Keto jídelníček' : 'Tvůj plán vln'),
+        title: Text(isKeto ? 'Tvůj Keto jídelníček' : 'Tvůj plán'),
+        actions: [
+          if (resolvedMealPlan != null) ...[
+            IconButton(
+              tooltip: 'Tisk / PDF',
+              onPressed: () => DietPlanPdfService.printPlan(resolvedMealPlan),
+              icon: const Icon(Icons.print_outlined),
+            ),
+            IconButton(
+              tooltip: 'Sdílet PDF',
+              onPressed: () => DietPlanPdfService.sharePlan(resolvedMealPlan),
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+            ),
+          ],
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -101,14 +117,19 @@ class CarbCyclingResultScreen extends StatelessWidget {
                 'GENEROVAT NÁKUPNÍ SEZNAM',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ShoppingListScreen(plan: plan),
-                  ),
-                );
-              },
+              onPressed: resolvedMealPlan == null
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ShoppingListScreen(
+                            mealPlan: resolvedMealPlan,
+                            isKeto: isKeto,
+                          ),
+                        ),
+                      );
+                    },
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -125,14 +146,18 @@ class CarbCyclingResultScreen extends StatelessWidget {
                 'ZOBRAZIT CELÝ TÝDENNÍ JÍDELNÍČEK',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WeeklyMealPlanScreen(plan: plan),
-                  ),
-                );
-              },
+              onPressed: resolvedMealPlan == null
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => WeeklyMealPlanScreen(
+                            mealPlan: resolvedMealPlan,
+                          ),
+                        ),
+                      );
+                    },
             ),
             const SizedBox(height: 24),
             Align(
@@ -154,6 +179,7 @@ class CarbCyclingResultScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final grams = plan.dailyCarbs[index];
                 final isRefeed = !isKeto && index == 6;
+                final day = resolvedMealPlan?.days[index];
 
                 return Column(
                   children: [
@@ -202,13 +228,16 @@ class CarbCyclingResultScreen extends StatelessWidget {
                             : null,
                       ),
                     ),
-                    MealPlanView(
-                      dailyCarbs: grams,
-                      dailyProtein: plan.protein,
-                      dailyFats: plan.fats,
-                      dayName: days[index],
-                      isKeto: isKeto,
-                    ),
+                    if (day != null)
+                      MealPlanView(day: day, isKeto: isKeto)
+                    else
+                      MealPlanView(
+                        dailyCarbs: grams,
+                        dailyProtein: plan.protein,
+                        dailyFats: plan.fats,
+                        dayName: days[index],
+                        isKeto: isKeto,
+                      ),
                     const SizedBox(height: 16),
                   ],
                 );

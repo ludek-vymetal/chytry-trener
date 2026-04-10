@@ -1,33 +1,37 @@
 import 'package:flutter/material.dart';
 
+import '../models/carb_cycling_plan.dart';
 import 'carb_cycling_logic.dart';
 
 class MealPlanView extends StatelessWidget {
-  final double dailyCarbs;
-  final double dailyProtein;
-  final double dailyFats;
-  final String dayName;
+  final double? dailyCarbs;
+  final double? dailyProtein;
+  final double? dailyFats;
+  final String? dayName;
   final bool isKeto;
+  final PlannedDay? day;
 
   const MealPlanView({
     super.key,
-    required this.dailyCarbs,
-    required this.dailyProtein,
-    required this.dailyFats,
-    required this.dayName,
+    this.dailyCarbs,
+    this.dailyProtein,
+    this.dailyFats,
+    this.dayName,
     this.isKeto = false,
+    this.day,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final meals = CarbCyclingCalculator.generateDailyMenu(
-      carbs: dailyCarbs,
-      protein: dailyProtein,
-      fats: dailyFats,
-      isKeto: isKeto,
-    );
+    final resolvedDay = day ??
+        CarbCyclingCalculator.generateDayPlan(
+          dayName: dayName ?? 'Den',
+          carbs: isKeto ? (dailyCarbs ?? 30) : (dailyCarbs ?? 0),
+          protein: dailyProtein ?? 0,
+          fats: dailyFats ?? 0,
+        );
 
     final backgroundColor = isKeto
         ? colorScheme.secondaryContainer.withValues(alpha: 0.45)
@@ -43,25 +47,22 @@ class MealPlanView extends StatelessWidget {
         ),
       ),
       child: Column(
-        children: meals.map((meal) => _buildMealItem(context, meal)).toList(),
+        children: resolvedDay.meals
+            .map((meal) => _buildMealItem(context, meal))
+            .toList(),
       ),
     );
   }
 
-  Widget _buildMealItem(BuildContext context, Map<String, dynamic> meal) {
+  Widget _buildMealItem(BuildContext context, PlannedMeal meal) {
     final colorScheme = Theme.of(context).colorScheme;
     final accentColor = isKeto ? colorScheme.secondary : colorScheme.primary;
 
-    final description = (meal['description'] ?? '').toString();
-
-    final calories = _readDouble(meal, ['calories', 'kcal']);
-    final protein = _readDouble(meal, ['protein']);
-    final carbs = _readDouble(meal, ['carbs', 'sacharidy']);
-    final fats = _readDouble(meal, ['fats', 'tuky']);
-    final grams = _readInt(meal, ['grams', 'gramy']);
-
     final hasStructuredMacros =
-        calories != null || protein != null || carbs != null || fats != null;
+        meal.calories != null ||
+            meal.protein != null ||
+            meal.carbs != null ||
+            meal.fats != null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -69,7 +70,7 @@ class MealPlanView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            _getMealIcon((meal['label'] ?? '').toString()),
+            _getMealIcon(meal.label),
             size: 20,
             color: accentColor,
           ),
@@ -79,17 +80,19 @@ class MealPlanView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${meal['label']}: ${meal['name']}",
+                  meal.time != null
+                      ? '${meal.time} • ${meal.label}: ${meal.name}'
+                      : '${meal.label}: ${meal.name}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: colorScheme.onSurface,
                   ),
                 ),
-                if (grams != null) ...[
+                if (meal.grams != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    'Porce: $grams g',
+                    'Porce: ${meal.grams} g',
                     style: TextStyle(
                       color: colorScheme.onSurfaceVariant,
                       fontSize: 12,
@@ -103,42 +106,41 @@ class MealPlanView extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (calories != null)
+                      if (meal.calories != null)
                         _macroChip(
                           context,
                           label: 'kcal',
-                          value: calories.round().toString(),
+                          value: meal.calories!.round().toString(),
                         ),
-                      if (protein != null)
+                      if (meal.protein != null)
                         _macroChip(
                           context,
                           label: 'B',
-                          value: '${protein.toStringAsFixed(1)} g',
+                          value: '${meal.protein!.toStringAsFixed(1)} g',
                         ),
-                      if (carbs != null)
+                      if (meal.carbs != null)
                         _macroChip(
                           context,
                           label: 'S',
-                          value: '${carbs.toStringAsFixed(1)} g',
+                          value: '${meal.carbs!.toStringAsFixed(1)} g',
                         ),
-                      if (fats != null)
+                      if (meal.fats != null)
                         _macroChip(
                           context,
                           label: 'T',
-                          value: '${fats.toStringAsFixed(1)} g',
+                          value: '${meal.fats!.toStringAsFixed(1)} g',
                         ),
                     ],
                   ),
-                ] else if (description.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
                 ],
+                const SizedBox(height: 6),
+                Text(
+                  meal.description,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -174,43 +176,8 @@ class MealPlanView extends StatelessWidget {
     );
   }
 
-  double? _readDouble(Map<String, dynamic> map, List<String> keys) {
-    for (final key in keys) {
-      final value = map[key];
-      if (value is num) {
-        return value.toDouble();
-      }
-      if (value is String) {
-        final parsed = double.tryParse(value.replaceAll(',', '.'));
-        if (parsed != null) {
-          return parsed;
-        }
-      }
-    }
-    return null;
-  }
-
-  int? _readInt(Map<String, dynamic> map, List<String> keys) {
-    for (final key in keys) {
-      final value = map[key];
-      if (value is int) {
-        return value;
-      }
-      if (value is num) {
-        return value.round();
-      }
-      if (value is String) {
-        final parsed = int.tryParse(value);
-        if (parsed != null) {
-          return parsed;
-        }
-      }
-    }
-    return null;
-  }
-
   IconData _getMealIcon(String label) {
-    if (label.contains('Snídaně')) {
+    if (label.contains('Snídaně') || label.contains('První')) {
       return Icons.wb_sunny_outlined;
     }
     if (label.contains('Oběd')) {
@@ -218,6 +185,9 @@ class MealPlanView extends StatelessWidget {
     }
     if (label.contains('Svačina')) {
       return Icons.apple;
+    }
+    if (label.contains('Večeře') || label.contains('Poslední')) {
+      return Icons.nightlight_round;
     }
     return Icons.restaurant_menu;
   }

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../providers/diet_settings_provider.dart';
 import '../logic/keto_calculator.dart';
 import '../models/carb_cycling_food_logic.dart';
 import '../models/carb_cycling_plan.dart';
-import '../providers/diet_settings_provider.dart';
 
 class ShoppingListScreen extends ConsumerStatefulWidget {
   final CarbCyclingPlan? plan;
+  final DietMealPlan? mealPlan;
   final List<List<Map<String, String>>>? weeklyKetoMenu;
   final List<List<Map<String, String>>>? weeklyFastingMenu;
   final bool isKeto;
@@ -17,6 +18,7 @@ class ShoppingListScreen extends ConsumerStatefulWidget {
   const ShoppingListScreen({
     super.key,
     this.plan,
+    this.mealPlan,
     this.weeklyKetoMenu,
     this.weeklyFastingMenu,
     this.isKeto = false,
@@ -29,73 +31,92 @@ class ShoppingListScreen extends ConsumerStatefulWidget {
 }
 
 class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
-  late Map<String, double> items;
-  List<String> checkedItems = [];
-
-  Map<String, double> _calculateFastingItems(
-    List<List<Map<String, String>>> menu,
-  ) {
-    final Map<String, double> totals = {};
-
-    for (final day in menu) {
-      for (final meal in day) {
-        final String name = meal['name'] ?? 'Neznámé';
-        totals[name] = (totals[name] ?? 0) + 1;
-      }
-    }
-
-    return totals;
-  }
+  late List<ShoppingListItem> items;
+  final List<String> checkedItems = [];
 
   void _generateList() {
     final excluded = ref.read(excludedIngredientsProvider);
 
+    if (widget.mealPlan != null) {
+      items = widget.mealPlan!.buildShoppingList();
+      return;
+    }
+
     if (widget.isFasting && widget.weeklyFastingMenu != null) {
-      final rawItems = _calculateFastingItems(widget.weeklyFastingMenu!);
-      items = rawItems;
-    } else if (widget.isKeto && widget.weeklyKetoMenu != null) {
-      items = KetoCalculator.getShoppingList(widget.weeklyKetoMenu!);
-    } else if (widget.plan != null) {
-      items = MealGenerator.generateShoppingList(
+      final map = <String, double>{};
+      for (final day in widget.weeklyFastingMenu!) {
+        for (final meal in day) {
+          final name = (meal['name'] ?? '').trim();
+          if (name.isEmpty) continue;
+          map[name] = (map[name] ?? 0) + 1;
+        }
+      }
+      items = map.entries
+          .map((e) => ShoppingListItem(name: e.key, amount: e.value, unit: 'x'))
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
+      return;
+    }
+
+    if (widget.isKeto && widget.weeklyKetoMenu != null) {
+      final raw = KetoCalculator.getShoppingList(widget.weeklyKetoMenu!);
+      items = raw.entries
+          .map((e) => ShoppingListItem(name: e.key, amount: e.value, unit: 'x'))
+          .toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
+      return;
+    }
+
+    if (widget.plan != null) {
+      final rawItems = MealGenerator.generateShoppingList(
         widget.plan!,
         isKeto: false,
         excluded: excluded,
       );
-    } else {
-      items = {};
+
+      items = rawItems.entries.map((e) {
+        final key = e.key;
+        if (key.contains('(') && key.contains(')')) {
+          final name = key.substring(0, key.indexOf('(')).trim();
+          final unit = key.substring(key.indexOf('(') + 1, key.indexOf(')')).trim();
+          return ShoppingListItem(name: name, amount: e.value, unit: unit);
+        }
+        return ShoppingListItem(name: key, amount: e.value, unit: 'g');
+      }).toList()
+        ..sort((a, b) => a.name.compareTo(b.name));
+      return;
     }
+
+    items = [];
   }
 
-  void _shareToWhatsApp() {
-    String titul = '🛒 *MŮJ NÁKUPNÍ SEZNAM*\n';
-    if (widget.isKeto) {
-      titul = '🛒 *MŮJ KETO NÁKUPNÍ SEZNAM*\n\n';
+  void _shareList() {
+    final title = widget.isKeto
+        ? '🛒 MŮJ KETO NÁKUPNÍ SEZNAM'
+        : widget.isFasting
+            ? '🛒 MŮJ FASTING NÁKUPNÍ SEZNAM'
+            : '🛒 MŮJ NÁKUPNÍ SEZNAM';
+
+    final buffer = StringBuffer()
+      ..writeln(title)
+      ..writeln();
+
+    for (final item in items) {
+      buffer.writeln('☐ ${item.name} (${item.formattedAmount})');
     }
-    if (widget.isFasting) {
-      titul = '🛒 *MŮJ FASTING NÁKUPNÍ SEZNAM*\n\n';
-    }
 
-    String textSeznamu = titul;
+    buffer.writeln();
+    buffer.writeln('Generováno tvým chytrým trenérem 🍏');
 
-    items.forEach((name, weight) {
-      final String amountStr;
-      if (widget.isFasting) {
-        amountStr = '${weight.toInt()}x porce';
-      } else {
-        amountStr = weight >= 1000
-            ? '${(weight / 1000).toStringAsFixed(2)} kg'
-            : '${weight.toInt()} g';
-      }
-      textSeznamu += '☐ $name ($amountStr)\n';
-    });
-
-    textSeznamu += '\n_Generováno tvým chytrým trenérem_ 🍏';
-    Share.share(textSeznamu);
+    Share.share(buffer.toString());
   }
 
   @override
   Widget build(BuildContext context) {
     _generateList();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final isSpecial = widget.isKeto || widget.isFasting;
 
     return Scaffold(
       appBar: AppBar(
@@ -104,13 +125,10 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
               ? 'Keto nákup'
               : (widget.isFasting ? 'Fasting nákup' : 'Týdenní nákup'),
         ),
-        backgroundColor: widget.isKeto || widget.isFasting
-            ? Colors.indigo[700]
-            : Colors.green[700],
         actions: [
           IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
-            onPressed: _shareToWhatsApp,
+            icon: const Icon(Icons.share),
+            onPressed: _shareList,
           ),
         ],
       ),
@@ -120,21 +138,19 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
-                  color: widget.isKeto || widget.isFasting
-                      ? Colors.indigo[50]
-                      : Colors.green[50],
+                  color: isSpecial
+                      ? colorScheme.secondaryContainer
+                      : colorScheme.primaryContainer,
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.shopping_basket,
-                        color: Colors.blueGrey,
-                      ),
+                      const Icon(Icons.shopping_basket),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          widget.isFasting
-                              ? 'Seznam obsahuje všechna jídla pro tvé okno jídla na 7 dní.'
-                              : 'Množství odpovídá tvému 7dennímu plánu.',
+                          'Seznam obsahuje všechny ingredience ze všech dní a slučuje duplicity.',
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ],
@@ -145,23 +161,18 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                     padding: const EdgeInsets.all(10),
                     itemCount: items.length,
                     itemBuilder: (context, index) {
-                      final String name = items.keys.elementAt(index);
-                      final double weight = items[name]!;
-                      final bool isChecked = checkedItems.contains(name);
-
-                      final String displayAmount = widget.isFasting
-                          ? '${weight.toInt()}x v týdnu'
-                          : (weight >= 1000
-                              ? '${(weight / 1000).toStringAsFixed(2)} kg'
-                              : '${weight.toInt()} g');
+                      final item = items[index];
+                      final isChecked = checkedItems.contains(item.name);
 
                       return Card(
-                        elevation: isChecked ? 0 : 2,
-                        color: isChecked ? Colors.grey[200] : Colors.white,
+                        elevation: isChecked ? 0 : 1,
+                        color: isChecked
+                            ? colorScheme.surfaceContainerHighest
+                            : colorScheme.surface,
                         child: CheckboxListTile(
-                          activeColor: Colors.indigo,
+                          activeColor: colorScheme.primary,
                           title: Text(
-                            name,
+                            item.name,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               decoration: isChecked
@@ -169,14 +180,14 @@ class _ShoppingListScreenState extends ConsumerState<ShoppingListScreen> {
                                   : null,
                             ),
                           ),
-                          subtitle: Text(displayAmount),
+                          subtitle: Text(item.formattedAmount),
                           value: isChecked,
                           onChanged: (val) {
                             setState(() {
                               if (val == true) {
-                                checkedItems.add(name);
+                                checkedItems.add(item.name);
                               } else {
-                                checkedItems.remove(name);
+                                checkedItems.remove(item.name);
                               }
                             });
                           },

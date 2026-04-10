@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+
+import '../../../services/pdf/diet_plan_pdf_service.dart';
 import '../logic/keto_calculator.dart';
-import 'shopping_list_screen.dart'; // Importuj tvůj upravený shopping list
+import '../models/carb_cycling_plan.dart';
+import 'shopping_list_screen.dart';
+import 'weekly_meal_plan_screen.dart';
 
 class KetoResultScreen extends StatefulWidget {
   final Map<String, double> macros;
@@ -12,52 +16,57 @@ class KetoResultScreen extends StatefulWidget {
 }
 
 class _KetoResultScreenState extends State<KetoResultScreen> {
-  // ✅ Vygenerujeme týdenní menu hned při startu a uložíme ho do stavu
-  late List<List<Map<String, String>>> weeklyMenu;
-  final List<String> dny = ["Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota", "Neděle"];
+  late DietMealPlan weeklyPlan;
 
   @override
   void initState() {
     super.initState();
-    // Vygenerujeme 7 dní (každý den bude díky .shuffle() v kalkulačce trochu jiný)
-    weeklyMenu = KetoCalculator.generateWeeklyKetoMenu(
-      widget.macros['protein']!,
-      widget.macros['fats']!,
-      widget.macros['carbs']!,
+    weeklyPlan = KetoCalculator.generateWeeklyKetoMealPlan(
+      protein: widget.macros['protein'] ?? 0,
+      fats: widget.macros['fats'] ?? 0,
+      carbs: widget.macros['carbs'] ?? 30,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Tvůj týdenní Keto plán"),
-        backgroundColor: Colors.indigo[900],
+        actions: [
+          IconButton(
+            tooltip: 'Tisk / PDF',
+            onPressed: () => DietPlanPdfService.printPlan(weeklyPlan),
+            icon: const Icon(Icons.print_outlined),
+          ),
+          IconButton(
+            tooltip: 'Sdílet PDF',
+            onPressed: () => DietPlanPdfService.sharePlan(weeklyPlan),
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Horní panel s makry
-            _buildMacroHeader(),
-
+            _buildMacroHeader(context),
             const SizedBox(height: 10),
-
-            // Tlačítko pro nákupní seznam (předáváme CELÝ týden)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                icon: const Icon(Icons.shopping_cart, color: Colors.white),
-                label: const Text("GENEROVAT NÁKUPNÍ SEZNAM", style: TextStyle(color: Colors.white)),
+                icon: const Icon(Icons.shopping_cart),
+                label: const Text("GENEROVAT NÁKUPNÍ SEZNAM"),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ShoppingListScreen(
-                        weeklyKetoMenu: weeklyMenu,
+                        mealPlan: weeklyPlan,
                         isKeto: true,
                       ),
                     ),
@@ -65,28 +74,68 @@ class _KetoResultScreenState extends State<KetoResultScreen> {
                 },
               ),
             ),
-
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: FilledButton.tonalIcon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+                icon: const Icon(Icons.calendar_month),
+                label: const Text("OTEVŘÍT CELÝ TÝDEN"),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WeeklyMealPlanScreen(
+                        mealPlan: weeklyPlan,
+                        titleOverride: 'Týdenní keto jídelníček',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
             const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text("Jídelníček na celý týden:", 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                "Jídelníček na celý týden:",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
-
-            // ✅ Zobrazení 7 dní pod sebou (ExpansionTile jako u vln)
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: weeklyMenu.length,
+              itemCount: weeklyPlan.days.length,
               itemBuilder: (context, dayIndex) {
+                final day = weeklyPlan.days[dayIndex];
+
                 return ExpansionTile(
-                  leading: const Icon(Icons.calendar_today, color: Colors.indigo),
-                  title: Text(dny[dayIndex], style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text("Zobrazit jídla"),
-                  children: weeklyMenu[dayIndex].map((meal) {
+                  leading: Icon(
+                    Icons.calendar_today,
+                    color: colorScheme.secondary,
+                  ),
+                  title: Text(
+                    day.dayName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    'B ${day.protein.round()} g • S ${day.carbs.round()} g • T ${day.fats.round()} g',
+                  ),
+                  children: day.meals.map((meal) {
                     return ListTile(
-                      title: Text("${meal['label']}: ${meal['name']}"),
-                      subtitle: Text(meal['description']!),
-                      isThreeLine: true,
+                      title: Text('${meal.label}: ${meal.name}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(meal.description),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Ingredience: ${meal.ingredients.map((e) => '${e.name} (${e.formattedAmount})').join(', ')}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     );
                   }).toList(),
                 );
@@ -98,16 +147,30 @@ class _KetoResultScreenState extends State<KetoResultScreen> {
     );
   }
 
-  Widget _buildMacroHeader() {
+  Widget _buildMacroHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Colors.indigo[50],
+      color: colorScheme.secondaryContainer,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _macroColumn("Bílkoviny", "${widget.macros['protein']?.round()}g", Colors.blue),
-          _macroColumn("Tuky", "${widget.macros['fats']?.round()}g", Colors.orange),
-          _macroColumn("Sacharidy", "${widget.macros['carbs']?.round()}g", Colors.red),
+          _macroColumn(
+            "Bílkoviny",
+            "${widget.macros['protein']?.round()}g",
+            colorScheme.primary,
+          ),
+          _macroColumn(
+            "Tuky",
+            "${widget.macros['fats']?.round()}g",
+            colorScheme.tertiary,
+          ),
+          _macroColumn(
+            "Sacharidy",
+            "${widget.macros['carbs']?.round()}g",
+            colorScheme.error,
+          ),
         ],
       ),
     );
@@ -117,7 +180,14 @@ class _KetoResultScreenState extends State<KetoResultScreen> {
     return Column(
       children: [
         Text(label, style: const TextStyle(fontSize: 12)),
-        Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }
