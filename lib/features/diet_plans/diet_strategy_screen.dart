@@ -8,9 +8,13 @@ import 'providers/diet_plan_provider.dart';
 import 'screens/carb_cycling_logic.dart';
 import 'screens/carb_cycling_result_screen.dart';
 import 'screens/carb_cycling_survey_screen.dart';
+import 'screens/daily_meal_plan_editor_screen.dart';
 import 'screens/daily_menu_screen.dart';
 import 'screens/keto_result_screen.dart';
+import 'screens/monthly_template_builder_screen.dart';
 import 'screens/saved_meal_plans_screen.dart';
+import 'screens/weekly_template_builder_screen.dart';
+import 'screens/create_food_combo_screen.dart';
 
 class DietStrategyScreen extends ConsumerWidget {
   const DietStrategyScreen({super.key});
@@ -240,6 +244,103 @@ class DietStrategyScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: 'Vytvořit vlastní jídelníček',
+            description:
+                'Ručně poskládej denní jídelníček z hotových jídel a ulož si ho jako vlastní šablonu.',
+            icon: Icons.edit_note,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DailyMealPlanEditorScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add_task),
+                  label: const Text('OTEVŘÍT DENNÍ EDITOR'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: 'Vytvořit hotovku z potravin',
+            description:
+                'Poskládej vlastní jídlo z jednotlivých potravin a ulož ho do databanky hotovek.',
+            icon: Icons.restaurant_outlined,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CreateFoodComboScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.playlist_add),
+                  label: const Text('OTEVŘÍT EDITOR HOTOVKY'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: 'Sestavit týden z denních šablon',
+            description:
+                'Vyber denní šablonu pro každý den a ulož si kompletní týdenní jídelníček.',
+            icon: Icons.view_week_outlined,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const WeeklyTemplateBuilderScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.calendar_view_week),
+                  label: const Text('OTEVŘÍT TÝDENNÍ BUILDER'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: 'Sestavit měsíc z týdnů',
+            description:
+                'Vyber 4 uložené týdenní jídelníčky a slož z nich kompletní měsíční plán.',
+            icon: Icons.calendar_month_outlined,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MonthlyTemplateBuilderScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.date_range),
+                  label: const Text('OTEVŘÍT MĚSÍČNÍ BUILDER'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
           _StrategyCard(
             title: 'Konstantní příjem (Linear)',
             description:
@@ -260,6 +361,7 @@ class DietStrategyScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
+
           _StrategyCard(
             title: 'Sacharidové vlny',
             description: 'Cyklování sacharidů pro spalování tuku.',
@@ -287,6 +389,7 @@ class DietStrategyScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
+
           _StrategyCard(
             title: 'Keto dieta',
             description: 'Vysoký obsah tuků, minimum sacharidů.',
@@ -307,6 +410,7 @@ class DietStrategyScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
+
           _StrategyCard(
             title: 'Přerušovaný půst',
             description:

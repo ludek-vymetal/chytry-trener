@@ -35,6 +35,11 @@ class CarbCyclingResultScreen extends StatelessWidget {
         ? colorScheme.onSecondaryContainer
         : colorScheme.onPrimaryContainer;
 
+    final pdfTitle = isKeto ? 'Keto jídelníček' : 'Sacharidové vlny';
+    final pdfSubtitle = isKeto
+        ? 'Nízkosacharidový režim s důrazem na tuky a stabilní příjem bílkovin.'
+        : 'Sacharidy se cyklují podle jednotlivých dnů.';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isKeto ? 'Tvůj Keto jídelníček' : 'Tvůj plán'),
@@ -42,12 +47,20 @@ class CarbCyclingResultScreen extends StatelessWidget {
           if (resolvedMealPlan != null) ...[
             IconButton(
               tooltip: 'Tisk / PDF',
-              onPressed: () => DietPlanPdfService.printPlan(resolvedMealPlan),
+              onPressed: () => DietPlanPdfService.printPlan(
+                resolvedMealPlan,
+                documentTitle: pdfTitle,
+                subtitle: pdfSubtitle,
+              ),
               icon: const Icon(Icons.print_outlined),
             ),
             IconButton(
               tooltip: 'Sdílet PDF',
-              onPressed: () => DietPlanPdfService.sharePlan(resolvedMealPlan),
+              onPressed: () => DietPlanPdfService.sharePlan(
+                resolvedMealPlan,
+                documentTitle: pdfTitle,
+                subtitle: pdfSubtitle,
+              ),
               icon: const Icon(Icons.picture_as_pdf_outlined),
             ),
           ],

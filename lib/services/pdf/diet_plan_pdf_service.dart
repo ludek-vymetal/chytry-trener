@@ -10,31 +10,65 @@ class DietPlanPdfService {
   static Future<Uint8List> buildPdf(
     DietMealPlan plan, {
     String? trainerNote,
+    String? documentTitle,
+    String? subtitle,
   }) async {
+    final regularFont = await PdfGoogleFonts.notoSansRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBold();
     final pdf = pw.Document();
     final nextCheck = DateTime.now().add(const Duration(days: 30));
+
+    final baseStyle = pw.TextStyle(
+      font: regularFont,
+      fontSize: 10,
+    );
+
+    final boldStyle = pw.TextStyle(
+      font: boldFont,
+    );
+
+    final normalizedSubtitle = subtitle?.trim();
+    final normalizedNote = plan.note?.trim();
+
+    final hasSubtitle =
+        normalizedSubtitle != null && normalizedSubtitle.isNotEmpty;
+    final hasPlanNote = normalizedNote != null && normalizedNote.isNotEmpty;
+    final shouldShowPlanNote =
+        hasPlanNote && normalizedNote != normalizedSubtitle;
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
+        theme: pw.ThemeData.withFont(
+          base: regularFont,
+          bold: boldFont,
+        ),
         build: (context) {
           final shopping = plan.buildShoppingList();
 
           return [
             pw.Text(
-              _title(plan),
-              style: pw.TextStyle(
+              documentTitle ?? _title(plan),
+              style: baseStyle.copyWith(
+                font: boldFont,
                 fontSize: 22,
-                fontWeight: pw.FontWeight.bold,
               ),
             ),
-            pw.SizedBox(height: 8),
-            if ((plan.note ?? '').isNotEmpty)
+            if (hasSubtitle) ...[
+              pw.SizedBox(height: 6),
               pw.Text(
-                plan.note!,
-                style: const pw.TextStyle(fontSize: 10),
+                normalizedSubtitle,
+                style: baseStyle,
               ),
+            ],
+            if (shouldShowPlanNote) ...[
+              pw.SizedBox(height: 8),
+              pw.Text(
+                normalizedNote,
+                style: baseStyle,
+              ),
+            ],
             pw.SizedBox(height: 12),
             pw.Container(
               padding: const pw.EdgeInsets.all(12),
@@ -45,9 +79,24 @@ class DietPlanPdfService {
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
-                  _macroBox('Bílkoviny', '${plan.protein.round()} g'),
-                  _macroBox('Sacharidy', '${plan.carbs.round()} g'),
-                  _macroBox('Tuky', '${plan.fats.round()} g'),
+                  _macroBox(
+                    'Bílkoviny',
+                    '${plan.protein.round()} g',
+                    baseStyle,
+                    boldStyle,
+                  ),
+                  _macroBox(
+                    'Sacharidy',
+                    '${plan.carbs.round()} g',
+                    baseStyle,
+                    boldStyle,
+                  ),
+                  _macroBox(
+                    'Tuky',
+                    '${plan.fats.round()} g',
+                    baseStyle,
+                    boldStyle,
+                  ),
                 ],
               ),
             ),
@@ -63,8 +112,8 @@ class DietPlanPdfService {
                 ),
                 child: pw.Text(
                   '${day.dayName} • B ${day.protein.round()} g • S ${day.carbs.round()} g • T ${day.fats.round()} g',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
+                  style: baseStyle.copyWith(
+                    font: boldFont,
                     fontSize: 12,
                   ),
                 ),
@@ -86,21 +135,21 @@ class DietPlanPdfService {
                         meal.time != null
                             ? '${meal.time} • ${meal.label}: ${meal.name}'
                             : '${meal.label}: ${meal.name}',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
+                        style: baseStyle.copyWith(
+                          font: boldFont,
                           fontSize: 11,
                         ),
                       ),
                       pw.SizedBox(height: 4),
                       pw.Text(
                         meal.description,
-                        style: const pw.TextStyle(fontSize: 10),
+                        style: baseStyle,
                       ),
                       if (meal.ingredients.isNotEmpty) ...[
                         pw.SizedBox(height: 4),
                         pw.Text(
                           'Ingredience: ${meal.ingredients.map((e) => '${e.name} (${e.formattedAmount})').join(', ')}',
-                          style: const pw.TextStyle(fontSize: 9),
+                          style: baseStyle.copyWith(fontSize: 9),
                         ),
                       ],
                     ],
@@ -111,39 +160,45 @@ class DietPlanPdfService {
             pw.SizedBox(height: 16),
             pw.Text(
               'Nákupní seznam',
-              style: pw.TextStyle(
+              style: baseStyle.copyWith(
+                font: boldFont,
                 fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
               ),
             ),
             pw.SizedBox(height: 8),
-            pw.Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: shopping
-                  .map(
-                    (item) => pw.Container(
-                      width: 240,
-                      padding: const pw.EdgeInsets.all(8),
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey300),
-                        borderRadius:
-                            const pw.BorderRadius.all(pw.Radius.circular(6)),
+            if (shopping.isEmpty)
+              pw.Text(
+                'Nákupní seznam je prázdný.',
+                style: baseStyle,
+              )
+            else
+              pw.Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: shopping
+                    .map(
+                      (item) => pw.Container(
+                        width: 240,
+                        padding: const pw.EdgeInsets.all(8),
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.grey300),
+                          borderRadius:
+                              const pw.BorderRadius.all(pw.Radius.circular(6)),
+                        ),
+                        child: pw.Text(
+                          '${item.name}: ${item.formattedAmount}',
+                          style: baseStyle,
+                        ),
                       ),
-                      child: pw.Text(
-                        '${item.name}: ${item.formattedAmount}',
-                        style: const pw.TextStyle(fontSize: 10),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
+                    )
+                    .toList(),
+              ),
             pw.SizedBox(height: 18),
             pw.Text(
               'Doporučení trenéra',
-              style: pw.TextStyle(
+              style: baseStyle.copyWith(
+                font: boldFont,
                 fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
               ),
             ),
             pw.SizedBox(height: 8),
@@ -151,7 +206,7 @@ class DietPlanPdfService {
               (trainerNote == null || trainerNote.trim().isEmpty)
                   ? 'Dodržuj plán po dobu 4 týdnů. Další kontrola a vážení za 1 měsíc (${_fmtDate(nextCheck)}).'
                   : trainerNote.trim(),
-              style: const pw.TextStyle(fontSize: 10),
+              style: baseStyle,
             ),
           ];
         },
@@ -164,9 +219,16 @@ class DietPlanPdfService {
   static Future<void> printPlan(
     DietMealPlan plan, {
     String? trainerNote,
+    String? documentTitle,
+    String? subtitle,
   }) async {
     await Printing.layoutPdf(
-      onLayout: (_) => buildPdf(plan, trainerNote: trainerNote),
+      onLayout: (_) => buildPdf(
+        plan,
+        trainerNote: trainerNote,
+        documentTitle: documentTitle,
+        subtitle: subtitle,
+      ),
       name: _safeFileName(plan),
     );
   }
@@ -174,26 +236,39 @@ class DietPlanPdfService {
   static Future<void> sharePlan(
     DietMealPlan plan, {
     String? trainerNote,
+    String? documentTitle,
+    String? subtitle,
   }) async {
-    final bytes = await buildPdf(plan, trainerNote: trainerNote);
+    final bytes = await buildPdf(
+      plan,
+      trainerNote: trainerNote,
+      documentTitle: documentTitle,
+      subtitle: subtitle,
+    );
+
     await Printing.sharePdf(
       bytes: bytes,
       filename: '${_safeFileName(plan)}.pdf',
     );
   }
 
-  static pw.Widget _macroBox(String label, String value) {
+  static pw.Widget _macroBox(
+    String label,
+    String value,
+    pw.TextStyle baseStyle,
+    pw.TextStyle boldStyle,
+  ) {
     return pw.Column(
       children: [
         pw.Text(
           label,
-          style: const pw.TextStyle(fontSize: 10),
+          style: baseStyle,
         ),
         pw.Text(
           value,
-          style: pw.TextStyle(
+          style: baseStyle.copyWith(
+            font: boldStyle.font,
             fontSize: 13,
-            fontWeight: pw.FontWeight.bold,
           ),
         ),
       ],
@@ -209,7 +284,7 @@ class DietPlanPdfService {
       case 'linear':
         return 'Linear jídelníček';
       default:
-        return 'Týdenní meal plan';
+        return 'Meal plan';
     }
   }
 

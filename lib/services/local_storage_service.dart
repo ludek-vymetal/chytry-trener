@@ -9,6 +9,7 @@ class LocalStorageService {
   static const _foodBankKey = 'food_bank_v1';
   static const _clientExportFolderPathKey = 'client_export_folder_path_v1';
   static const _savedMealPlansKey = 'saved_meal_plans_v1';
+  static const _customFoodCombosKey = 'custom_food_combos_v1';
 
   static Future<void> saveFoodBank(List<Map<String, dynamic>> meals) async {
     final prefs = await SharedPreferences.getInstance();
@@ -122,5 +123,36 @@ class LocalStorageService {
     final prefs = await SharedPreferences.getInstance();
     final jsonStr = jsonEncode(plans.map((e) => e.toJson()).toList());
     await prefs.setString(_savedMealPlansKey, jsonStr);
+  }
+
+  // =========================
+  // CUSTOM FOOD COMBOS
+  // =========================
+
+  static Future<List<Map<String, dynamic>>> loadCustomFoodCombos() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_customFoodCombosKey);
+
+    if (jsonStr == null || jsonStr.isEmpty) {
+      return [];
+    }
+
+    final decoded = jsonDecode(jsonStr);
+    if (decoded is! List) {
+      return [];
+    }
+
+    return decoded
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  static Future<void> saveCustomFoodCombos(
+    List<Map<String, dynamic>> combos,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = jsonEncode(combos);
+    await prefs.setString(_customFoodCombosKey, jsonStr);
   }
 }

@@ -40,6 +40,7 @@ class MealPlanScalingService {
         profile.tdee > 0 &&
         profile.goal != null) {
       final targetCalories = _resolveTargetCalories(profile);
+
       return scaleByCalories(
         original: template.plan,
         fromCalories: template.baseCalories,
@@ -142,28 +143,38 @@ class MealPlanScalingService {
 
   static double _resolveTargetCalories(UserProfile profile) {
     final goal = profile.goal;
+    final base = profile.tdee;
 
     if (goal == null) {
-      return profile.tdee;
+      return base;
     }
 
+    double target;
     switch (goal.phase) {
       case GoalPhase.cut:
-        return profile.tdee - 400;
+        target = base - 400;
+        break;
       case GoalPhase.build:
-        return profile.tdee + 200;
+        target = base + 200;
+        break;
       case GoalPhase.maintain:
-        return profile.tdee;
+        target = base;
+        break;
       case GoalPhase.strength:
-        return profile.tdee + 100;
+        target = base + 100;
+        break;
       case null:
-        return profile.tdee;
+        target = base;
+        break;
     }
+
+    return target < 1200 ? 1200 : target;
   }
 
   static String _appendScaleNote(String? note, String appended) {
     final base = (note ?? '').trim();
     if (base.isEmpty) return appended;
+    if (base.contains(appended)) return base;
     return '$base\n$appended';
   }
 }

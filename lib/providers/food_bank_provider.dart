@@ -5,7 +5,7 @@ import '../data/food_bank_seed.dart';
 
 class FoodBankNotifier extends StateNotifier<List<Meal>> {
   FoodBankNotifier() : super(FoodBankSeed.items) {
-    load(); // načti uložené hned po startu
+    load();
   }
 
   Future<void> load() async {
@@ -14,11 +14,9 @@ class FoodBankNotifier extends StateNotifier<List<Meal>> {
 
     final loaded = raw.map((e) => Meal.fromJson(e)).toList();
 
-    // ✅ pokud máme něco uloženého, přepíšeme seed
     if (loaded.isNotEmpty) {
       state = loaded;
     } else {
-      // ✅ pokud nic uloženého není, uložíme seed do storage
       await _persist();
     }
   }
@@ -29,7 +27,6 @@ class FoodBankNotifier extends StateNotifier<List<Meal>> {
     );
   }
 
-  /// Najde položku v bance podle názvu (case-insensitive)
   Meal? findByName(String name) {
     final q = name.trim().toLowerCase();
     if (q.isEmpty) return null;
@@ -41,7 +38,6 @@ class FoodBankNotifier extends StateNotifier<List<Meal>> {
     }
   }
 
-  /// Návrhy podle části textu
   List<Meal> search(String query) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return [];
@@ -52,8 +48,7 @@ class FoodBankNotifier extends StateNotifier<List<Meal>> {
         .toList();
   }
 
-  /// Uloží/aktualizuje položku v bance + persist
-  void upsert(Meal meal) {
+  Future<void> upsert(Meal meal) async {
     final q = meal.name.trim().toLowerCase();
     final existingIndex =
         state.indexWhere((m) => m.name.trim().toLowerCase() == q);
@@ -66,7 +61,7 @@ class FoodBankNotifier extends StateNotifier<List<Meal>> {
       state = [meal, ...state];
     }
 
-    _persist();
+    await _persist();
   }
 }
 
