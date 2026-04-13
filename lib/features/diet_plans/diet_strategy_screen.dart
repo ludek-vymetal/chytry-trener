@@ -8,13 +8,14 @@ import 'providers/diet_plan_provider.dart';
 import 'screens/carb_cycling_logic.dart';
 import 'screens/carb_cycling_result_screen.dart';
 import 'screens/carb_cycling_survey_screen.dart';
+import 'screens/create_food_combo_screen.dart';
 import 'screens/daily_meal_plan_editor_screen.dart';
 import 'screens/daily_menu_screen.dart';
+import 'screens/food_combo_library_screen.dart';
 import 'screens/keto_result_screen.dart';
 import 'screens/monthly_template_builder_screen.dart';
 import 'screens/saved_meal_plans_screen.dart';
 import 'screens/weekly_template_builder_screen.dart';
-import 'screens/create_food_combo_screen.dart';
 
 class DietStrategyScreen extends ConsumerWidget {
   const DietStrategyScreen({super.key});
@@ -263,6 +264,30 @@ class DietStrategyScreen extends ConsumerWidget {
                   },
                   icon: const Icon(Icons.add_task),
                   label: const Text('OTEVŘÍT DENNÍ EDITOR'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: 'Databanka hotovek',
+            description:
+                'Procházej, duplikuj, upravuj a maž vlastní hotovky z databanky.',
+            icon: Icons.menu_book_outlined,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FoodComboLibraryScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.restaurant_menu),
+                  label: const Text('OTEVŘÍT DATABANKU HOTOVEK'),
                 ),
               ),
             ],
