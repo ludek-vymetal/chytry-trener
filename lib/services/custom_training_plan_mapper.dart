@@ -18,9 +18,9 @@ class CustomTrainingPlanMapper {
             reps: e.reps,
             rir: e.rir,
             note: e.note,
-            weightKg: null,
+            weightKg: e.weightKg,
             intensityPercent: null,
-            plannedSets: null,
+            plannedSets: const [],
           );
         }).toList(),
       );
@@ -34,7 +34,7 @@ class CustomTrainingPlanMapper {
     final weekly = toWeeklyPlan(plan);
     if (weekly.isEmpty) return null;
 
-    final rawIndex = date.weekday - 1; // 0..6
+    final rawIndex = date.weekday - 1;
     final index = rawIndex % weekly.length;
     return weekly[index];
   }

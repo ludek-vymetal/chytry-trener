@@ -170,7 +170,7 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
                 'note': e.note,
                 'intensityPercent': e.intensityPercent,
                 'weightKg': e.weightKg,
-                'plannedSets': (e.plannedSets ?? const <PlannedSet>[])
+                'plannedSets': e.plannedSets
                     .map((ps) => ps.toJson())
                     .toList(),
               },

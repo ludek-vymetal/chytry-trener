@@ -40,17 +40,72 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
 
   int? _parseGramsOrNull() {
     final g = int.tryParse(_gramsCtrl.text.trim());
-    if (g == null) {
-      return null;
-    }
-    if (g < 10 || g > 3000) {
-      return null;
-    }
+    if (g == null) return null;
+    if (g < 10 || g > 3000) return null;
     return g;
   }
 
   void _toast(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Meal? _findMeal(List<Meal> bank, String mealName) {
+    final normalized = mealName.trim().toLowerCase();
+
+    try {
+      return bank.firstWhere(
+        (m) => m.name.trim().toLowerCase() == normalized,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  double _comboCalories(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.caloriesPer100g * item.grams) / 100.0;
+    }
+    return sum;
+  }
+
+  double _comboProtein(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.proteinPer100g * item.grams) / 100.0;
+    }
+    return sum;
+  }
+
+  double _comboCarbs(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.carbsPer100g * item.grams) / 100.0;
+    }
+    return sum;
+  }
+
+  double _comboFats(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.fatsPer100g * item.grams) / 100.0;
+    }
+    return sum;
+  }
+
+  List<String> _comboMissingItems(FoodCombo combo, List<Meal> bank) {
+    return combo.items
+        .where((item) => _findMeal(bank, item.mealName) == null)
+        .map((item) => item.mealName)
+        .toList();
   }
 
   void _addFoodLogItemToDay(FoodLogItem item) {
@@ -71,15 +126,26 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
   }
 
   void _addComboToDay(FoodCombo combo, int grams) {
-    final factor = grams / 100.0;
+    final bank = ref.read(foodBankProvider);
+
+    final defaultGrams =
+        combo.defaultGrams <= 0 ? grams.toDouble() : combo.defaultGrams.toDouble();
+    final factor = grams / defaultGrams;
+
+    final calories = (_comboCalories(combo, bank) * factor).round();
+    final protein = (_comboProtein(combo, bank) * factor).round();
+    final carbs = (_comboCarbs(combo, bank) * factor).round();
+    final fats = (_comboFats(combo, bank) * factor).round();
+
     final item = FoodLogItem(
-      name: combo.name,
+      name: combo.title,
       grams: grams,
-      calories: (combo.caloriesPer100g * factor).round(),
-      protein: (combo.proteinPer100g * factor).round(),
-      carbs: (combo.carbsPer100g * factor).round(),
-      fat: (combo.fatsPer100g * factor).round(),
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fat: fats,
     );
+
     _addFoodLogItemToDay(item);
   }
 
@@ -332,6 +398,7 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
 
   Future<void> _openComboPicker() async {
     final combos = ref.read(foodComboProvider);
+    final bank = ref.read(foodBankProvider);
 
     ComboMealTime time = ComboMealTime.lunch;
     ComboTaste taste = ComboTaste.any;
@@ -352,96 +419,111 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Vyber hotovku',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                child: SizedBox(
+                  height: MediaQuery.of(ctx).size.height * 0.75,
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Vyber hotovku',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: ComboMealTime.values.map((t) {
-                        final selected = time == t;
-                        return ChoiceChip(
-                          label: Text(FoodComboService.timeLabel(t)),
-                          selected: selected,
-                          onSelected: (_) => setLocal(() => time = t),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 10),
-                    if (time == ComboMealTime.breakfast ||
-                        time == ComboMealTime.snack)
+                      const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
-                        children: [
-                          ChoiceChip(
-                            label: const Text('Slané'),
-                            selected: taste == ComboTaste.savory,
-                            onSelected: (_) =>
-                                setLocal(() => taste = ComboTaste.savory),
-                          ),
-                          ChoiceChip(
-                            label: const Text('Sladké'),
-                            selected: taste == ComboTaste.sweet,
-                            onSelected: (_) =>
-                                setLocal(() => taste = ComboTaste.sweet),
-                          ),
-                          ChoiceChip(
-                            label: const Text('Cokoliv'),
-                            selected: taste == ComboTaste.any,
-                            onSelected: (_) =>
-                                setLocal(() => taste = ComboTaste.any),
-                          ),
-                        ],
+                        runSpacing: 8,
+                        children: ComboMealTime.values.map((t) {
+                          final selected = time == t;
+                          return ChoiceChip(
+                            label: Text(FoodComboService.timeLabel(t)),
+                            selected: selected,
+                            onSelected: (_) => setLocal(() => time = t),
+                          );
+                        }).toList(),
                       ),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? const Center(
-                              child: Text('V této kategorii zatím nic není.'),
-                            )
-                          : ListView.separated(
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 1),
-                              itemBuilder: (_, i) {
-                                final c = filtered[i];
-                                return ListTile(
-                                  title: Text(c.name),
-                                  subtitle: Text(
-                                    '${c.defaultGrams} g (default) • '
-                                    '${c.caloriesPer100g} kcal/100g • '
-                                    'B ${c.proteinPer100g} / S ${c.carbsPer100g} / T ${c.fatsPer100g}',
-                                  ),
-                                  trailing: const Icon(Icons.add),
-                                  onTap: () async {
-                                    final grams = await _askGrams(
-                                      context: ctx,
-                                      initial: c.defaultGrams,
-                                    );
-
-                                    if (!ctx.mounted) return;
-                                    if (grams == null) return;
-
-                                    Navigator.of(ctx).pop();
-                                    if (!mounted) return;
-
-                                    _addComboToDay(c, grams);
-                                  },
-                                );
-                              },
+                      const SizedBox(height: 10),
+                      if (time == ComboMealTime.breakfast ||
+                          time == ComboMealTime.snack)
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Slané'),
+                              selected: taste == ComboTaste.savory,
+                              onSelected: (_) =>
+                                  setLocal(() => taste = ComboTaste.savory),
                             ),
-                    ),
-                  ],
+                            ChoiceChip(
+                              label: const Text('Sladké'),
+                              selected: taste == ComboTaste.sweet,
+                              onSelected: (_) =>
+                                  setLocal(() => taste = ComboTaste.sweet),
+                            ),
+                            ChoiceChip(
+                              label: const Text('Cokoliv'),
+                              selected: taste == ComboTaste.any,
+                              onSelected: (_) =>
+                                  setLocal(() => taste = ComboTaste.any),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 12),
+                      const Divider(height: 1),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? const Center(
+                                child: Text('V této kategorii zatím nic není.'),
+                              )
+                            : ListView.separated(
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (_, i) {
+                                  final c = filtered[i];
+                                  final kcal = _comboCalories(c, bank).round();
+                                  final protein =
+                                      _comboProtein(c, bank).toStringAsFixed(1);
+                                  final carbs =
+                                      _comboCarbs(c, bank).toStringAsFixed(1);
+                                  final fats =
+                                      _comboFats(c, bank).toStringAsFixed(1);
+                                  final missing = _comboMissingItems(c, bank);
+
+                                  return ListTile(
+                                    title: Text(c.title),
+                                    subtitle: Text(
+                                      missing.isNotEmpty
+                                          ? 'Chybí potraviny v databance: ${missing.join(', ')}'
+                                          : '${c.defaultGrams} g (default) • '
+                                              '$kcal kcal • '
+                                              'B $protein / S $carbs / T $fats',
+                                    ),
+                                    trailing: const Icon(Icons.add),
+                                    onTap: missing.isNotEmpty
+                                        ? null
+                                        : () async {
+                                            final grams = await _askGrams(
+                                              context: ctx,
+                                              initial: c.defaultGrams,
+                                            );
+
+                                            if (!ctx.mounted) return;
+                                            if (grams == null) return;
+
+                                            Navigator.of(ctx).pop();
+                                            if (!mounted) return;
+
+                                            _addComboToDay(c, grams);
+                                          },
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

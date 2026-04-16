@@ -18,10 +18,12 @@ class BulkLogTrainingScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<BulkLogTrainingScreen> createState() => _TrainingLogScreenState();
+  ConsumerState<BulkLogTrainingScreen> createState() =>
+      _TrainingLogScreenState();
 }
 
-class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
+class _TrainingLogScreenState
+    extends ConsumerState<BulkLogTrainingScreen> {
   late final String exerciseKey;
   late final List<PlannedSet> planned;
   late List<_Row> rows;
@@ -49,7 +51,7 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
         _Row(
           weightCtrl: TextEditingController(),
           repsCtrl: TextEditingController(),
-        )
+        ),
       ];
     }
   }
@@ -64,8 +66,8 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
   }
 
   List<PlannedSet> _resolvePlannedSets(PlannedExercise ex) {
-    if (ex.plannedSets != null && ex.plannedSets!.isNotEmpty) {
-      return ex.plannedSets!;
+    if (ex.plannedSets.isNotEmpty) {
+      return ex.plannedSets;
     }
 
     final sets = _firstInt(ex.sets) ?? 0;
@@ -112,18 +114,23 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
       final w = double.tryParse(r.weightCtrl.text.trim().replaceAll(',', '.'));
       final repsParsed = int.tryParse(r.repsCtrl.text.trim());
 
-      // ✅ reps je povinný (jinak se set neuloží)
       if (repsParsed == null || repsParsed <= 0) continue;
 
-      // w může být null (u cviků bez váhy), to je ok
       actualSets.add(
-        ActualSet(weightKg: w, reps: repsParsed),
+        ActualSet(
+          weightKg: w,
+          reps: repsParsed,
+        ),
       );
     }
 
     if (actualSets.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Zadej alespoň opakování pro minimálně 1 sérii.')),
+        const SnackBar(
+          content: Text(
+            'Zadej alespoň opakování pro minimálně 1 sérii.',
+          ),
+        ),
       );
       return;
     }
@@ -150,7 +157,10 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
             if (planned.isNotEmpty) ...[
               const Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Plán', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Plán',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 8),
               for (final p in planned)
@@ -161,7 +171,10 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
             ],
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text('Skutečnost', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Skutečnost',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 8),
             Expanded(
@@ -173,7 +186,10 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
                       Expanded(
                         child: TextField(
                           controller: rows[i].weightCtrl,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType:
+                              const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: const InputDecoration(labelText: 'kg'),
                         ),
                       ),
@@ -182,11 +198,14 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
                         child: TextField(
                           controller: rows[i].repsCtrl,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'opakování'),
+                          decoration: const InputDecoration(
+                            labelText: 'opakování',
+                          ),
                         ),
                       ),
                       IconButton(
-                        onPressed: rows.length > 1 ? () => _removeSet(i) : null,
+                        onPressed:
+                            rows.length > 1 ? () => _removeSet(i) : null,
                         icon: const Icon(Icons.delete_outline),
                       ),
                     ],
@@ -207,7 +226,7 @@ class _TrainingLogScreenState extends ConsumerState<BulkLogTrainingScreen> {
                   child: const Text('Uložit'),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -219,5 +238,8 @@ class _Row {
   final TextEditingController weightCtrl;
   final TextEditingController repsCtrl;
 
-  _Row({required this.weightCtrl, required this.repsCtrl});
+  _Row({
+    required this.weightCtrl,
+    required this.repsCtrl,
+  });
 }

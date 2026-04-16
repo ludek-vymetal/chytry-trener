@@ -6,6 +6,7 @@ import '../../providers/coach/active_client_provider.dart';
 import '../../providers/coach/custom_training_plan_provider.dart';
 import '../../core/training/exercises/exercise.dart';
 import '../../core/training/exercises/exercise_db.dart';
+import 'training_plan_screen.dart';
 
 class CustomTrainingPlanScreen extends ConsumerWidget {
   const CustomTrainingPlanScreen({super.key});
@@ -229,6 +230,13 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     WidgetRef ref,
     String clientId,
   ) async {
+    final maxes = await showDialog<_PowerliftingMaxes>(
+      context: context,
+      builder: (_) => const _PowerliftingMaxesDialog(),
+    );
+
+    if (maxes == null) return;
+
     final plans = ref.read(customTrainingPlanProvider);
     final newName = _buildUniquePlanName(
       '🏋️ Příprava na závody – silový trojboj',
@@ -261,7 +269,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     }
 
     final notifier = ref.read(customTrainingPlanProvider.notifier);
-    final templateDays = _powerliftingMeetPrepDays();
+    final templateDays = _powerliftingMeetPrepDays(maxes);
 
     for (final day in templateDays) {
       await notifier.addDay(
@@ -408,8 +416,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             sets: '20 min',
             reps: '10–12',
             rir: '1–2',
-            note:
-                'Střídej cviky 20 minut. Pauza mezi cviky 20 s. Fáze 1.',
+            note: 'Střídej cviky 20 minut. Pauza mezi cviky 20 s. Fáze 1.',
           ),
           CustomTrainingExercise(
             customName: 'Mrtvý tah s jednoručkami',
@@ -541,171 +548,714 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     ];
   }
 
-  List<CustomTrainingDay> _powerliftingMeetPrepDays() {
-    return [
-      CustomTrainingDay(
-        name: 'Den 1 – Dřep těžce + bench objem',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'Dřep – závodní styl',
-            sets: '6',
-            reps: '2–6 dle týdne',
-            rir: '1–3',
-            note:
-                'Hlavní lift dne. Postupně navyšuj intenzitu, technika musí zůstat čistá.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Bench press – objem',
-            sets: '5',
-            reps: '5–8',
-            rir: '2–3',
-            note: 'Střední váha, důraz na kontrolu dráhy a stabilitu.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Rumunský mrtvý tah',
-            sets: '4',
-            reps: '6–8',
-            rir: '2–3',
-          ),
-          CustomTrainingExercise(
-            customName: 'Břicho / core',
-            sets: '3',
-            reps: '10–15 / 20–30 s',
-            rir: '2–3',
-          ),
-        ],
+  List<CustomTrainingDay> _powerliftingMeetPrepDays(
+    _PowerliftingMaxes maxes,
+  ) {
+    final squatBase = maxes.squat1rm;
+    final benchTm = _trainingMax(maxes.bench1rm);
+    final deadliftBase = maxes.deadlift1rm;
+
+    final phaseWeeks = <_PowerWeekConfig>[
+      const _PowerWeekConfig(
+        week: 1,
+        phaseLabel: 'Objem',
+        squatPct: 0.70,
+        benchPct: 0.75,
+        deadliftPct: 0.70,
+        squatSets: '5',
+        squatReps: '5',
+        benchHeavySets: '5',
+        benchHeavyReps: '5',
+        deadliftSets: '5',
+        deadliftReps: '4',
       ),
-      CustomTrainingDay(
-        name: 'Den 2 – Bench těžce + záda',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'Bench press – závodní pauza',
-            sets: '6',
-            reps: '2–6 dle týdne',
-            rir: '1–3',
-            note:
-                'Hlavní bench den. Pauza na hrudníku, pevný setup, tlak do země.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Přítahy v předklonu',
-            sets: '4',
-            reps: '6–10',
-            rir: '2',
-          ),
-          CustomTrainingExercise(
-            customName: 'Shyby / horní kladka',
-            sets: '4',
-            reps: '6–10',
-            rir: '2',
-          ),
-          CustomTrainingExercise(
-            customName: 'Triceps',
-            sets: '3',
-            reps: '10–15',
-            rir: '2–3',
-          ),
-        ],
+      const _PowerWeekConfig(
+        week: 2,
+        phaseLabel: 'Objem',
+        squatPct: 0.725,
+        benchPct: 0.775,
+        deadliftPct: 0.725,
+        squatSets: '5',
+        squatReps: '5',
+        benchHeavySets: '5',
+        benchHeavyReps: '5',
+        deadliftSets: '5',
+        deadliftReps: '4',
       ),
-      CustomTrainingDay(
-        name: 'Den 3 – Mrtvý tah těžce + dřep lehce',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'Mrtvý tah – závodní styl',
-            sets: '5',
-            reps: '2–5 dle týdne',
-            rir: '1–3',
-            note:
-                'Hlavní deadlift den. Nejezdi techniku přes hranu, prioritou je kvalita pokusu.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Dřep – lehčí technika / pauza',
-            sets: '4',
-            reps: '3–5',
-            rir: '2–3',
-            note: 'Technická práce, ne maximální zatížení.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Hamstringy',
-            sets: '3',
-            reps: '8–12',
-            rir: '2–3',
-          ),
-          CustomTrainingExercise(
-            customName: 'Záda / mezilopatky',
-            sets: '3',
-            reps: '10–15',
-            rir: '2–3',
-          ),
-        ],
+      const _PowerWeekConfig(
+        week: 3,
+        phaseLabel: 'Objem',
+        squatPct: 0.75,
+        benchPct: 0.80,
+        deadliftPct: 0.75,
+        squatSets: '5',
+        squatReps: '5',
+        benchHeavySets: '5',
+        benchHeavyReps: '5',
+        deadliftSets: '5',
+        deadliftReps: '4',
       ),
-      CustomTrainingDay(
-        name: 'Den 4 – Bench technika + doplňky',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'Bench press – lehčí technika',
-            sets: '5',
-            reps: '4–6',
-            rir: '2–3',
-            note: 'Důraz na rychlost činky, setup, dráhu a leg drive.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Tlaky nad hlavu / ramena',
-            sets: '3',
-            reps: '6–10',
-            rir: '2–3',
-          ),
-          CustomTrainingExercise(
-            customName: 'Biceps',
-            sets: '3',
-            reps: '10–15',
-            rir: '2–3',
-          ),
-          CustomTrainingExercise(
-            customName: 'Rotátory / prevence ramen',
-            sets: '2–3',
-            reps: '12–20',
-            rir: '2–3',
-          ),
-        ],
+      const _PowerWeekConfig(
+        week: 4,
+        phaseLabel: 'Objem',
+        squatPct: 0.775,
+        benchPct: 0.825,
+        deadliftPct: 0.775,
+        squatSets: '5',
+        squatReps: '5',
+        benchHeavySets: '5',
+        benchHeavyReps: '5',
+        deadliftSets: '5',
+        deadliftReps: '4',
       ),
+      const _PowerWeekConfig(
+        week: 5,
+        phaseLabel: 'Síla',
+        squatPct: 0.80,
+        benchPct: 0.85,
+        deadliftPct: 0.80,
+        squatSets: '4',
+        squatReps: '4',
+        benchHeavySets: '4',
+        benchHeavyReps: '4',
+        deadliftSets: '4',
+        deadliftReps: '3',
+      ),
+      const _PowerWeekConfig(
+        week: 6,
+        phaseLabel: 'Síla',
+        squatPct: 0.825,
+        benchPct: 0.875,
+        deadliftPct: 0.825,
+        squatSets: '4',
+        squatReps: '4',
+        benchHeavySets: '4',
+        benchHeavyReps: '4',
+        deadliftSets: '4',
+        deadliftReps: '3',
+      ),
+      const _PowerWeekConfig(
+        week: 7,
+        phaseLabel: 'Síla',
+        squatPct: 0.85,
+        benchPct: 0.90,
+        deadliftPct: 0.85,
+        squatSets: '4',
+        squatReps: '4',
+        benchHeavySets: '4',
+        benchHeavyReps: '4',
+        deadliftSets: '4',
+        deadliftReps: '3',
+      ),
+      const _PowerWeekConfig(
+        week: 8,
+        phaseLabel: 'Síla',
+        squatPct: 0.875,
+        benchPct: 0.925,
+        deadliftPct: 0.875,
+        squatSets: '4',
+        squatReps: '4',
+        benchHeavySets: '4',
+        benchHeavyReps: '4',
+        deadliftSets: '4',
+        deadliftReps: '3',
+      ),
+      const _PowerWeekConfig(
+        week: 9,
+        phaseLabel: 'Intenzifikace',
+        squatPct: 0.90,
+        benchPct: 0.925,
+        deadliftPct: 0.90,
+        squatSets: '3',
+        squatReps: '3',
+        benchHeavySets: '3',
+        benchHeavyReps: '3',
+        deadliftSets: '3',
+        deadliftReps: '2',
+      ),
+      const _PowerWeekConfig(
+        week: 10,
+        phaseLabel: 'Intenzifikace',
+        squatPct: 0.925,
+        benchPct: 0.95,
+        deadliftPct: 0.925,
+        squatSets: '3',
+        squatReps: '3',
+        benchHeavySets: '3',
+        benchHeavyReps: '3',
+        deadliftSets: '3',
+        deadliftReps: '2',
+      ),
+      const _PowerWeekConfig(
+        week: 11,
+        phaseLabel: 'Peak / CNS',
+        squatPct: 0.90,
+        benchPct: 0.90,
+        deadliftPct: 0.90,
+        topSinglePct: 0.975,
+        squatSets: '3 + 2 singly',
+        squatReps: '2 + 1',
+        benchHeavySets: '3 + 2 singly',
+        benchHeavyReps: '2 + 1',
+        deadliftSets: '3 + 2 singly',
+        deadliftReps: '2 + 1',
+      ),
+      const _PowerWeekConfig(
+        week: 12,
+        phaseLabel: 'Taper / závod',
+        squatPct: 0.85,
+        benchPct: 0.875,
+        deadliftPct: 0.85,
+        topSinglePct: 0.925,
+        squatSets: '2 + 1 single',
+        squatReps: '1 + 1',
+        benchHeavySets: '2 + 1 single',
+        benchHeavyReps: '1 + 1',
+        deadliftSets: '2 + 1 single',
+        deadliftReps: '1 + 1',
+      ),
+    ];
+
+    final days = <CustomTrainingDay>[];
+
+    for (final week in phaseWeeks) {
+      final squatMain = _weightFromMax(squatBase, week.squatPct);
+      final benchMain = _weightFromTm(benchTm, week.benchPct);
+      final deadliftMain = _weightFromMax(deadliftBase, week.deadliftPct);
+
+      final squatTechPercent = week.week <= 4
+          ? 0.65
+          : week.week <= 8
+              ? 0.70
+              : week.week <= 10
+                  ? 0.75
+                  : 0.70;
+
+      final benchVolumePercent =
+          (week.benchPct - 0.10).clamp(0.65, 0.80).toDouble();
+      final benchTechPercent =
+          (week.benchPct - 0.15).clamp(0.60, 0.75).toDouble();
+      final backoffPercent = week.benchPct - 0.10;
+
+      final squatTech = _weightFromMax(squatBase, squatTechPercent);
+      final benchVolume = _weightFromTm(benchTm, benchVolumePercent);
+      final benchTech = _weightFromTm(benchTm, benchTechPercent);
+      final benchBackoff = _weightFromTm(benchTm, backoffPercent);
+
+      final topSingleSquat = week.topSinglePct == null
+          ? null
+          : _weightFromMax(squatBase, week.topSinglePct!);
+      final topSingleBench = week.topSinglePct == null
+          ? null
+          : _weightFromTm(benchTm, week.topSinglePct!);
+      final topSingleDeadlift = week.topSinglePct == null
+          ? null
+          : _weightFromMax(deadliftBase, week.topSinglePct!);
+
+      final daysBeforeMeetWeekEnd = (12 - week.week) * 7;
+      final weekEnd = maxes.meetDate.subtract(
+        Duration(days: daysBeforeMeetWeekEnd),
+      );
+      final weekStart = weekEnd.subtract(const Duration(days: 6));
+      final weekLabel =
+          'Týden ${week.week} (${_fmtDate(weekStart)} – ${_fmtDate(weekEnd)})';
+
+      final benchVolumeSets = week.week <= 4
+          ? '5'
+          : week.week <= 8
+              ? '4'
+              : week.week <= 10
+                  ? '4'
+                  : '3';
+
+      final benchVolumeReps = week.week <= 4
+          ? '6–8'
+          : week.week <= 8
+              ? '5–6'
+              : week.week <= 10
+                  ? '4–5'
+                  : '3–4';
+
+      final benchTechSets = week.week >= 11 ? '3' : '4';
+      final benchTechReps = week.week >= 11 ? '3–4' : '4–6';
+      final benchBackoffReps = week.week >= 11 ? '2' : week.benchHeavyReps;
+
+      days.addAll([
+        CustomTrainingDay(
+          name: '$weekLabel – Den 1 – Dřep těžce + spodní část',
+          exercises: [
+            CustomTrainingExercise(
+              customName: 'Dřep – závodní styl',
+              sets: week.squatSets,
+              reps: week.squatReps,
+              rir: week.week >= 11 ? '1–2' : '1–3',
+              weightKg: squatMain,
+              note:
+                  'Fáze: ${week.phaseLabel}\n'
+                  'Datum závodu: ${_fmtDate(maxes.meetDate)}\n'
+                  'Výchozí 1RM: ${maxes.squat1rm.toStringAsFixed(1)} kg\n'
+                  'Pracovní váha: ${_formatWeightAndPercent(squatMain, week.squatPct)}'
+                  '${topSingleSquat == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleSquat, week.topSinglePct!)}'}',
+            ),
+            CustomTrainingExercise(
+              customName: 'Dřep – lehčí technika / pauza',
+              sets: week.week >= 11 ? '3' : '4',
+              reps: week.week >= 11 ? '2–3' : '3–5',
+              rir: '2–3',
+              weightKg: squatTech,
+              note:
+                  'Technická práce.\n'
+                  'Pracovní váha: ${_formatWeightAndPercent(squatTech, squatTechPercent)}',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Rumunský mrtvý tah',
+              sets: '4',
+              reps: '6–8',
+              rir: '2–3',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Břicho / core',
+              sets: '3',
+              reps: '10–15 / 20–30 s',
+              rir: '2–3',
+            ),
+          ],
+        ),
+        CustomTrainingDay(
+          name: '$weekLabel – Den 2 – Bench těžce + backoff + doplňky',
+          exercises: [
+            CustomTrainingExercise(
+              customName: 'Bench press – závodní pauza',
+              sets: week.benchHeavySets,
+              reps: week.benchHeavyReps,
+              rir: week.week >= 11 ? '1–2' : '1–3',
+              weightKg: benchMain,
+              note:
+                  'Fáze: ${week.phaseLabel}\n'
+                  'Datum závodu: ${_fmtDate(maxes.meetDate)}\n'
+                  'Training max: ${benchTm.toStringAsFixed(1)} kg\n'
+                  'Pracovní váha: ${_formatWeightAndPercent(benchMain, week.benchPct)}'
+                  '${topSingleBench == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleBench, week.topSinglePct!)}'}',
+            ),
+            CustomTrainingExercise(
+              customName: 'Bench press – backoff série',
+              sets: '2',
+              reps: benchBackoffReps,
+              rir: '2',
+              weightKg: benchBackoff,
+              note:
+                  'Backoff práce po hlavním bench dni.\n'
+                  'Pracovní váha: ${_formatWeightAndPercent(benchBackoff, backoffPercent)}',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Incline Bench',
+              sets: '3',
+              reps: '8–10',
+              rir: '2–3',
+              note: 'Horní hrudník a přenos do bench pressu.',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Dips',
+              sets: '3',
+              reps: '6–10',
+              rir: '2–3',
+              note: 'Triceps, tlaková síla, lockout.',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Triceps Pushdown',
+              sets: '3',
+              reps: '10–15',
+              rir: '2–3',
+              note: 'Lokální objem pro triceps.',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Přítahy v předklonu',
+              sets: '4',
+              reps: '6–10',
+              rir: '2',
+            ),
+          ],
+        ),
+        CustomTrainingDay(
+          name: '$weekLabel – Den 3 – Mrtvý tah těžce + záda',
+          exercises: [
+            CustomTrainingExercise(
+              customName: 'Mrtvý tah – závodní styl',
+              sets: week.deadliftSets,
+              reps: week.deadliftReps,
+              rir: week.week >= 11 ? '1–2' : '1–3',
+              weightKg: deadliftMain,
+              note:
+                  'Fáze: ${week.phaseLabel}\n'
+                  'Datum závodu: ${_fmtDate(maxes.meetDate)}\n'
+                  'Výchozí 1RM: ${maxes.deadlift1rm.toStringAsFixed(1)} kg\n'
+                  'Pracovní váha: ${_formatWeightAndPercent(deadliftMain, week.deadliftPct)}'
+                  '${topSingleDeadlift == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleDeadlift, week.topSinglePct!)}'}',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Hamstringy',
+              sets: '3',
+              reps: '8–12',
+              rir: '2–3',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Shyby / horní kladka',
+              sets: '4',
+              reps: '6–10',
+              rir: '2',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Záda / mezilopatky',
+              sets: '3',
+              reps: '10–15',
+              rir: '2–3',
+            ),
+          ],
+        ),
+        CustomTrainingDay(
+          name: '$weekLabel – Den 4 – Bench objem / technika',
+          exercises: [
+            CustomTrainingExercise(
+              customName: 'Bench press – objem',
+              sets: benchVolumeSets,
+              reps: benchVolumeReps,
+              rir: '2–3',
+              weightKg: benchVolume,
+              note:
+                  'Objem, technika a bench-specific hypertrofie.\n'
+                  'Pracovní váha: ${_formatWeightAndPercent(benchVolume, benchVolumePercent)}',
+            ),
+            CustomTrainingExercise(
+              customName: 'Bench press – lehčí technika',
+              sets: benchTechSets,
+              reps: benchTechReps,
+              rir: '2–3',
+              weightKg: benchTech,
+              note:
+                  'Technika, rychlost osy, setup.\n'
+                  'Pracovní váha: ${_formatWeightAndPercent(benchTech, benchTechPercent)}',
+            ),
+            CustomTrainingExercise(
+              customName: 'Close-Grip Bench Press',
+              sets: '3',
+              reps: '6–8',
+              rir: '2–3',
+              weightKg: benchTech,
+              note:
+                  'Bench-specific doplněk se zaměřením na triceps a lockout.',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Tlaky nad hlavu / ramena',
+              sets: '3',
+              reps: '6–10',
+              rir: '2–3',
+            ),
+            const CustomTrainingExercise(
+              customName: 'Rotátory / prevence ramen',
+              sets: '2–3',
+              reps: '12–20',
+              rir: '2–3',
+            ),
+          ],
+        ),
+      ]);
+    }
+
+    days.add(
       CustomTrainingDay(
-        name: 'Instrukce k cyklu',
-        exercises: const [
+        name: 'Instrukce k 12týdennímu cyklu',
+        exercises: [
           CustomTrainingExercise(
-            customName: 'Týdny 1–3',
+            customName: 'Datum závodu',
             sets: '1',
-            reps: 'Objem',
+            reps: _fmtDate(maxes.meetDate),
+            rir: '—',
+            note: 'Všechny týdny jsou rozpočítané zpětně od tohoto data.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Týdny 1–4',
+            sets: '1',
+            reps: 'Objem + technika',
             rir: '—',
             note:
-                'Drž vyšší počet opakování v rozmezí 5–6, buduj techniku a pracovní kapacitu.',
+                'Buduješ základ, stabilitu a přesnost pohybu. Vyšší objem, nižší intenzita, žádné zbytečné selhání.',
           ),
-          CustomTrainingExercise(
-            customName: 'Týdny 4–6',
+          const CustomTrainingExercise(
+            customName: 'Týdny 5–8',
+            sets: '1',
+            reps: 'Síla',
+            rir: '—',
+            note:
+                'Zvedáš intenzitu, snižuješ počet opakování a připravuješ se na těžší specifickou práci.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Týdny 9–10',
             sets: '1',
             reps: 'Intenzifikace',
             rir: '—',
             note:
-                'Postupně snižuj opakování k 3–4 a zvyšuj pracovní váhy.',
+                'Těžké trojky a dvojky. Důraz na závodní provedení a kontrolu únavy.',
           ),
-          CustomTrainingExercise(
-            customName: 'Týdny 7–8',
+          const CustomTrainingExercise(
+            customName: 'Týden 11',
             sets: '1',
-            reps: 'Předzávodní těžké dvojky / trojky',
+            reps: 'Peak / CNS',
             rir: '—',
             note:
-                'Specifičnost trojboje, nízké chyby, vysoká koncentrace, žádné zbytečné doplňky navíc.',
+                'Ano, tohle je přesně prostor pro nabuzení nervového systému. Nízký objem, vysoká intenzita, žádné zbytečné doplňky navíc.',
           ),
-          CustomTrainingExercise(
-            customName: 'Týden 9',
+          const CustomTrainingExercise(
+            customName: 'Týden 12',
             sets: '1',
-            reps: 'Deload / peak',
+            reps: 'Taper / závod',
             rir: '—',
             note:
-                'Sniž objem, nech intenzitu rozumně vysoko, dojdi čerstvý na pokusy.',
+                'Výrazně stáhni objem. Cílem je čerstvost, jistota a rychlost na platformě.',
           ),
         ],
       ),
-    ];
+    );
+
+    return days;
+  }
+
+  String _fmtDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.'
+        '${date.month.toString().padLeft(2, '0')}.'
+        '${date.year}';
+  }
+
+  double _trainingMax(double oneRepMax) {
+    return _roundToNearest2_5(oneRepMax * 0.90);
+  }
+
+  double _weightFromTm(double trainingMax, double percent) {
+    return _roundToNearest2_5(trainingMax * percent);
+  }
+
+  double _weightFromMax(double max, double percent) {
+    return _roundToNearest2_5(max * percent);
+  }
+
+  double _roundToNearest2_5(double value) {
+    return (value / 2.5).round() * 2.5;
+  }
+
+  String _formatWeightAndPercent(double weight, double percent) {
+    return '${(percent * 100).toStringAsFixed(percent * 100 % 1 == 0 ? 0 : 1)} % = ${weight.toStringAsFixed(1)} kg';
+  }
+}
+
+class _PowerWeekConfig {
+  final int week;
+  final String phaseLabel;
+  final double squatPct;
+  final double benchPct;
+  final double deadliftPct;
+  final double? topSinglePct;
+  final String squatSets;
+  final String squatReps;
+  final String benchHeavySets;
+  final String benchHeavyReps;
+  final String deadliftSets;
+  final String deadliftReps;
+
+  const _PowerWeekConfig({
+    required this.week,
+    required this.phaseLabel,
+    required this.squatPct,
+    required this.benchPct,
+    required this.deadliftPct,
+    this.topSinglePct,
+    required this.squatSets,
+    required this.squatReps,
+    required this.benchHeavySets,
+    required this.benchHeavyReps,
+    required this.deadliftSets,
+    required this.deadliftReps,
+  });
+}
+
+class _PowerliftingMaxes {
+  final double squat1rm;
+  final double bench1rm;
+  final double deadlift1rm;
+  final DateTime meetDate;
+
+  const _PowerliftingMaxes({
+    required this.squat1rm,
+    required this.bench1rm,
+    required this.deadlift1rm,
+    required this.meetDate,
+  });
+}
+
+class _PowerliftingMaxesDialog extends StatefulWidget {
+  const _PowerliftingMaxesDialog();
+
+  @override
+  State<_PowerliftingMaxesDialog> createState() =>
+      _PowerliftingMaxesDialogState();
+}
+
+class _PowerliftingMaxesDialogState extends State<_PowerliftingMaxesDialog> {
+  final _squatCtrl = TextEditingController();
+  final _benchCtrl = TextEditingController();
+  final _deadliftCtrl = TextEditingController();
+
+  DateTime? _meetDate;
+
+  @override
+  void dispose() {
+    _squatCtrl.dispose();
+    _benchCtrl.dispose();
+    _deadliftCtrl.dispose();
+    super.dispose();
+  }
+
+  double? _parse(String value) {
+    return double.tryParse(value.trim().replaceAll(',', '.'));
+  }
+
+  String _fmtDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.'
+        '${date.month.toString().padLeft(2, '0')}.'
+        '${date.year}';
+  }
+
+  Future<void> _pickMeetDate() async {
+    final now = DateTime.now();
+    final initialDate = _meetDate ?? now.add(const Duration(days: 84));
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 730)),
+      helpText: 'DATUM ZÁVODU',
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _meetDate = picked;
+    });
+  }
+
+  void _submit() {
+    final squat = _parse(_squatCtrl.text);
+    final bench = _parse(_benchCtrl.text);
+    final deadlift = _parse(_deadliftCtrl.text);
+
+    if (squat == null || squat <= 0) {
+      _toast('Vyplň platný dřep 1RM.');
+      return;
+    }
+    if (bench == null || bench <= 0) {
+      _toast('Vyplň platný bench 1RM.');
+      return;
+    }
+    if (deadlift == null || deadlift <= 0) {
+      _toast('Vyplň platný mrtvý tah 1RM.');
+      return;
+    }
+    if (_meetDate == null) {
+      _toast('Vyber datum závodu.');
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _PowerliftingMaxes(
+        squat1rm: squat,
+        bench1rm: bench,
+        deadlift1rm: deadlift,
+        meetDate: _meetDate!,
+      ),
+    );
+  }
+
+  void _toast(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Maximálky pro trojboj'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _squatCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Dřep 1RM (kg)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _benchCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Bench press 1RM (kg)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _deadliftCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Mrtvý tah 1RM (kg)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _pickMeetDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Datum závodu',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  _meetDate == null
+                      ? 'Vybrat datum závodu'
+                      : _fmtDate(_meetDate!),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Bench používá training max = 90 %, dřep a mrtvý tah jedou z reálného 1RM. Zaokrouhlení je na 2.5 kg.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Zrušit'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Vložit plán'),
+        ),
+      ],
+    );
   }
 }
 
@@ -713,6 +1263,25 @@ class _PlanCard extends ConsumerWidget {
   final CustomTrainingPlan plan;
 
   const _PlanCard({required this.plan});
+
+  Future<void> _activateAndOpen(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await ref.read(customTrainingPlanProvider.notifier).setActivePlan(
+          clientId: plan.clientId,
+          planId: plan.id,
+        );
+
+    if (!context.mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const TrainingPlanScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -730,7 +1299,8 @@ class _PlanCard extends ConsumerWidget {
             ),
             if (plan.isActive)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.green.shade100,
                   borderRadius: BorderRadius.circular(20),
@@ -749,6 +1319,18 @@ class _PlanCard extends ConsumerWidget {
         subtitle: Text('Počet dnů: ${plan.days.length}'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () => _activateAndOpen(context, ref),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Aktivovat a otevřít'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -1270,7 +1852,9 @@ class _ExerciseTile extends ConsumerWidget {
       child: ListTile(
         title: Text(exercise.customName),
         subtitle: Text(
-          '${exercise.sets} × ${exercise.reps} | RIR ${exercise.rir}'
+          '${exercise.sets} × ${exercise.reps}'
+          '${exercise.weightKg != null ? ' | ${exercise.weightKg!.toStringAsFixed(1)} kg' : ''}'
+          ' | RIR ${exercise.rir}'
           '${exercise.note != null ? '\n${exercise.note}' : ''}',
         ),
         onTap: () => _editExerciseDialog(context, ref),
@@ -1398,6 +1982,7 @@ class _ExerciseTile extends ConsumerWidget {
               sets: setsCtrl.text.trim().isEmpty ? '3' : setsCtrl.text.trim(),
               reps: repsCtrl.text.trim().isEmpty ? '8–12' : repsCtrl.text.trim(),
               rir: rirCtrl.text.trim().isEmpty ? '2' : rirCtrl.text.trim(),
+              weightKg: exercise.weightKg,
               note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
             ),
           );

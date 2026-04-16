@@ -64,8 +64,8 @@ class _TrainingLogScreenState extends ConsumerState<TrainingLogScreen> {
   }
 
   List<PlannedSet> _resolvePlannedSets(PlannedExercise ex) {
-    if (ex.plannedSets != null && ex.plannedSets!.isNotEmpty) {
-      return ex.plannedSets!;
+    if (ex.plannedSets.isNotEmpty) {
+      return ex.plannedSets;
     }
 
     final setsCount = _firstInt(ex.sets) ?? 0;
@@ -188,7 +188,8 @@ class _TrainingLogScreenState extends ConsumerState<TrainingLogScreen> {
                       Expanded(
                         child: TextField(
                           controller: rows[i].weightCtrl,
-                          keyboardType: const TextInputType.numberWithOptions(
+                          keyboardType:
+                              const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
                           decoration: const InputDecoration(labelText: 'kg'),
@@ -205,7 +206,8 @@ class _TrainingLogScreenState extends ConsumerState<TrainingLogScreen> {
                         ),
                       ),
                       IconButton(
-                        onPressed: rows.length > 1 ? () => _removeSet(i) : null,
+                        onPressed:
+                            rows.length > 1 ? () => _removeSet(i) : null,
                         icon: const Icon(Icons.delete_outline),
                       ),
                     ],

@@ -517,15 +517,14 @@ class ClientExportService {
                 'intensityPercent': e.intensityPercent,
                 'weightKg': e.weightKg,
                 'plannedSets': e.plannedSets
-                        ?.map(
-                          (ps) => {
-                            'weightKg': ps.weightKg,
-                            'reps': ps.reps,
-                            'note': ps.note,
-                          },
-                        )
-                        .toList() ??
-                    [],
+                    .map(
+                      (ps) => {
+                        'weightKg': ps.weightKg,
+                        'reps': ps.reps,
+                        'note': ps.note,
+                      },
+                    )
+                    .toList(),
               },
             )
             .toList(),
