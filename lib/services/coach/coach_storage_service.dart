@@ -131,6 +131,15 @@ class CoachStorageService {
     return newId;
   }
 
+  static Future<String> _requireDeviceId() async {
+    final existing = await loadDeviceId();
+    if (existing != null && existing.trim().isNotEmpty) {
+      return existing;
+    }
+
+    return _ensureDeviceId();
+  }
+
   static Future<void> _safeUploadSnapshot({
     required String key,
     required List<Map<String, dynamic>> items,
@@ -363,28 +372,154 @@ class CoachStorageService {
     );
   }
 
-  static Future<void> deleteNotesForClient(String clientId) async {
+  static Future<void> _softDeleteNotesForClient(String clientId) async {
+    final deviceId = await _requireDeviceId();
+    final now = DateTime.now();
+
     final notes = await loadNotes();
-    final updated = notes.where((n) => n.clientId != clientId).toList();
+    final updated = notes.map((n) {
+      if (n.clientId != clientId || n.isDeleted) return n;
+
+      return n.copyWith(
+        updatedAt: now,
+        deletedAt: now,
+        version: n.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
     await saveNotes(updated);
   }
 
-  static Future<void> deleteClientDetails(String clientId) async {
+  static Future<void> _softDeleteClientDetailsForClient(String clientId) async {
+    final deviceId = await _requireDeviceId();
+    final now = DateTime.now();
+
     final items = await loadClientDetailsAll();
-    final updated = items.where((x) => x.clientId != clientId).toList();
+    final updated = items.map((x) {
+      if (x.clientId != clientId || x.isDeleted) return x;
+
+      return x.copyWith(
+        updatedAt: now,
+        deletedAt: now,
+        version: x.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
     await saveClientDetailsAll(updated);
   }
 
-  static Future<void> deleteCircumferencesForClient(String clientId) async {
+  static Future<void> _softDeleteCircumferencesForClient(
+    String clientId,
+  ) async {
+    final deviceId = await _requireDeviceId();
+    final now = DateTime.now();
+
     final items = await loadCircumferencesAll();
-    final updated = items.where((x) => x.clientId != clientId).toList();
+    final updated = items.map((x) {
+      if (x.clientId != clientId || x.isDeleted) return x;
+
+      return x.copyWith(
+        updatedAt: now,
+        deletedAt: now,
+        version: x.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
     await saveCircumferencesAll(updated);
   }
 
-  static Future<void> deleteInbodyForClient(String clientId) async {
+  static Future<void> _softDeleteInbodyForClient(String clientId) async {
+    final deviceId = await _requireDeviceId();
+    final now = DateTime.now();
+
     final items = await loadInbodyAll();
-    final updated = items.where((x) => x.clientId != clientId).toList();
+    final updated = items.map((x) {
+      if (x.clientId != clientId || x.isDeleted) return x;
+
+      return x.copyWith(
+        updatedAt: now,
+        deletedAt: now,
+        version: x.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
     await saveInbodyAll(updated);
+  }
+
+  static Future<void> _softDeleteGoalsForClient(String clientId) async {
+    final deviceId = await _requireDeviceId();
+    final now = DateTime.now();
+
+    final items = await loadGoalsAll();
+    final updated = items.map((x) {
+      if (x.clientId != clientId || x.isDeleted) return x;
+
+      return x.copyWith(
+        updatedAt: now,
+        deletedAt: now,
+        version: x.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
+    await saveGoalsAll(updated);
+  }
+
+  static Future<void> _softDeleteDiagnosticsForClient(String clientId) async {
+    final deviceId = await _requireDeviceId();
+    final now = DateTime.now();
+
+    final items = await loadDiagnosticsAll();
+    final updated = items.map((x) {
+      if (x.clientId != clientId || x.isDeleted) return x;
+
+      return x.copyWith(
+        updatedAt: now,
+        deletedAt: now,
+        version: x.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
+    await saveDiagnosticsAll(updated);
+  }
+
+  static Future<void> _hardDeleteOverridesForClient(String clientId) async {
+    final items = await loadOverrides();
+    final updated = items.where((x) => x.clientId != clientId).toList();
+    await saveOverrides(updated);
+  }
+
+  static Future<void> deleteNotesForClient(String clientId) async {
+    await _softDeleteNotesForClient(clientId);
+  }
+
+  static Future<void> deleteClientDetails(String clientId) async {
+    await _softDeleteClientDetailsForClient(clientId);
+  }
+
+  static Future<void> deleteCircumferencesForClient(String clientId) async {
+    await _softDeleteCircumferencesForClient(clientId);
+  }
+
+  static Future<void> deleteInbodyForClient(String clientId) async {
+    await _softDeleteInbodyForClient(clientId);
+  }
+
+  static Future<void> deleteGoalsForClient(String clientId) async {
+    await _softDeleteGoalsForClient(clientId);
+  }
+
+  static Future<void> deleteDiagnosticsForClient(String clientId) async {
+    await _softDeleteDiagnosticsForClient(clientId);
+  }
+
+  static Future<void> deleteOverridesForClient(String clientId) async {
+    await _hardDeleteOverridesForClient(clientId);
   }
 
   static Future<String?> loadDeviceId() async {

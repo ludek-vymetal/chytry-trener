@@ -159,7 +159,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
           ),
         ),
         data: (clients) {
-          final warnings = clients.where((c) => c.compliance7d < 0.5).length;
+          final warnings = clients.where((c) => c.isInactive7d).length;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -181,7 +181,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
               ),
               const SizedBox(height: 12),
               _StatCard(
-                title: 'Varování (7d compliance < 50%)',
+                title: 'Varování (bez tréninku 7+ dní)',
                 value: warnings.toString(),
                 icon: Icons.warning_amber,
                 highlighted: warnings > 0,

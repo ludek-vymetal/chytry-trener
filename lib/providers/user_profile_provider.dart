@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,38 +19,61 @@ import '../models/user_profile.dart';
 
 class UserProfileNotifier extends StateNotifier<UserProfile?> {
   UserProfileNotifier() : super(null) {
-    _loadFromPrefs();
+    unawaited(_loadFromPrefs());
   }
 
   static const String _legacyStorageKey = 'user_profile_storage';
 
+  // ==========================================================
+  // Logging
+  // ==========================================================
+
+  void _log(String message) {
+    debugPrint('USER PROFILE -> $message');
+  }
+
+  // ==========================================================
+  // Storage keys
+  // ==========================================================
+
   String _storageKeyForClient(String? clientId) {
-    if (clientId == null || clientId.trim().isEmpty) {
+    final trimmed = clientId?.trim();
+
+    if (trimmed == null || trimmed.isEmpty) {
       return _legacyStorageKey;
     }
-    return 'user_profile_storage_${clientId.trim()}';
+
+    return 'user_profile_storage_$trimmed';
   }
+
+  // ==========================================================
+  // Load / Save
+  // ==========================================================
 
   Future<void> _loadFromPrefs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final legacyJson = prefs.getString(_legacyStorageKey);
-      if (legacyJson != null && legacyJson.isNotEmpty) {
-        final Map<String, dynamic> jsonData =
-            Map<String, dynamic>.from(json.decode(legacyJson) as Map);
 
-        state = UserProfile.fromJson(jsonData);
-
-        print(
-          'USER PROFILE LOADED (LEGACY) -> '
-          'key=$_legacyStorageKey '
-          'clientId=${state?.clientId} '
-          'goal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
-        );
+      if (legacyJson == null || legacyJson.isEmpty) {
+        _log('LOAD LEGACY MISS -> key=$_legacyStorageKey');
+        return;
       }
+
+      final jsonData = Map<String, dynamic>.from(
+        json.decode(legacyJson) as Map,
+      );
+
+      state = UserProfile.fromJson(jsonData);
+
+      _log(
+        'LOAD LEGACY OK -> '
+        'key=$_legacyStorageKey '
+        'clientId=${state?.clientId} '
+        'goal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
+      );
     } catch (e) {
-      print('Chyba při načítání UserProfile z SharedPreferences: $e');
+      _log('LOAD LEGACY ERROR -> $e');
     }
   }
 
@@ -56,36 +81,37 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final key = _storageKeyForClient(clientId);
-
       final jsonString = prefs.getString(key);
+
       if (jsonString == null || jsonString.isEmpty) {
-        print('USER PROFILE LOAD MISS -> key=$key clientId=$clientId');
+        _log('LOAD MISS -> key=$key clientId=$clientId');
         return null;
       }
 
-      final Map<String, dynamic> jsonData =
-          Map<String, dynamic>.from(json.decode(jsonString) as Map);
+      final jsonData = Map<String, dynamic>.from(
+        json.decode(jsonString) as Map,
+      );
 
       final loaded = UserProfile.fromJson(jsonData);
 
-      print(
-        'USER PROFILE LOADED -> key=$key clientId=${loaded.clientId} '
+      _log(
+        'LOAD OK -> key=$key clientId=${loaded.clientId} '
         'goal=${loaded.goal?.type.name}/${loaded.goal?.reason.name}',
       );
 
       return loaded;
     } catch (e) {
-      print('USER PROFILE LOAD ERROR -> clientId=$clientId error=$e');
+      _log('LOAD ERROR -> clientId=$clientId error=$e');
       return null;
     }
   }
 
   Future<void> _saveToPrefs() async {
-    if (state == null) return;
+    final currentState = state;
+    if (currentState == null) return;
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final currentState = state!;
       final key = _storageKeyForClient(currentState.clientId);
 
       final existingStored = await _readProfileFromStorage(currentState.clientId);
@@ -99,14 +125,18 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
       state = safeProfile;
 
-      print(
-        'USER PROFILE SAVED -> key=$key clientId=${safeProfile.clientId} '
+      _log(
+        'SAVE OK -> key=$key clientId=${safeProfile.clientId} '
         'goal=${safeProfile.goal?.type.name}/${safeProfile.goal?.reason.name}',
       );
     } catch (e) {
-      print('Chyba při ukládání UserProfile do SharedPreferences: $e');
+      _log('SAVE ERROR -> $e');
     }
   }
+
+  // ==========================================================
+  // Merge
+  // ==========================================================
 
   UserProfile _mergeProfiles({
     UserProfile? base,
@@ -116,38 +146,39 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       return incoming;
     }
 
+    final incomingClientId = incoming.clientId?.trim();
+
     return base.copyWith(
-      clientId: (incoming.clientId != null && incoming.clientId!.trim().isNotEmpty)
+      clientId: (incomingClientId != null && incomingClientId.isNotEmpty)
           ? incoming.clientId
           : base.clientId,
       firstName:
           incoming.firstName.isNotEmpty ? incoming.firstName : base.firstName,
-      lastName: incoming.lastName.isNotEmpty ? incoming.lastName : base.lastName,
+      lastName:
+          incoming.lastName.isNotEmpty ? incoming.lastName : base.lastName,
       email: incoming.email.isNotEmpty ? incoming.email : base.email,
       age: incoming.age != 0 ? incoming.age : base.age,
       gender: incoming.gender.isNotEmpty ? incoming.gender : base.gender,
       height: incoming.height != 0 ? incoming.height : base.height,
       weight: incoming.weight != 0.0 ? incoming.weight : base.weight,
       tdee: incoming.tdee != 0.0 ? incoming.tdee : base.tdee,
-
       goal: incoming.goal ?? base.goal,
-
-      measurements:
-          incoming.measurements.isNotEmpty ? incoming.measurements : base.measurements,
+      measurements: incoming.measurements.isNotEmpty
+          ? incoming.measurements
+          : base.measurements,
       circumferences: incoming.circumferences.isNotEmpty
           ? incoming.circumferences
           : base.circumferences,
-
       preferredSplit: incoming.preferredSplit ?? base.preferredSplit,
       trainingIntake: incoming.trainingIntake ?? base.trainingIntake,
-
-      selectedPlan:
-          incoming.selectedPlan.isNotEmpty ? incoming.selectedPlan : base.selectedPlan,
-
+      selectedPlan: incoming.selectedPlan.isNotEmpty
+          ? incoming.selectedPlan
+          : base.selectedPlan,
       isFasting: incoming.isFasting,
       fastingStartTime: incoming.fastingStartTime ?? base.fastingStartTime,
-      fastingDuration:
-          incoming.fastingDuration != 0 ? incoming.fastingDuration : base.fastingDuration,
+      fastingDuration: incoming.fastingDuration != 0
+          ? incoming.fastingDuration
+          : base.fastingDuration,
     );
   }
 
@@ -167,16 +198,22 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     );
   }
 
+  // ==========================================================
+  // Public updates
+  // ==========================================================
+
   void setBasicInfo({
     required int age,
     required String gender,
   }) {
     final current = state ?? const UserProfile();
+
     state = current.copyWith(
       age: age,
       gender: gender,
     );
-    _onStateChanged();
+
+    unawaited(_onStateChanged());
   }
 
   void setBodyMetrics({
@@ -184,11 +221,13 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     required double weight,
   }) {
     final current = state ?? const UserProfile();
+
     state = current.copyWith(
       height: height,
       weight: weight,
     );
-    _onStateChanged();
+
+    unawaited(_onStateChanged());
   }
 
   Future<void> setProfileBasics({
@@ -200,7 +239,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     required int heightCm,
     required double weightKg,
   }) async {
-    print(
+    _log(
       'SET PROFILE BASICS START -> incomingClientId=$clientId '
       'currentStateClientId=${state?.clientId}',
     );
@@ -222,16 +261,16 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       incoming: incoming,
     );
 
-    print(
-      'SET PROFILE BASICS DONE -> state.clientId=${state!.clientId} '
-      'goal=${state!.goal?.type.name}/${state!.goal?.reason.name}',
+    _log(
+      'SET PROFILE BASICS DONE -> state.clientId=${state?.clientId} '
+      'goal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
     );
 
     await _onStateChanged();
   }
 
   Future<void> setFullProfile(UserProfile profile) async {
-    print(
+    _log(
       'SET FULL PROFILE START -> incomingClientId=${profile.clientId} '
       'incomingGoal=${profile.goal?.type.name}/${profile.goal?.reason.name} '
       'currentClientId=${state?.clientId} '
@@ -243,7 +282,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       incoming: profile,
     );
 
-    print(
+    _log(
       'SET FULL PROFILE DONE -> state.clientId=${state?.clientId} '
       'stateGoal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
     );
@@ -252,7 +291,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   }
 
   Future<void> updateProfile(UserProfile profile) async {
-    print(
+    _log(
       'UPDATE PROFILE START -> incomingClientId=${profile.clientId} '
       'incomingGoal=${profile.goal?.type.name}/${profile.goal?.reason.name} '
       'currentClientId=${state?.clientId} '
@@ -264,7 +303,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       incoming: profile,
     );
 
-    print(
+    _log(
       'UPDATE PROFILE DONE -> state.clientId=${state?.clientId} '
       'stateGoal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
     );
@@ -273,17 +312,15 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   }
 
   Future<void> switchToClient(String? clientId) async {
-    print(
+    _log(
       'SWITCH CLIENT START -> requestedClientId=$clientId '
       'currentClientId=${state?.clientId}',
     );
 
-    // KLÍČOVÝ FIX:
-    // null / empty už NESMÍ načítat legacy profil, ale musí vytvořit čistý odpojený stav
     if (clientId == null || clientId.trim().isEmpty) {
       state = const UserProfile();
 
-      print(
+      _log(
         'SWITCH CLIENT DONE -> detached clean profile '
         'clientId=${state?.clientId} '
         'goal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
@@ -295,7 +332,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
     if (loaded != null) {
       state = loaded;
-      print(
+
+      _log(
         'SWITCH CLIENT DONE -> loaded clientId=${state?.clientId} '
         'goal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
       );
@@ -304,78 +342,98 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
     state = UserProfile(clientId: clientId);
 
-    print(
+    _log(
       'SWITCH CLIENT DONE -> initialized empty clientId=${state?.clientId} '
       'goal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
     );
   }
 
   void setGoal(Goal goal) {
-    if (state == null) {
-      print('SET GOAL FAIL -> state is null');
+    final current = state;
+    if (current == null) {
+      _log('SET GOAL FAIL -> state is null');
       return;
     }
 
-    print(
-      'SET GOAL -> clientId=${state!.clientId} '
+    _log(
+      'SET GOAL -> clientId=${current.clientId} '
       'type=${goal.type.name} '
       'reason=${goal.reason.name} '
       'targetDate=${goal.targetDate.toIso8601String()} '
       'planMode=${goal.planMode.name}',
     );
 
-    state = state!.copyWith(goal: goal);
+    state = current.copyWith(goal: goal);
 
-    print(
-      'SET GOAL DONE -> state.clientId=${state!.clientId} '
-      'state.goal=${state!.goal?.type.name}/${state!.goal?.reason.name}',
+    _log(
+      'SET GOAL DONE -> state.clientId=${state?.clientId} '
+      'state.goal=${state?.goal?.type.name}/${state?.goal?.reason.name}',
     );
 
-    _onStateChanged();
+    unawaited(_onStateChanged());
   }
 
   void addMeasurement(Measurement measurement) {
-    if (state == null) return;
-    state = state!.copyWith(
-      measurements: [...state!.measurements, measurement],
+    final current = state;
+    if (current == null) return;
+
+    state = current.copyWith(
+      measurements: [...current.measurements, measurement],
       weight: measurement.weight,
     );
-    _onStateChanged();
+
+    unawaited(_onStateChanged());
   }
 
   void setPreferredSplit(TrainingSplit split) {
-    if (state == null) return;
-    state = state!.copyWith(preferredSplit: split);
-    _onStateChanged();
+    final current = state;
+    if (current == null) return;
+
+    state = current.copyWith(preferredSplit: split);
+
+    unawaited(_onStateChanged());
   }
 
   void setTrainingIntake(TrainingIntake intake) {
-    if (state == null) return;
-    state = state!.copyWith(trainingIntake: intake);
-    _onStateChanged();
+    final current = state;
+    if (current == null) return;
+
+    state = current.copyWith(trainingIntake: intake);
+
+    unawaited(_onStateChanged());
   }
 
   void addCircumference(BodyCircumference data) {
-    if (state == null) return;
-    state = state!.copyWith(
-      circumferences: [...state!.circumferences, data],
+    final current = state;
+    if (current == null) return;
+
+    state = current.copyWith(
+      circumferences: [...current.circumferences, data],
     );
-    _onStateChanged();
+
+    unawaited(_onStateChanged());
   }
 
   void updateTrainingMax(String exerciseId, double newTm) {
-    if (state == null) return;
-    final intake = state!.trainingIntake;
+    final current = state;
+    if (current == null) return;
+
+    final intake = current.trainingIntake;
     if (intake == null) return;
 
     final updated = Map<String, double>.from(intake.oneRMs);
     updated[exerciseId] = newTm;
 
-    state = state!.copyWith(
+    state = current.copyWith(
       trainingIntake: intake.copyWith(oneRMs: updated),
     );
-    _onStateChanged();
+
+    unawaited(_onStateChanged());
   }
+
+  // ==========================================================
+  // State side effects
+  // ==========================================================
 
   Future<void> _onStateChanged() async {
     _updateLegacyPhaseByDate();
@@ -384,9 +442,11 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   }
 
   void _updateLegacyPhaseByDate() {
-    if (state == null || state!.goal == null) return;
+    final current = state;
+    final goal = current?.goal;
 
-    final goal = state!.goal!;
+    if (current == null || goal == null) return;
+
     final now = DateTime.now();
 
     final ctx = TimeContext(
@@ -398,16 +458,16 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     final plans = PhasePlannerService.buildPlan(ctx);
     if (plans.isEmpty) return;
 
-    final current = PhaseResolver.resolveCurrentPhase(
+    final resolved = PhaseResolver.resolveCurrentPhase(
       plans: plans,
       date: now,
     );
 
-    final newLegacyPhase = _mapPhaseTypeToGoalPhase(current.phase);
+    final newLegacyPhase = _mapPhaseTypeToGoalPhase(resolved.phase);
 
     if (goal.phase != newLegacyPhase) {
       final updatedGoal = goal.copyWith(phase: newLegacyPhase);
-      state = state!.copyWith(goal: updatedGoal);
+      state = current.copyWith(goal: updatedGoal);
     }
   }
 
@@ -438,6 +498,10 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   void _recalculateMacros() {
     // Tady proběhne výpočet makroživin, pokud je potřeba
   }
+
+  // ==========================================================
+  // Clear
+  // ==========================================================
 
   Future<void> clearAllData() async {
     state = null;

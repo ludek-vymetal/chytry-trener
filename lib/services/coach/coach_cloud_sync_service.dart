@@ -25,7 +25,7 @@ class CoachCloudSyncService {
   static const Map<String, List<String>> _idCandidatesByKey = {
     CoachStorageService.clientsKey: ['clientId', 'id'],
     CoachStorageService.notesKey: ['noteId', 'id'],
-    CoachStorageService.overridesKey: ['clientId', 'overrideId', 'id'],
+    CoachStorageService.overridesKey: ['overrideId', 'clientId', 'id'],
     CoachStorageService.clientDetailsKey: ['clientId', 'detailsId', 'id'],
     CoachStorageService.circumferencesKey: ['entryId', 'id'],
     CoachStorageService.inbodyKey: ['entryId', 'inbodyId', 'id'],

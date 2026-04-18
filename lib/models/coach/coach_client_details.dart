@@ -19,7 +19,6 @@ class CoachClientDetails {
   /// zdravotní poznámky (tlak, záda, léky...) – česky
   final String healthNotes;
 
-  // ✅ regenerace + lifestyle
   /// průměr spánku (hodiny), např. 7.5
   final double sleepHours;
 
@@ -41,6 +40,15 @@ class CoachClientDetails {
   /// co klient nechce / vadí mu
   final String dislikedFoods;
 
+  // --------------------------
+  // Sync metadata
+  // --------------------------
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final int version;
+  final String updatedByDeviceId;
+
   const CoachClientDetails({
     required this.clientId,
     this.activityType = 'sedavé',
@@ -56,9 +64,17 @@ class CoachClientDetails {
     this.motivation = '',
     this.preferredFoods = '',
     this.dislikedFoods = '',
+    required this.createdAt,
+    required this.updatedAt,
+    required this.deletedAt,
+    required this.version,
+    required this.updatedByDeviceId,
   });
 
+  bool get isDeleted => deletedAt != null;
+
   CoachClientDetails copyWith({
+    String? clientId,
     String? activityType,
     String? occupation,
     String? injuries,
@@ -72,9 +88,15 @@ class CoachClientDetails {
     String? motivation,
     String? preferredFoods,
     String? dislikedFoods,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    bool clearDeletedAt = false,
+    int? version,
+    String? updatedByDeviceId,
   }) {
     return CoachClientDetails(
-      clientId: clientId,
+      clientId: clientId ?? this.clientId,
       activityType: activityType ?? this.activityType,
       occupation: occupation ?? this.occupation,
       injuries: injuries ?? this.injuries,
@@ -88,6 +110,11 @@ class CoachClientDetails {
       motivation: motivation ?? this.motivation,
       preferredFoods: preferredFoods ?? this.preferredFoods,
       dislikedFoods: dislikedFoods ?? this.dislikedFoods,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
+      version: version ?? this.version,
+      updatedByDeviceId: updatedByDeviceId ?? this.updatedByDeviceId,
     );
   }
 
@@ -106,9 +133,16 @@ class CoachClientDetails {
         'motivation': motivation,
         'preferredFoods': preferredFoods,
         'dislikedFoods': dislikedFoods,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+        'deletedAt': deletedAt?.toIso8601String(),
+        'version': version,
+        'updatedByDeviceId': updatedByDeviceId,
       };
 
   factory CoachClientDetails.fromJson(Map<String, dynamic> json) {
+    final now = DateTime.now();
+
     return CoachClientDetails(
       clientId: (json['clientId'] as String?) ?? '',
       activityType: (json['activityType'] as String?) ?? 'sedavé',
@@ -124,6 +158,15 @@ class CoachClientDetails {
       motivation: (json['motivation'] as String?) ?? '',
       preferredFoods: (json['preferredFoods'] as String?) ?? '',
       dislikedFoods: (json['dislikedFoods'] as String?) ?? '',
+      createdAt:
+          DateTime.tryParse((json['createdAt'] as String?) ?? '') ?? now,
+      updatedAt:
+          DateTime.tryParse((json['updatedAt'] as String?) ?? '') ?? now,
+      deletedAt: (json['deletedAt'] as String?) == null
+          ? null
+          : DateTime.tryParse(json['deletedAt'] as String),
+      version: (json['version'] as num?)?.toInt() ?? 1,
+      updatedByDeviceId: (json['updatedByDeviceId'] as String?) ?? 'local',
     );
   }
 }

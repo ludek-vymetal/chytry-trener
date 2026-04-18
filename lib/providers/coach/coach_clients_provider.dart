@@ -8,14 +8,18 @@ class CoachClientLite {
   final double compliance7d; // 0..1
   final DateTime? lastSessionAt;
   final bool isEatingDisorderSupport;
+  final int completedDaysInLast7;
+  final bool isInactive7d;
 
   const CoachClientLite({
     required this.clientId,
     required this.displayName,
     required this.email,
     required this.compliance7d,
-    this.lastSessionAt,
-    this.isEatingDisorderSupport = false,
+    required this.lastSessionAt,
+    required this.isEatingDisorderSupport,
+    required this.completedDaysInLast7,
+    required this.isInactive7d,
   });
 }
 
@@ -33,6 +37,8 @@ final coachClientsProvider = Provider<AsyncValue<List<CoachClientLite>>>((ref) {
             compliance7d: x.compliance7d,
             lastSessionAt: x.lastSessionAt,
             isEatingDisorderSupport: x.client.isEatingDisorderSupport,
+            completedDaysInLast7: x.completedDaysInLast7,
+            isInactive7d: x.isInactive7d,
           ),
         )
         .toList();

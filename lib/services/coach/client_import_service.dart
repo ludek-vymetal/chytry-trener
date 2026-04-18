@@ -214,29 +214,36 @@ class ClientImportService {
       'IMPORT START -> originalClientId=${originalClient.clientId} finalClientId=$finalClientId conflict=$clientExists',
     );
 
-    final importedClient = clientExists
-        ? CoachClient(
-            clientId: finalClientId,
-            firstName: originalClient.firstName,
-            lastName: originalClient.lastName,
-            email: originalClient.email,
-            gender: originalClient.gender,
-            age: originalClient.age,
-            heightCm: originalClient.heightCm,
-            weightKg: originalClient.weightKg,
-            isEatingDisorderSupport: originalClient.isEatingDisorderSupport,
-            linkedAt: originalClient.linkedAt,
-            createdAt: now,
-            updatedAt: now,
-            deletedAt: null,
-            version: 1,
-            updatedByDeviceId: deviceId,
-          )
-        : originalClient.copyWith(
-            updatedAt: now,
-            version: originalClient.version <= 0 ? 1 : originalClient.version,
-            updatedByDeviceId: deviceId,
-          );
+   final importedClient = clientExists
+    ? CoachClient(
+        clientId: finalClientId,
+        firstName: originalClient.firstName,
+        lastName: originalClient.lastName,
+        email: originalClient.email,
+        gender: originalClient.gender,
+        age: originalClient.age,
+        heightCm: originalClient.heightCm,
+        weightKg: originalClient.weightKg,
+        isEatingDisorderSupport: originalClient.isEatingDisorderSupport,
+        linkedAt: originalClient.linkedAt,
+
+        completedDays: originalClient.completedDays,
+        lastWorkoutAt: originalClient.lastWorkoutAt,
+        photosDelivered: originalClient.photosDelivered,
+        dietFollowed: originalClient.dietFollowed,
+        communicationOk: originalClient.communicationOk,
+
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+        version: 1,
+        updatedByDeviceId: deviceId,
+      )
+    : originalClient.copyWith(
+        updatedAt: now,
+        version: originalClient.version <= 0 ? 1 : originalClient.version,
+        updatedByDeviceId: deviceId,
+      );
 
     await _saveClient(importedClient, existingClients);
 

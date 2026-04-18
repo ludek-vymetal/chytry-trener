@@ -32,7 +32,6 @@ import '../../../providers/coach/app_role_provider.dart';
 import '../../../providers/user_profile_provider.dart';
 
 // Služby
-import '../../../services/coach/coach_metrics_service.dart';
 import '../../../services/coach/client_export_service.dart';
 import '../../../services/coach/client_import_service.dart';
 import '../../../services/local_storage_service.dart';
@@ -47,8 +46,6 @@ class ClientDetailScreen extends ConsumerWidget {
   final CoachClient client;
 
   const ClientDetailScreen({super.key, required this.client});
-
-  bool get _sensitive => client.isEatingDisorderSupport;
 
   bool _isValidEmail(String email) {
     if (email.trim().isEmpty) return true;
@@ -415,6 +412,7 @@ class ClientDetailScreen extends ConsumerWidget {
   Future<void> _deleteClientFlow(
     BuildContext context,
     WidgetRef ref, {
+    required CoachClient liveClient,
     required bool exportBeforeDelete,
     required dynamic details,
     required List<dynamic> notes,
@@ -455,7 +453,7 @@ class ClientDetailScreen extends ConsumerWidget {
     try {
       if (exportBeforeDelete) {
         await ClientExportService.archiveClientExport(
-          client: client,
+          client: liveClient,
           details: details,
           notes: notes,
           inbody: inbody,
@@ -467,20 +465,22 @@ class ClientDetailScreen extends ConsumerWidget {
       }
 
       final activeClientId = ref.read(activeClientIdProvider).valueOrNull;
-      if (activeClientId == client.clientId) {
+      if (activeClientId == liveClient.clientId) {
         await ref.read(activeClientIdProvider.notifier).clear();
         await ref.read(userProfileProvider.notifier).switchToClient(null);
       }
 
       await ref
           .read(customTrainingPlanProvider.notifier)
-          .deletePlansForClient(client.clientId);
+          .deletePlansForClient(liveClient.clientId);
 
-      await ref.read(userProfileProvider.notifier).clearClientData(client.clientId);
+      await ref
+          .read(userProfileProvider.notifier)
+          .clearClientData(liveClient.clientId);
 
       await ref
           .read(coachClientsControllerProvider.notifier)
-          .deleteClient(client.clientId);
+          .deleteClient(liveClient.clientId);
 
       ref.invalidate(coachNotesControllerProvider);
       ref.invalidate(coachClientDetailsControllerProvider);
@@ -529,36 +529,41 @@ class ClientDetailScreen extends ConsumerWidget {
       performancesForClientProvider(client.clientId),
     );
 
+    final allClientsAsync = ref.watch(coachClientsControllerProvider);
+
+    final liveStats = allClientsAsync.asData?.value
+        .where((x) => x.client.clientId == client.clientId)
+        .cast<CoachClientWithStats?>()
+        .firstOrNull;
+
+    final liveClient = liveStats?.client ?? client;
+    final isSensitive = liveClient.isEatingDisorderSupport;
+
     final List<TrainingSession> sessions = ref.watch(trainingSessionProvider);
     final List<TrainingSession> history =
-        client.clientId == 'local_user' ? sessions : <TrainingSession>[];
+        liveClient.clientId == 'local_user' ? sessions : <TrainingSession>[];
 
     final customPlans = ref.watch(customTrainingPlanProvider);
     final clientPlans =
-        customPlans.where((p) => p.clientId == client.clientId).toList();
+        customPlans.where((p) => p.clientId == liveClient.clientId).toList();
 
-    final now = DateTime.now();
-    final compliance7d = CoachMetricsService.complianceForDays(
-      history: history,
-      now: now,
-      days: 7,
-      frequencyPerWeek: 3,
-    );
+    final compliance7d = liveStats?.compliance7d ?? 0.0;
+    final completedDaysInLast7 = liveStats?.completedDaysInLast7 ?? 0;
+    final lastSession = liveStats?.lastSessionAt;
+    final isInactive7d = liveStats?.isInactive7d ?? true;
 
-    final lastSession = history.isEmpty
-        ? null
-        : ([...history]..sort((a, b) => b.date.compareTo(a.date))).first.date;
+    final workoutDoneToday = _containsToday(liveClient.completedDays);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${client.firstName} ${client.lastName}'),
+        title: Text('${liveClient.firstName} ${liveClient.lastName}'),
         actions: [
           IconButton(
             tooltip: 'Analýza klienta',
             icon: const Icon(Icons.assessment),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (_) => ClientMonthlyReportScreen(client: client),
+                builder: (_) => ClientMonthlyReportScreen(client: liveClient),
               ),
             ),
           ),
@@ -578,7 +583,7 @@ class ClientDetailScreen extends ConsumerWidget {
             onPressed: () async {
               try {
                 final result = await ClientExportService.archiveClientExport(
-                  client: client,
+                  client: liveClient,
                   details: detailsAsync.valueOrNull,
                   notes: notesAsync.valueOrNull ?? const [],
                   inbody: inbodyAsync.valueOrNull ?? const [],
@@ -612,6 +617,7 @@ class ClientDetailScreen extends ConsumerWidget {
             onPressed: () => _deleteClientFlow(
               context,
               ref,
+              liveClient: liveClient,
               exportBeforeDelete: true,
               details: detailsAsync.valueOrNull,
               notes: notesAsync.valueOrNull ?? const [],
@@ -628,6 +634,7 @@ class ClientDetailScreen extends ConsumerWidget {
             onPressed: () => _deleteClientFlow(
               context,
               ref,
+              liveClient: liveClient,
               exportBeforeDelete: false,
               details: detailsAsync.valueOrNull,
               notes: notesAsync.valueOrNull ?? const [],
@@ -641,7 +648,7 @@ class ClientDetailScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'Upravit klienta',
             icon: const Icon(Icons.edit),
-            onPressed: () => _editClientBasicsDialog(context, ref),
+            onPressed: () => _editClientBasicsDialog(context, ref, liveClient),
           ),
           IconButton(
             tooltip: 'Upravit kartu klienta',
@@ -649,14 +656,14 @@ class ClientDetailScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) =>
-                    EditClientDetailsScreen(clientId: client.clientId),
+                    EditClientDetailsScreen(clientId: liveClient.clientId),
               ),
             ),
           ),
           IconButton(
             tooltip: 'Přidat poznámku',
             icon: const Icon(Icons.note_add),
-            onPressed: () => _addNoteDialog(context, ref),
+            onPressed: () => _addNoteDialog(context, ref, liveClient.clientId),
           ),
         ],
       ),
@@ -664,20 +671,20 @@ class ClientDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _section(context, 'Základní informace', [
-            _row(context, 'Jméno', client.displayName),
-            _row(context, 'ID klienta', client.clientId),
+            _row(context, 'Jméno', liveClient.displayName),
+            _row(context, 'ID klienta', liveClient.clientId),
             _rowWithAction(
               context,
               label: 'Email',
-              value: client.email.trim().isEmpty ? '—' : client.email.trim(),
-              trailing: client.email.trim().isEmpty
+              value: liveClient.email.trim().isEmpty ? '—' : liveClient.email.trim(),
+              trailing: liveClient.email.trim().isEmpty
                   ? null
                   : IconButton(
                       tooltip: 'Kopírovat email',
                       icon: const Icon(Icons.copy, size: 18),
                       onPressed: () async {
                         await Clipboard.setData(
-                          ClipboardData(text: client.email.trim()),
+                          ClipboardData(text: liveClient.email.trim()),
                         );
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -689,25 +696,159 @@ class ClientDetailScreen extends ConsumerWidget {
                       },
                     ),
             ),
-            _row(context, 'Registrován', _fmtDate(client.linkedAt)),
-            _row(context, 'Pohlaví', _genderLabel(client.gender)),
-            _row(context, 'Věk', '${client.age} let'),
-            _row(context, 'Výška', '${client.heightCm} cm'),
-            if (!_sensitive)
-              _row(context, 'Váha', '${client.weightKg.toStringAsFixed(1)} kg'),
+            _row(context, 'Registrován', _fmtDate(liveClient.linkedAt)),
+            _row(context, 'Pohlaví', _genderLabel(liveClient.gender)),
+            _row(context, 'Věk', '${liveClient.age} let'),
+            _row(context, 'Výška', '${liveClient.heightCm} cm'),
+            if (!isSensitive)
+              _row(context, 'Váha', '${liveClient.weightKg.toStringAsFixed(1)} kg'),
             _row(
               context,
               'Poslední trénink',
               lastSession == null ? '—' : _fmtDate(lastSession),
             ),
-            if (!_sensitive)
+            _row(
+              context,
+              'Odcvičeno za 7 dní',
+              '$completedDaysInLast7 / 7 dní',
+            ),
+            if (!isSensitive)
               _row(context, 'Plnění (7 dní)', '${(compliance7d * 100).round()} %'),
           ]),
 
-          if (_sensitive) ...[
+          if (isSensitive) ...[
             const SizedBox(height: 12),
-            _warningBox(context),
+            _warningBox(
+              context,
+              'PPP / Recovery režim',
+              colorScheme.tertiaryContainer,
+              colorScheme.onTertiaryContainer,
+            ),
           ],
+
+          if (isInactive7d) ...[
+            const SizedBox(height: 12),
+            _warningBox(
+              context,
+              'Klient necvičil déle než 7 dní',
+              colorScheme.errorContainer,
+              colorScheme.onErrorContainer,
+            ),
+          ],
+
+          const SizedBox(height: 16),
+
+          _section(context, 'Dnešek', [
+            CheckboxListTile(
+              value: workoutDoneToday,
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Odcvičeno dnes'),
+              subtitle: Text(
+                workoutDoneToday
+                    ? 'Dnešní trénink je uložen.'
+                    : 'Klikni a uloží se dnešní trénink.',
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
+              ),
+              onChanged: workoutDoneToday
+                  ? null
+                  : (_) async {
+                      await ref
+                          .read(coachClientsControllerProvider.notifier)
+                          .markWorkoutDoneToday(liveClient.clientId);
+
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Dnešní trénink byl uložen.'),
+                          backgroundColor: colorScheme.primary,
+                        ),
+                      );
+                    },
+            ),
+          ]),
+
+          const SizedBox(height: 16),
+
+          _section(context, 'Status check', [
+            _binaryStatusRow(
+              context,
+              label: 'Poslal porovnávací fotky',
+              value: liveClient.photosDelivered,
+              onYes: () async {
+                await ref
+                    .read(coachClientsControllerProvider.notifier)
+                    .setPhotosDelivered(
+                      clientId: liveClient.clientId,
+                      value: true,
+                    );
+              },
+              onNo: () async {
+                await ref
+                    .read(coachClientsControllerProvider.notifier)
+                    .setPhotosDelivered(
+                      clientId: liveClient.clientId,
+                      value: false,
+                    );
+              },
+              onRequest: () => _showRequestPlaceholder(
+                context,
+                'Požadavek na fotky zatím jen připravený pro budoucí notifikace.',
+              ),
+            ),
+            const SizedBox(height: 10),
+            _binaryStatusRow(
+              context,
+              label: 'Dodržuje jídelníček',
+              value: liveClient.dietFollowed,
+              onYes: () async {
+                await ref
+                    .read(coachClientsControllerProvider.notifier)
+                    .setDietFollowed(
+                      clientId: liveClient.clientId,
+                      value: true,
+                    );
+              },
+              onNo: () async {
+                await ref
+                    .read(coachClientsControllerProvider.notifier)
+                    .setDietFollowed(
+                      clientId: liveClient.clientId,
+                      value: false,
+                    );
+              },
+              onRequest: () => _showRequestPlaceholder(
+                context,
+                'Požadavek na kontrolu stravy zatím jen připravený pro budoucí notifikace.',
+              ),
+            ),
+            const SizedBox(height: 10),
+            _binaryStatusRow(
+              context,
+              label: 'Odpověděl na zprávu',
+              value: liveClient.communicationOk,
+              onYes: () async {
+                await ref
+                    .read(coachClientsControllerProvider.notifier)
+                    .setCommunicationOk(
+                      clientId: liveClient.clientId,
+                      value: true,
+                    );
+              },
+              onNo: () async {
+                await ref
+                    .read(coachClientsControllerProvider.notifier)
+                    .setCommunicationOk(
+                      clientId: liveClient.clientId,
+                      value: false,
+                    );
+              },
+              onRequest: () => _showRequestPlaceholder(
+                context,
+                'Požadavek na odpověď zatím jen připravený pro budoucí notifikace.',
+              ),
+            ),
+          ]),
 
           const SizedBox(height: 16),
 
@@ -723,7 +864,7 @@ class ClientDetailScreen extends ConsumerWidget {
                   ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: () => _createPlanDialog(context, ref),
+                  onPressed: () => _createPlanDialog(context, ref, liveClient.clientId),
                   icon: const Icon(Icons.add),
                   label: const Text('Nový plán'),
                 ),
@@ -738,7 +879,8 @@ class ClientDetailScreen extends ConsumerWidget {
             else
               Column(
                 children: [
-                  for (final plan in clientPlans) _planTile(context, ref, plan),
+                  for (final plan in clientPlans)
+                    _planTile(context, ref, plan, liveClient.clientId),
                 ],
               ),
           ]),
@@ -766,7 +908,7 @@ class ClientDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           _section(context, 'InBody', [
-            if (_sensitive)
+            if (isSensitive)
               const Text('Data skryta (Recovery režim)')
             else
               inbodyAsync.when(
@@ -797,8 +939,8 @@ class ClientDetailScreen extends ConsumerWidget {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => AddInbodyEntryScreen(
-                    clientId: client.clientId,
-                    heightCm: client.heightCm,
+                    clientId: liveClient.clientId,
+                    heightCm: liveClient.heightCm,
                   ),
                 ),
               ),
@@ -809,7 +951,7 @@ class ClientDetailScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           _section(context, 'Obvody', [
-            if (_sensitive)
+            if (isSensitive)
               const Text('Skryto (Recovery režim)')
             else
               circsAsync.when(
@@ -824,7 +966,7 @@ class ClientDetailScreen extends ConsumerWidget {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) =>
-                      AddCircumferenceEntryScreen(clientId: client.clientId),
+                      AddCircumferenceEntryScreen(clientId: liveClient.clientId),
                 ),
               ),
               child: const Text('Přidat obvody'),
@@ -865,7 +1007,7 @@ class ClientDetailScreen extends ConsumerWidget {
                 try {
                   await ref
                       .read(activeClientIdProvider.notifier)
-                      .setActive(client.clientId);
+                      .setActive(liveClient.clientId);
 
                   await ref.read(appRoleProvider.notifier).setRole(AppRole.user);
 
@@ -899,17 +1041,19 @@ class ClientDetailScreen extends ConsumerWidget {
   Future<void> _editClientBasicsDialog(
     BuildContext context,
     WidgetRef ref,
+    CoachClient liveClient,
   ) async {
-    final firstNameCtrl = TextEditingController(text: client.firstName);
-    final lastNameCtrl = TextEditingController(text: client.lastName);
-    final emailCtrl = TextEditingController(text: client.email);
-    final ageCtrl = TextEditingController(text: client.age.toString());
-    final heightCtrl = TextEditingController(text: client.heightCm.toString());
+    final firstNameCtrl = TextEditingController(text: liveClient.firstName);
+    final lastNameCtrl = TextEditingController(text: liveClient.lastName);
+    final emailCtrl = TextEditingController(text: liveClient.email);
+    final ageCtrl = TextEditingController(text: liveClient.age.toString());
+    final heightCtrl =
+        TextEditingController(text: liveClient.heightCm.toString());
     final weightCtrl =
-        TextEditingController(text: client.weightKg.toStringAsFixed(1));
+        TextEditingController(text: liveClient.weightKg.toStringAsFixed(1));
 
-    String gender = client.gender;
-    bool eatingDisorderSupport = client.isEatingDisorderSupport;
+    String gender = liveClient.gender;
+    bool eatingDisorderSupport = liveClient.isEatingDisorderSupport;
     String? emailError;
 
     final ok = await showDialog<bool>(
@@ -964,7 +1108,7 @@ class ClientDetailScreen extends ConsumerWidget {
                       DropdownMenuItem(value: 'other', child: Text('Jiné')),
                     ],
                     onChanged: (v) =>
-                        setLocalState(() => gender = v ?? client.gender),
+                        setLocalState(() => gender = v ?? liveClient.gender),
                     decoration: const InputDecoration(
                       labelText: 'Pohlaví',
                       border: OutlineInputBorder(),
@@ -1064,7 +1208,7 @@ class ClientDetailScreen extends ConsumerWidget {
     }
 
     await ref.read(coachClientsControllerProvider.notifier).updateClientBasic(
-          clientId: client.clientId,
+          clientId: liveClient.clientId,
           firstName: firstName,
           lastName: lastName,
           email: email,
@@ -1076,9 +1220,9 @@ class ClientDetailScreen extends ConsumerWidget {
         );
 
     final activeClientId = ref.read(activeClientIdProvider).valueOrNull;
-    if (activeClientId == client.clientId) {
+    if (activeClientId == liveClient.clientId) {
       ref.read(userProfileProvider.notifier).setProfileBasics(
-            clientId: client.clientId,
+            clientId: liveClient.clientId,
             firstName: firstName,
             lastName: lastName,
             age: age,
@@ -1300,27 +1444,87 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _warningBox(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _warningBox(
+    BuildContext context,
+    String text,
+    Color background,
+    Color foreground,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.tertiaryContainer,
+        color: background,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          Icon(Icons.warning, color: colorScheme.onTertiaryContainer),
+          Icon(Icons.warning, color: foreground),
           const SizedBox(width: 10),
           Text(
-            'PPP / Recovery režim',
+            text,
             style: TextStyle(
-              color: colorScheme.onTertiaryContainer,
+              color: foreground,
               fontWeight: FontWeight.bold,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _binaryStatusRow(
+    BuildContext context, {
+    required String label,
+    required bool value,
+    required Future<void> Function() onYes,
+    required Future<void> Function() onNo,
+    required VoidCallback onRequest,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            ChoiceChip(
+              label: const Text('ANO'),
+              selected: value,
+              onSelected: (_) => onYes(),
+            ),
+            ChoiceChip(
+              label: const Text('NE'),
+              selected: !value,
+              onSelected: (_) => onNo(),
+            ),
+            if (!value)
+              OutlinedButton(
+                onPressed: onRequest,
+                child: const Text('Vyžádat'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showRequestPlaceholder(BuildContext context, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: colorScheme.tertiary,
       ),
     );
   }
@@ -1529,6 +1733,7 @@ class ClientDetailScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     CustomTrainingPlan plan,
+    String clientId,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -1587,7 +1792,7 @@ class ClientDetailScreen extends ConsumerWidget {
           onSelected: (value) async {
             if (value == 'activate') {
               await ref.read(customTrainingPlanProvider.notifier).setActivePlan(
-                    clientId: client.clientId,
+                    clientId: clientId,
                     planId: plan.id,
                   );
             } else if (value == 'duplicate') {
@@ -1626,7 +1831,11 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _createPlanDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _createPlanDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String clientId,
+  ) async {
     final ctrl = TextEditingController();
 
     final ok = await showDialog<bool>(
@@ -1656,7 +1865,7 @@ class ClientDetailScreen extends ConsumerWidget {
 
     if (ok == true && ctrl.text.trim().isNotEmpty) {
       await ref.read(customTrainingPlanProvider.notifier).createPlan(
-            clientId: client.clientId,
+            clientId: clientId,
             name: ctrl.text.trim(),
           );
     }
@@ -1701,7 +1910,11 @@ class ClientDetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _addNoteDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _addNoteDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String clientId,
+  ) async {
     final ctrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
@@ -1726,7 +1939,7 @@ class ClientDetailScreen extends ConsumerWidget {
     );
     if (ok == true && ctrl.text.trim().isNotEmpty) {
       await ref.read(coachNotesControllerProvider.notifier).addNote(
-            clientId: client.clientId,
+            clientId: clientId,
             text: ctrl.text.trim(),
           );
     }
@@ -1784,4 +1997,15 @@ class ClientDetailScreen extends ConsumerWidget {
 
   static String _cap(String s) =>
       s.isEmpty ? '—' : '${s[0].toUpperCase()}${s.substring(1)}';
+
+  static bool _containsToday(List<DateTime> days) {
+    final now = DateTime.now();
+    return days.any(
+      (d) => d.year == now.year && d.month == now.month && d.day == now.day,
+    );
+  }
+}
+
+extension<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

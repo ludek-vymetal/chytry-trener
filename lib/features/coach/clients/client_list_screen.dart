@@ -441,65 +441,107 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                         final name = c.client.displayName;
                         final email = c.client.email.trim();
 
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 6,
+                        final tileColor = c.isInactive7d
+                            ? colorScheme.errorContainer.withValues(alpha: 0.45)
+                            : null;
+
+                        final titleColor = c.isInactive7d
+                            ? colorScheme.onErrorContainer
+                            : colorScheme.onSurface;
+
+                        final subtitleColor = c.isInactive7d
+                            ? colorScheme.onErrorContainer
+                            : colorScheme.onSurfaceVariant;
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: tileColor,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          title: Text(
-                            '$name (${c.client.clientId})',
-                            style: TextStyle(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
                             ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '7d compliance: ${(c.compliance7d * 100).round()}% • '
-                                'Věk: ${c.client.age}, ${c.client.heightCm} cm'
-                                '${c.client.isEatingDisorderSupport ? '' : ', ${c.client.weightKg.toStringAsFixed(1)} kg'}',
-                                style: TextStyle(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                            title: Text(
+                              '$name (${c.client.clientId})',
+                              style: TextStyle(
+                                color: titleColor,
+                                fontWeight: FontWeight.w600,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                email.isEmpty ? 'Email: —' : 'Email: $email',
-                                style: TextStyle(
-                                  color: colorScheme.onSurfaceVariant,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Odcvičeno za 7 dní: ${c.completedDaysInLast7}/7 • '
+                                  'Věk: ${c.client.age}, ${c.client.heightCm} cm'
+                                  '${c.client.isEatingDisorderSupport ? '' : ', ${c.client.weightKg.toStringAsFixed(1)} kg'}',
+                                  style: TextStyle(
+                                    color: subtitleColor,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (c.client.isEatingDisorderSupport)
-                                Icon(
-                                  Icons.shield,
-                                  color: colorScheme.tertiary,
+                                const SizedBox(height: 2),
+                                Text(
+                                  email.isEmpty ? 'Email: —' : 'Email: $email',
+                                  style: TextStyle(
+                                    color: subtitleColor,
+                                  ),
                                 ),
-                              Icon(
-                                Icons.chevron_right,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ],
-                          ),
-                          onTap: () async {
-                            final navigator = Navigator.of(context);
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (c.isInactive7d)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.error,
+                                          borderRadius: BorderRadius.circular(999),
+                                        ),
+                                        child: Text(
+                                          'NECVIČIL 7+ DNÍ',
+                                          style: TextStyle(
+                                            color: colorScheme.onError,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    if (c.client.isEatingDisorderSupport) ...[
+                                      if (c.isInactive7d) const SizedBox(width: 8),
+                                      Icon(
+                                        Icons.shield,
+                                        color: c.isInactive7d
+                                            ? colorScheme.onErrorContainer
+                                            : colorScheme.tertiary,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              color: subtitleColor,
+                            ),
+                            onTap: () async {
+                              final navigator = Navigator.of(context);
 
-                            await _setActiveClient(c.client.clientId);
-                            if (!mounted) return;
+                              await _setActiveClient(c.client.clientId);
+                              if (!mounted) return;
 
-                            navigator.push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ClientDetailScreen(client: c.client),
-                              ),
-                            );
-                          },
+                              navigator.push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ClientDetailScreen(client: c.client),
+                                ),
+                              );
+                            },
+                          ),
                         );
                       },
                     ),

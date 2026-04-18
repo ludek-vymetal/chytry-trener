@@ -16,9 +16,25 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
     try {
       final rawItems = await CoachStorageService.loadTrainingSessionsRaw();
 
-      final sessions = rawItems
+      final loaded = rawItems
           .map((e) => _fromJson(Map<String, dynamic>.from(e)))
-          .toList()
+          .toList();
+
+      final merged = <String, TrainingSession>{};
+
+      for (final session in loaded) {
+        final id = _sessionId(session.date);
+        final existing = merged[id];
+
+        if (existing == null) {
+          merged[id] = session;
+          continue;
+        }
+
+        merged[id] = _pickNewerSession(existing, session);
+      }
+
+      final sessions = merged.values.toList()
         ..sort((a, b) => b.date.compareTo(a.date));
 
       state = sessions;
@@ -44,7 +60,15 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
     };
 
     for (final session in sessions) {
-      merged[_sessionId(session.date)] = session;
+      final id = _sessionId(session.date);
+      final existing = merged[id];
+
+      if (existing == null) {
+        merged[id] = session;
+        continue;
+      }
+
+      merged[id] = _pickNewerSession(existing, session);
     }
 
     state = merged.values.toList()..sort((a, b) => b.date.compareTo(a.date));
@@ -137,6 +161,17 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
     newState.sort((a, b) => b.date.compareTo(a.date));
     state = newState;
     await _save();
+  }
+
+  TrainingSession _pickNewerSession(
+    TrainingSession a,
+    TrainingSession b,
+  ) {
+    if (b.version > a.version) return b;
+    if (a.version > b.version) return a;
+
+    if (b.updatedAt.isAfter(a.updatedAt)) return b;
+    return a;
   }
 
   bool _sameDay(DateTime a, DateTime b) =>
