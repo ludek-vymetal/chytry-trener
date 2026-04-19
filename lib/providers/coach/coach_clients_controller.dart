@@ -125,6 +125,37 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
     state = AsyncData(await _mapWithStats(_visibleClients(updated)));
   }
 
+  Future<void> markWorkoutDoneToday(String clientId) async {
+    state = const AsyncLoading();
+
+    final deviceId = await _ensureDeviceId();
+    final now = DateTime.now();
+    final today = _normalizeDate(now);
+    final allClients = await CoachStorageService.loadClients();
+
+    final updated = allClients.map((c) {
+      if (c.clientId != clientId) return c;
+
+      final existingDays = [...c.completedDays.map(_normalizeDate)];
+      final alreadyDoneToday = existingDays.any((d) => _isSameDay(d, today));
+
+      final nextDays = alreadyDoneToday
+          ? existingDays
+          : [...existingDays, today]..sort((a, b) => a.compareTo(b));
+
+      return c.copyWith(
+        completedDays: nextDays,
+        lastWorkoutAt: now,
+        updatedAt: now,
+        version: c.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
+    await CoachStorageService.saveClients(updated);
+    state = AsyncData(await _mapWithStats(_visibleClients(updated)));
+  }
+
   Future<void> addClientManual({
     required String firstName,
     required String lastName,
@@ -212,37 +243,6 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
         heightCm: heightCm,
         weightKg: weightKg,
         isEatingDisorderSupport: isEatingDisorderSupport,
-        updatedAt: now,
-        version: c.version + 1,
-        updatedByDeviceId: deviceId,
-      );
-    }).toList();
-
-    await CoachStorageService.saveClients(updated);
-    state = AsyncData(await _mapWithStats(_visibleClients(updated)));
-  }
-
-  Future<void> markWorkoutDoneToday(String clientId) async {
-    state = const AsyncLoading();
-
-    final deviceId = await _ensureDeviceId();
-    final now = DateTime.now();
-    final today = _normalizeDate(now);
-    final allClients = await CoachStorageService.loadClients();
-
-    final updated = allClients.map((c) {
-      if (c.clientId != clientId) return c;
-
-      final existingDays = [...c.completedDays.map(_normalizeDate)];
-      final alreadyDoneToday = existingDays.any((d) => _isSameDay(d, today));
-
-      final nextDays = alreadyDoneToday
-          ? existingDays
-          : [...existingDays, today]..sort((a, b) => a.compareTo(b));
-
-      return c.copyWith(
-        completedDays: nextDays,
-        lastWorkoutAt: now,
         updatedAt: now,
         version: c.version + 1,
         updatedByDeviceId: deviceId,

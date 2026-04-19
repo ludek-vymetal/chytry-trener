@@ -1,6 +1,5 @@
 // lib/models/food_combo.dart
 
-import '../data/food_bank_seed.dart';
 import 'meal.dart';
 
 enum ComboMealTime { breakfast, snack, lunch, dinner, vegan }
@@ -15,8 +14,6 @@ class FoodComboItem {
     required this.mealName,
     required this.grams,
   });
-
-  Meal? get meal => FoodBankSeed.byName[mealName];
 
   FoodComboItem copyWith({
     String? mealName,
@@ -58,141 +55,84 @@ class FoodCombo {
 
   int get defaultGrams => items.fold<int>(0, (sum, i) => sum + i.grams);
 
-  double get _totalCalories {
+  double totalCaloriesForBank(List<Meal> bank) {
     double sum = 0;
     for (final i in items) {
-      final m = i.meal;
-      if (m == null) continue;
-      sum += (m.caloriesPer100g * i.grams) / 100.0;
+      final meal = _findMeal(bank, i.mealName);
+      if (meal == null) continue;
+      sum += (meal.caloriesPer100g * i.grams) / 100.0;
     }
     return sum;
   }
 
-  double get _totalProtein {
+  double totalProteinForBank(List<Meal> bank) {
     double sum = 0;
     for (final i in items) {
-      final m = i.meal;
-      if (m == null) continue;
-      sum += (m.proteinPer100g * i.grams) / 100.0;
+      final meal = _findMeal(bank, i.mealName);
+      if (meal == null) continue;
+      sum += (meal.proteinPer100g * i.grams) / 100.0;
     }
     return sum;
   }
 
-  double get _totalCarbs {
+  double totalCarbsForBank(List<Meal> bank) {
     double sum = 0;
     for (final i in items) {
-      final m = i.meal;
-      if (m == null) continue;
-      sum += (m.carbsPer100g * i.grams) / 100.0;
+      final meal = _findMeal(bank, i.mealName);
+      if (meal == null) continue;
+      sum += (meal.carbsPer100g * i.grams) / 100.0;
     }
     return sum;
   }
 
-  double get _totalFats {
+  double totalFatsForBank(List<Meal> bank) {
     double sum = 0;
     for (final i in items) {
-      final m = i.meal;
-      if (m == null) continue;
-      sum += (m.fatsPer100g * i.grams) / 100.0;
+      final meal = _findMeal(bank, i.mealName);
+      if (meal == null) continue;
+      sum += (meal.fatsPer100g * i.grams) / 100.0;
     }
     return sum;
   }
 
-  // -------------------------------------------------
-  // Makra na 100 g
-  // -------------------------------------------------
-
-  double get caloriesPer100g =>
-      defaultGrams == 0 ? 0 : (_totalCalories / defaultGrams) * 100.0;
-
-  double get proteinPer100g =>
-      defaultGrams == 0 ? 0 : (_totalProtein / defaultGrams) * 100.0;
-
-  double get carbsPer100g =>
-      defaultGrams == 0 ? 0 : (_totalCarbs / defaultGrams) * 100.0;
-
-  double get fatsPer100g =>
-      defaultGrams == 0 ? 0 : (_totalFats / defaultGrams) * 100.0;
-
-  // -------------------------------------------------
-  // Makra na celou porci
-  // -------------------------------------------------
-
-  double get totalCalories => _totalCalories;
-  double get totalProtein => _totalProtein;
-  double get totalCarbs => _totalCarbs;
-  double get totalFats => _totalFats;
-
-  // -------------------------------------------------
-  // Doporučený poměr dne podle typu jídla
-  // To je přesně ta logika snídaně 15–20 %, svačina 10 %, oběd 30 %...
-  // -------------------------------------------------
-
-  double get suggestedDailyRatio {
-    switch (time) {
-      case ComboMealTime.breakfast:
-        return 0.20; // 20 %
-      case ComboMealTime.snack:
-        return 0.10; // 10 %
-      case ComboMealTime.lunch:
-        return 0.30; // 30 %
-      case ComboMealTime.dinner:
-        return 0.30; // 30 %
-      case ComboMealTime.vegan:
-        return 0.30; // chová se většinou jako hlavní jídlo
-    }
+  double caloriesPer100gForBank(List<Meal> bank) {
+    if (defaultGrams == 0) return 0;
+    return (totalCaloriesForBank(bank) / defaultGrams) * 100.0;
   }
 
-  int suggestedCaloriesForDay(double dailyCalories) {
-    return (dailyCalories * suggestedDailyRatio).round();
+  double proteinPer100gForBank(List<Meal> bank) {
+    if (defaultGrams == 0) return 0;
+    return (totalProteinForBank(bank) / defaultGrams) * 100.0;
   }
 
-  bool fitsDailyCalories(
-    double dailyCalories, {
-    double tolerance = 0.25,
-  }) {
-    if (dailyCalories <= 0) return false;
-
-    final target = dailyCalories * suggestedDailyRatio;
-    final min = target * (1 - tolerance);
-    final max = target * (1 + tolerance);
-
-    return totalCalories >= min && totalCalories <= max;
+  double carbsPer100gForBank(List<Meal> bank) {
+    if (defaultGrams == 0) return 0;
+    return (totalCarbsForBank(bank) / defaultGrams) * 100.0;
   }
 
-  // -------------------------------------------------
-  // Přepočet porce
-  // -------------------------------------------------
-
-  FoodCombo scaled(double multiplier) {
-    if (multiplier <= 0) return this;
-
-    return FoodCombo(
-      title: title,
-      time: time,
-      taste: taste,
-      items: items
-          .map(
-            (item) => item.copyWith(
-              grams: (item.grams * multiplier).round(),
-            ),
-          )
-          .toList(),
-    );
+  double fatsPer100gForBank(List<Meal> bank) {
+    if (defaultGrams == 0) return 0;
+    return (totalFatsForBank(bank) / defaultGrams) * 100.0;
   }
 
-  // -------------------------------------------------
-  // Chybějící položky v bance
-  // -------------------------------------------------
-
-  List<String> get missingItems => items
-      .where((i) => i.meal == null)
+  List<String> missingItemsForBank(List<Meal> bank) => items
+      .where((i) => _findMeal(bank, i.mealName) == null)
       .map((i) => i.mealName)
       .toList(growable: false);
 
-  // -------------------------------------------------
-  // JSON
-  // -------------------------------------------------
+  FoodCombo copyWith({
+    String? title,
+    ComboMealTime? time,
+    ComboTaste? taste,
+    List<FoodComboItem>? items,
+  }) {
+    return FoodCombo(
+      title: title ?? this.title,
+      time: time ?? this.time,
+      taste: taste ?? this.taste,
+      items: items ?? this.items,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'title': title,
@@ -205,14 +145,27 @@ class FoodCombo {
     return FoodCombo(
       title: (json['title'] ?? '').toString(),
       time: ComboMealTime.values.byName(
-        (json['time'] ?? ComboMealTime.breakfast.name).toString(),
+        (json['time'] as String?) ?? ComboMealTime.breakfast.name,
       ),
       taste: ComboTaste.values.byName(
-        (json['taste'] ?? ComboTaste.any.name).toString(),
+        (json['taste'] as String?) ?? ComboTaste.any.name,
       ),
       items: ((json['items'] as List?) ?? const [])
-          .map((e) => FoodComboItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .whereType<Map>()
+          .map((e) => FoodComboItem.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
     );
+  }
+
+  static Meal? _findMeal(List<Meal> bank, String name) {
+    final normalized = name.trim().toLowerCase();
+
+    try {
+      return bank.firstWhere(
+        (m) => m.name.trim().toLowerCase() == normalized,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 }

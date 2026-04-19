@@ -735,6 +735,7 @@ class ClientDetailScreen extends ConsumerWidget {
               colorScheme.onErrorContainer,
             ),
           ],
+          
 
           const SizedBox(height: 16),
 

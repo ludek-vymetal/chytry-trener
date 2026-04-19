@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/food_combo.dart';
+import '../../../models/meal.dart';
+import '../../../providers/food_bank_provider.dart';
 import '../../../providers/food_combo_provider.dart';
 import '../../../providers/user_profile_provider.dart';
 import '../models/carb_cycling_plan.dart';
@@ -53,6 +55,7 @@ class _WeeklyTemplateBuilderScreenState
   Future<void> _saveWeeklyPlan() async {
     final dailyTemplates = ref.read(customMealPlanTemplatesProvider);
     final combos = ref.read(foodComboProvider);
+    final bank = ref.read(foodBankProvider);
     final profile = ref.read(userProfileProvider);
 
     final title = _titleCtrl.text.trim();
@@ -88,6 +91,7 @@ class _WeeklyTemplateBuilderScreenState
           dayName: _days[i],
           template: selectedTemplates[i],
           combos: combos,
+          bank: bank,
         ),
       );
     }
@@ -148,15 +152,19 @@ class _WeeklyTemplateBuilderScreenState
     required String dayName,
     required DailyMealTemplate template,
     required List<FoodCombo> combos,
+    required List<Meal> bank,
   }) {
     final meals = template.entries
-        .map((entry) => _mapEntryToMeal(entry, combos))
+        .map((entry) => _mapEntryToMeal(entry, combos, bank))
         .whereType<PlannedMeal>()
         .toList();
 
-    final totalProtein = meals.fold<double>(0, (sum, meal) => sum + (meal.protein ?? 0));
-    final totalCarbs = meals.fold<double>(0, (sum, meal) => sum + (meal.carbs ?? 0));
-    final totalFats = meals.fold<double>(0, (sum, meal) => sum + (meal.fats ?? 0));
+    final totalProtein =
+        meals.fold<double>(0, (sum, meal) => sum + (meal.protein ?? 0));
+    final totalCarbs =
+        meals.fold<double>(0, (sum, meal) => sum + (meal.carbs ?? 0));
+    final totalFats =
+        meals.fold<double>(0, (sum, meal) => sum + (meal.fats ?? 0));
 
     return PlannedDay(
       dayName: dayName,
@@ -170,6 +178,7 @@ class _WeeklyTemplateBuilderScreenState
   PlannedMeal? _mapEntryToMeal(
     CustomMealEntry entry,
     List<FoodCombo> combos,
+    List<Meal> bank,
   ) {
     if (entry.comboTitle == null || entry.comboTitle!.trim().isEmpty) {
       return null;
@@ -184,13 +193,14 @@ class _WeeklyTemplateBuilderScreenState
       return null;
     }
 
-    final multiplier = entry.portionMultiplier <= 0 ? 1.0 : entry.portionMultiplier;
+    final multiplier =
+        entry.portionMultiplier <= 0 ? 1.0 : entry.portionMultiplier;
     final grams = (combo.defaultGrams * multiplier).round();
 
-    final calories = (combo.caloriesPer100g * grams) / 100.0;
-    final protein = (combo.proteinPer100g * grams) / 100.0;
-    final carbs = (combo.carbsPer100g * grams) / 100.0;
-    final fats = (combo.fatsPer100g * grams) / 100.0;
+    final calories = _comboCalories(combo, bank) * multiplier;
+    final protein = _comboProtein(combo, bank) * multiplier;
+    final carbs = _comboCarbs(combo, bank) * multiplier;
+    final fats = _comboFats(combo, bank) * multiplier;
 
     final ingredients = combo.items
         .map(
@@ -218,6 +228,58 @@ class _WeeklyTemplateBuilderScreenState
       grams: grams,
       ingredients: ingredients,
     );
+  }
+
+  Meal? _findMeal(List<Meal> bank, String name) {
+    final normalized = name.trim().toLowerCase();
+
+    for (final meal in bank) {
+      if (meal.name.trim().toLowerCase() == normalized) {
+        return meal;
+      }
+    }
+
+    return null;
+  }
+
+  double _comboCalories(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.caloriesPer100g * item.grams) / 100.0;
+    }
+    return sum;
+  }
+
+  double _comboProtein(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.proteinPer100g * item.grams) / 100.0;
+    }
+    return sum;
+  }
+
+  double _comboCarbs(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.carbsPer100g * item.grams) / 100.0;
+    }
+    return sum;
+  }
+
+  double _comboFats(FoodCombo combo, List<Meal> bank) {
+    double sum = 0;
+    for (final item in combo.items) {
+      final meal = _findMeal(bank, item.mealName);
+      if (meal == null) continue;
+      sum += (meal.fatsPer100g * item.grams) / 100.0;
+    }
+    return sum;
   }
 
   String _slotLabel(CustomMealSlot slot) {
