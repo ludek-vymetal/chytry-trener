@@ -26,7 +26,7 @@ class CoachCloudSyncService {
     CoachStorageService.clientsKey: ['clientId', 'id'],
     CoachStorageService.notesKey: ['noteId', 'id'],
     CoachStorageService.overridesKey: ['overrideId', 'clientId', 'id'],
-    CoachStorageService.clientDetailsKey: ['clientId', 'detailsId', 'id'],
+    CoachStorageService.clientDetailsKey: ['clientId', 'id'],
     CoachStorageService.circumferencesKey: ['entryId', 'id'],
     CoachStorageService.inbodyKey: ['entryId', 'inbodyId', 'id'],
     CoachStorageService.goalsKey: ['goalId', 'id'],
@@ -48,7 +48,9 @@ class CoachCloudSyncService {
         startedAt: startedAt,
         finishedAt: finishedAt,
         processedKeys: const [],
-        warnings: const ['Coach není přihlášený, upload do cloudu byl přeskočen.'],
+        warnings: const [
+          'Coach není přihlášený, upload do cloudu byl přeskočen.',
+        ],
       );
     }
 
@@ -59,7 +61,9 @@ class CoachCloudSyncService {
         try {
           final localItems = await CoachStorageService.loadRawItemsForKey(key);
 
-          debugPrint('UPLOAD -> coaches/$uid/snapshots/$key count=${localItems.length}');
+          debugPrint(
+            'UPLOAD -> coaches/$uid/snapshots/$key count=${localItems.length}',
+          );
 
           await _uploadCloudSnapshotItems(
             uid: uid,
@@ -78,7 +82,9 @@ class CoachCloudSyncService {
       final finishedAt = DateTime.now();
       await CoachStorageService.saveLastCloudSyncAt(finishedAt);
 
-      debugPrint('PUSH END -> success processed=$processedKeys warnings=$warnings');
+      debugPrint(
+        'PUSH END -> success processed=$processedKeys warnings=$warnings',
+      );
 
       return CoachCloudSyncReport(
         success: true,
@@ -191,12 +197,113 @@ class CoachCloudSyncService {
     }
   }
 
+  static Future<CoachCloudSyncReport> safeReconcileLocalAndCloud() async {
+    final startedAt = DateTime.now();
+    final warnings = <String>[];
+    final processedKeys = <String>[];
+
+    final uid = CoachStorageService.currentCoachUid();
+    if (uid == null) {
+      final finishedAt = DateTime.now();
+      return CoachCloudSyncReport(
+        success: false,
+        startedAt: startedAt,
+        finishedAt: finishedAt,
+        processedKeys: const [],
+        warnings: const [
+          'Coach není přihlášený, synchronizace byla přeskočena.',
+        ],
+      );
+    }
+
+    try {
+      debugPrint('RECONCILE START -> uid=$uid');
+
+      for (final key in CoachStorageService.syncStorageKeys) {
+        try {
+          final localItems = await CoachStorageService.loadRawItemsForKey(key);
+          final cloudItems = await _loadCloudSnapshotItems(uid, key);
+
+          if (cloudItems == null) {
+            debugPrint(
+              'RECONCILE -> cloud snapshot missing, uploading local key=$key local=${localItems.length}',
+            );
+
+            await _uploadCloudSnapshotItems(
+              uid: uid,
+              key: key,
+              items: localItems,
+            );
+
+            processedKeys.add(key);
+            continue;
+          }
+
+          final mergedItems = _mergeLists(
+            key: key,
+            localItems: localItems,
+            cloudItems: cloudItems,
+          );
+
+          await CoachStorageService.saveRawItemsForKeyLocalOnly(
+            key: key,
+            items: mergedItems,
+          );
+
+          await _uploadCloudSnapshotItems(
+            uid: uid,
+            key: key,
+            items: mergedItems,
+          );
+
+          processedKeys.add(key);
+
+          debugPrint(
+            'RECONCILE OK -> uid=$uid key=$key local=${localItems.length} cloud=${cloudItems.length} merged=${mergedItems.length}',
+          );
+        } catch (e, st) {
+          warnings.add('Reconcile failed: $key -> $e');
+          debugPrint('RECONCILE ERROR -> uid=$uid key=$key error=$e');
+          debugPrint('$st');
+        }
+      }
+
+      final finishedAt = DateTime.now();
+      await CoachStorageService.saveLastCloudSyncAt(finishedAt);
+
+      debugPrint(
+        'RECONCILE END -> success processed=$processedKeys warnings=$warnings',
+      );
+
+      return CoachCloudSyncReport(
+        success: true,
+        startedAt: startedAt,
+        finishedAt: finishedAt,
+        processedKeys: processedKeys,
+        warnings: warnings,
+      );
+    } catch (e, st) {
+      debugPrint('RECONCILE GLOBAL ERROR -> $e');
+      debugPrint('$st');
+
+      final finishedAt = DateTime.now();
+      return CoachCloudSyncReport(
+        success: false,
+        startedAt: startedAt,
+        finishedAt: finishedAt,
+        processedKeys: processedKeys,
+        warnings: [...warnings, e.toString()],
+      );
+    }
+  }
+
   static Future<void> _uploadCloudSnapshotItems({
     required String uid,
     required String key,
     required List<Map<String, dynamic>> items,
   }) async {
-    final deviceId = await CoachStorageService.loadDeviceId() ?? 'unknown_device';
+    final deviceId =
+        await CoachStorageService.loadDeviceId() ?? 'unknown_device';
     final now = DateTime.now();
     final payloadJson = jsonEncode(items);
 

@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 import '../../../providers/coach/coach_auth_provider.dart';
 import '../../../providers/coach/coach_setup_provider.dart';
@@ -17,6 +21,7 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
   final _firstNameController = TextEditingController();
   final _pinController = TextEditingController();
   final _confirmPinController = TextEditingController();
+  final _exportFolderController = TextEditingController();
 
   bool _isSaving = false;
   bool _pinObscured = true;
@@ -27,7 +32,67 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
     _firstNameController.dispose();
     _pinController.dispose();
     _confirmPinController.dispose();
+    _exportFolderController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickExportFolder() async {
+    try {
+      final selectedPath = await getDirectoryPath(
+        confirmButtonText: 'Vybrat složku',
+      );
+
+      if (selectedPath == null || selectedPath.trim().isEmpty) return;
+
+      final dir = Directory(selectedPath);
+      if (!dir.existsSync()) {
+        await dir.create(recursive: true);
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _exportFolderController.text = selectedPath.trim();
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Výběr složky selhal: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _fillSuggestedDocumentsFolder() async {
+    try {
+      final home = Platform.environment['USERPROFILE'] ??
+          Platform.environment['HOME'] ??
+          '';
+      if (home.trim().isEmpty) return;
+
+      final suggested = p.join(home, 'Documents', 'Klienti');
+
+      final dir = Directory(suggested);
+      if (!dir.existsSync()) {
+        await dir.create(recursive: true);
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _exportFolderController.text = suggested;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nepodařilo se připravit složku Dokumenty/Klienti: $e'),
+        ),
+      );
+    }
   }
 
   Future<void> _saveSetup() async {
@@ -41,6 +106,7 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
       await ref.read(coachSetupProvider.notifier).saveSetup(
             firstName: _firstNameController.text,
             securityPin: _pinController.text.trim(),
+            exportFolderPath: _exportFolderController.text.trim(),
           );
 
       if (!mounted) return;
@@ -113,6 +179,14 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
     return null;
   }
 
+  String? validateExportFolder(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) {
+      return 'Vyber exportní složku pro archiv klientů.';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -132,7 +206,7 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: 640),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Card(
@@ -160,7 +234,7 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                           const SizedBox(height: 12),
                         ],
                         Text(
-                          'Teď si nastavíme tvoje jméno a bezpečnostní kód pro citlivé akce, například vymazání dat v zařízení.',
+                          'Teď si nastavíme tvoje jméno, bezpečnostní kód a hlavně složku, kam se budou ukládat archivy klientů.',
                           style: theme.textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 24),
@@ -205,7 +279,7 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                         TextFormField(
                           controller: _confirmPinController,
                           keyboardType: TextInputType.number,
-                          textInputAction: TextInputAction.done,
+                          textInputAction: TextInputAction.next,
                           obscureText: _confirmPinObscured,
                           maxLength: 4,
                           decoration: InputDecoration(
@@ -228,11 +302,35 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                             ),
                           ),
                           validator: validateConfirmPin,
-                          onFieldSubmitted: (_) {
-                            if (!_isSaving) {
-                              _saveSetup();
-                            }
-                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _exportFolderController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Exportní složka klientů',
+                            hintText: 'Vyber složku pro archiv klientů',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: validateExportFolder,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: _isSaving ? null : _pickExportFolder,
+                              icon: const Icon(Icons.folder_open),
+                              label: const Text('Vybrat vlastní složku'),
+                            ),
+                            TextButton.icon(
+                              onPressed:
+                                  _isSaving ? null : _fillSuggestedDocumentsFolder,
+                              icon: const Icon(Icons.folder),
+                              label: const Text('Použít Dokumenty/Klienti'),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 20),
                         Container(
@@ -243,7 +341,7 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                             color: theme.colorScheme.surfaceContainerHighest,
                           ),
                           child: const Text(
-                            'Po uložení budeš v aplikaci vystupovat jako „Trenér {jméno}“ a zadaný kód se bude používat pro potvrzení lokálního resetu zařízení.',
+                            'Doporučení: vyber si vlastní archivní složku, ideálně v Google Drive nebo OneDrive synchronizované složce. Pak budeš mít klientské archivy dostupné i mimo tento počítač.',
                           ),
                         ),
                         const SizedBox(height: 20),

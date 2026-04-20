@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,6 +17,7 @@ import '../../../providers/daily_intake_provider.dart';
 import '../../../providers/training_session_provider.dart';
 import '../../../providers/user_profile_provider.dart';
 import '../../../services/coach/coach_cloud_sync_service.dart';
+import '../../../services/local_storage_service.dart';
 import '../../help/widgets/help_and_reset_actions.dart';
 
 class CoachDashboardScreen extends ConsumerStatefulWidget {
@@ -26,6 +30,7 @@ class CoachDashboardScreen extends ConsumerStatefulWidget {
 
 class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
   bool _syncBusy = false;
+  bool _folderBusy = false;
 
   Future<void> _reloadCoachData() async {
     ref.invalidate(coachClientsControllerProvider);
@@ -127,13 +132,70 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
     }
   }
 
+  Future<void> _pickAndSaveExportFolder() async {
+    if (_folderBusy) return;
+
+    final colorScheme = Theme.of(context).colorScheme;
+
+    setState(() => _folderBusy = true);
+
+    try {
+      final selectedPath = await getDirectoryPath(
+        confirmButtonText: 'Vybrat složku',
+      );
+
+      if (selectedPath == null || selectedPath.trim().isEmpty) {
+        if (mounted) {
+          setState(() => _folderBusy = false);
+        }
+        return;
+      }
+
+      final dir = Directory(selectedPath);
+      if (!dir.existsSync()) {
+        await dir.create(recursive: true);
+      }
+
+      await LocalStorageService.saveClientExportFolderPath(selectedPath.trim());
+      await ref
+          .read(coachSetupProvider.notifier)
+          .updateExportFolderPath(selectedPath.trim());
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Exportní složka byla nastavena:\n${dir.path}'),
+          duration: const Duration(seconds: 4),
+          backgroundColor: colorScheme.primary,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nepodařilo se nastavit exportní složku: $e'),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _folderBusy = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final clientsAsync = ref.watch(coachClientsControllerProvider);
     final coachSetupAsync = ref.watch(coachSetupProvider);
 
-    final coachFirstName = coachSetupAsync.asData?.value?.firstName.trim();
+    final coachSetup = coachSetupAsync.asData?.value;
+    final coachFirstName = coachSetup?.firstName.trim();
+    final exportFolderPath = coachSetup?.exportFolderPath.trim() ?? '';
+
     final coachTitle = (coachFirstName != null && coachFirstName.isNotEmpty)
         ? 'Trenér $coachFirstName'
         : 'Coach Dashboard';
@@ -185,6 +247,42 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                 value: warnings.toString(),
                 icon: Icons.warning_amber,
                 highlighted: warnings > 0,
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Archivní složka klientů',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        exportFolderPath.isEmpty
+                            ? 'Zatím není nastavená.'
+                            : exportFolderPath,
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _folderBusy ? null : _pickAndSaveExportFolder,
+                            icon: const Icon(Icons.folder_open),
+                            label: const Text('Změnit složku'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               Card(

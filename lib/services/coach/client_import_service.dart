@@ -214,36 +214,34 @@ class ClientImportService {
       'IMPORT START -> originalClientId=${originalClient.clientId} finalClientId=$finalClientId conflict=$clientExists',
     );
 
-   final importedClient = clientExists
-    ? CoachClient(
-        clientId: finalClientId,
-        firstName: originalClient.firstName,
-        lastName: originalClient.lastName,
-        email: originalClient.email,
-        gender: originalClient.gender,
-        age: originalClient.age,
-        heightCm: originalClient.heightCm,
-        weightKg: originalClient.weightKg,
-        isEatingDisorderSupport: originalClient.isEatingDisorderSupport,
-        linkedAt: originalClient.linkedAt,
-
-        completedDays: originalClient.completedDays,
-        lastWorkoutAt: originalClient.lastWorkoutAt,
-        photosDelivered: originalClient.photosDelivered,
-        dietFollowed: originalClient.dietFollowed,
-        communicationOk: originalClient.communicationOk,
-
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: null,
-        version: 1,
-        updatedByDeviceId: deviceId,
-      )
-    : originalClient.copyWith(
-        updatedAt: now,
-        version: originalClient.version <= 0 ? 1 : originalClient.version,
-        updatedByDeviceId: deviceId,
-      );
+    final importedClient = clientExists
+        ? CoachClient(
+            clientId: finalClientId,
+            firstName: originalClient.firstName,
+            lastName: originalClient.lastName,
+            email: originalClient.email,
+            gender: originalClient.gender,
+            age: originalClient.age,
+            heightCm: originalClient.heightCm,
+            weightKg: originalClient.weightKg,
+            isEatingDisorderSupport: originalClient.isEatingDisorderSupport,
+            linkedAt: originalClient.linkedAt,
+            completedDays: originalClient.completedDays,
+            lastWorkoutAt: originalClient.lastWorkoutAt,
+            photosDelivered: originalClient.photosDelivered,
+            dietFollowed: originalClient.dietFollowed,
+            communicationOk: originalClient.communicationOk,
+            createdAt: now,
+            updatedAt: now,
+            deletedAt: null,
+            version: 1,
+            updatedByDeviceId: deviceId,
+          )
+        : originalClient.copyWith(
+            updatedAt: now,
+            version: originalClient.version <= 0 ? 1 : originalClient.version,
+            updatedByDeviceId: deviceId,
+          );
 
     await _saveClient(importedClient, existingClients);
 
@@ -298,17 +296,11 @@ class ClientImportService {
 
     await _reloadClients(ref);
 
-    // DŮLEŽITÉ:
-    // Po importu explicitně pushneme všechny lokální snapshoty, které CoachStorageService umí synchronizovat.
-    // Tím obejdeme situace, kdy nějaký provider/controller uložil data lokálně, ale sám nespustil upload.
     await CoachStorageService.pushAllLocalSnapshotsToCloud();
 
-    debugPrint('IMPORT POST-PUSH DONE -> finalClientId=$finalClientId');
-
-    // Volitelně ještě lehký pull/merge pro sjednocení lokálu po pushi.
-    final syncReport = await CoachCloudSyncService.safePullMergeToLocal();
+    final syncReport = await CoachCloudSyncService.safeReconcileLocalAndCloud();
     debugPrint(
-      'IMPORT FINAL SYNC -> success=${syncReport.success} processed=${syncReport.processedKeys.length} warnings=${syncReport.warnings.length}',
+      'IMPORT FINAL RECONCILE -> success=${syncReport.success} processed=${syncReport.processedKeys.length} warnings=${syncReport.warnings.length}',
     );
   }
 
@@ -507,7 +499,11 @@ class ClientImportService {
     CoachClient importedClient,
     List<CoachClient> existingClients,
   ) async {
-    final updatedClients = [...existingClients, importedClient];
+    final withoutSameId = existingClients
+        .where((c) => c.clientId != importedClient.clientId)
+        .toList();
+
+    final updatedClients = [...withoutSameId, importedClient];
     await CoachStorageService.saveClients(updatedClients);
   }
 
@@ -525,9 +521,7 @@ class ClientImportService {
 
     final details = CoachClientDetails.fromJson(detailsMap);
 
-    await ref
-        .read(coachClientDetailsControllerProvider.notifier)
-        .upsert(details);
+    await ref.read(coachClientDetailsControllerProvider.notifier).upsert(details);
 
     debugPrint('IMPORT DETAILS OK -> clientId=$finalClientId');
   }
@@ -562,7 +556,9 @@ class ClientImportService {
     await CoachStorageService.saveNotes([...imported, ...existing]);
     await ref.read(coachNotesControllerProvider.notifier).refresh();
 
-    debugPrint('IMPORT NOTES OK -> clientId=$finalClientId count=${imported.length}');
+    debugPrint(
+      'IMPORT NOTES OK -> clientId=$finalClientId count=${imported.length}',
+    );
   }
 
   Future<void> _importInbody({
@@ -661,9 +657,7 @@ class ClientImportService {
 
     if (performances.isEmpty) return;
 
-    await ref
-        .read(performanceProvider.notifier)
-        .importPerformances(performances);
+    await ref.read(performanceProvider.notifier).importPerformances(performances);
 
     debugPrint(
       'IMPORT PERFORMANCE OK -> clientId=$finalClientId count=${performances.length}',
@@ -773,16 +767,14 @@ class ClientImportService {
               ),
             )
             .toList(),
-        actualSets: rawActualSets
-            .map((asItem) {
-              final actualMap = Map<String, dynamic>.from(asItem as Map);
-              return ActualSet(
-                weightKg: (actualMap['weightKg'] as num?)?.toDouble(),
-                reps: (actualMap['reps'] as num?)?.toInt() ?? 0,
-                rpe: (actualMap['rpe'] as num?)?.toDouble(),
-              );
-            })
-            .toList(),
+        actualSets: rawActualSets.map((asItem) {
+          final actualMap = Map<String, dynamic>.from(asItem as Map);
+          return ActualSet(
+            weightKg: (actualMap['weightKg'] as num?)?.toDouble(),
+            reps: (actualMap['reps'] as num?)?.toInt() ?? 0,
+            rpe: (actualMap['rpe'] as num?)?.toDouble(),
+          );
+        }).toList(),
       );
     }).toList();
 

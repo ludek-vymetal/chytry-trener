@@ -99,24 +99,35 @@ class ClientExportService {
     await reportsDirectory.create(recursive: true);
 
     final timestamp = _timestampForFileName(now);
+
     final currentJsonFile = File(
       p.join(clientDirectory.path, 'client_current.json'),
     );
-    final historyJsonFile = File(
-      p.join(historyDirectory.path, '${timestamp}_snapshot.json'),
+
+    final historyJsonFile = await _uniqueFile(
+      historyDirectory.path,
+      '${timestamp}_snapshot',
+      '.json',
     );
-    final reportPdfFile = File(
-      p.join(reportsDirectory.path, '${timestamp}_report.pdf'),
+
+    final reportPdfFile = await _uniqueFile(
+      reportsDirectory.path,
+      '${timestamp}_report',
+      '.pdf',
     );
+
     final manifestFile = File(
       p.join(clientDirectory.path, 'archive_manifest.json'),
     );
+
     final inbodyCsvFile = File(
       p.join(clientDirectory.path, 'inbody.csv'),
     );
+
     final circumferencesCsvFile = File(
       p.join(clientDirectory.path, 'circumferences.csv'),
     );
+
     final performancesCsvFile = File(
       p.join(clientDirectory.path, 'performances.csv'),
     );
@@ -155,11 +166,14 @@ class ClientExportService {
       reportFrom: reportRange.from,
       reportTo: reportRange.to,
       currentJsonRelativePath: 'client_current.json',
-      latestSnapshotRelativePath: p.join(
-        'history',
-        '${timestamp}_snapshot.json',
+      latestSnapshotRelativePath: p.relative(
+        historyJsonFile.path,
+        from: clientDirectory.path,
       ),
-      latestReportRelativePath: p.join('reports', '${timestamp}_report.pdf'),
+      latestReportRelativePath: p.relative(
+        reportPdfFile.path,
+        from: clientDirectory.path,
+      ),
       inbodyCsvRelativePath: 'inbody.csv',
       circumferencesCsvRelativePath: 'circumferences.csv',
       performancesCsvRelativePath: 'performances.csv',
@@ -683,8 +697,33 @@ class ClientExportService {
     final h = dateTime.hour.toString().padLeft(2, '0');
     final min = dateTime.minute.toString().padLeft(2, '0');
     final s = dateTime.second.toString().padLeft(2, '0');
+    final ms = dateTime.millisecond.toString().padLeft(3, '0');
 
-    return '$y-$m-${d}_$h-$min-$s';
+    return '$y-$m-${d}_$h-$min-$s-$ms';
+  }
+
+  static Future<File> _uniqueFile(
+    String directoryPath,
+    String fileNameWithoutExtension,
+    String extension,
+  ) async {
+    var counter = 0;
+
+    while (true) {
+      final suffix = counter == 0 ? '' : '_$counter';
+      final candidate = File(
+        p.join(
+          directoryPath,
+          '$fileNameWithoutExtension$suffix$extension',
+        ),
+      );
+
+      if (!candidate.existsSync()) {
+        return candidate;
+      }
+
+      counter++;
+    }
   }
 
   static String _safeFileName(String input) {

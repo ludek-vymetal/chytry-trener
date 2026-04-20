@@ -40,6 +40,7 @@ class CoachStorageService {
 
   static const _deviceIdKey = 'coach_device_id_v1';
   static const _lastCloudSyncAtKey = 'coach_last_cloud_sync_at_v1';
+  static const _clientIdCounterKey = 'client_id_counter_v1';
 
   static const cloudCoachesCollection = 'coaches';
   static const cloudSnapshotsCollection = 'snapshots';
@@ -81,7 +82,7 @@ class CoachStorageService {
 
     final shouldScope = syncStorageKeys.contains(key) ||
         key == _lastCloudSyncAtKey ||
-        key == 'client_id_counter_v1';
+        key == _clientIdCounterKey;
 
     if (!shouldScope) {
       return key;
@@ -91,22 +92,29 @@ class CoachStorageService {
   }
 
   static Future<List<Map<String, dynamic>>> _loadRawList(String key) async {
-    final prefs = await _prefs();
-    final jsonStr = prefs.getString(_scopedKey(key));
+    try {
+      final prefs = await _prefs();
+      final jsonStr = prefs.getString(_scopedKey(key));
 
-    if (jsonStr == null || jsonStr.isEmpty) {
+      if (jsonStr == null || jsonStr.isEmpty) {
+        return [];
+      }
+
+      final decoded = jsonDecode(jsonStr);
+      if (decoded is! List) {
+        debugPrint('LOAD RAW LIST -> key=$key decoded is not List');
+        return [];
+      }
+
+      return decoded
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (e, st) {
+      debugPrint('LOAD RAW LIST ERROR -> key=$key error=$e');
+      debugPrint('$st');
       return [];
     }
-
-    final decoded = jsonDecode(jsonStr);
-    if (decoded is! List) {
-      return [];
-    }
-
-    return decoded
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
   }
 
   static Future<void> _saveRawList(
@@ -123,7 +131,7 @@ class CoachStorageService {
     final existing = prefs.getString(_deviceIdKey);
 
     if (existing != null && existing.trim().isNotEmpty) {
-      return existing;
+      return existing.trim();
     }
 
     final newId = _uuid.v4();
@@ -134,7 +142,7 @@ class CoachStorageService {
   static Future<String> _requireDeviceId() async {
     final existing = await loadDeviceId();
     if (existing != null && existing.trim().isNotEmpty) {
-      return existing;
+      return existing.trim();
     }
 
     return _ensureDeviceId();
@@ -528,7 +536,7 @@ class CoachStorageService {
     if (value == null || value.trim().isEmpty) {
       return null;
     }
-    return value;
+    return value.trim();
   }
 
   static Future<void> saveDeviceId(String deviceId) async {

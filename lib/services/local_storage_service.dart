@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/diet_plans/models/saved_meal_plan.dart';
@@ -10,6 +11,14 @@ class LocalStorageService {
   static const _clientExportFolderPathKey = 'client_export_folder_path_v1';
   static const _savedMealPlansKey = 'saved_meal_plans_v1';
   static const _customFoodCombosKey = 'custom_food_combos_v1';
+
+  static String _scopedExportFolderKey() {
+    final uid = FirebaseAuth.instance.currentUser?.uid.trim();
+    if (uid == null || uid.isEmpty) {
+      return _clientExportFolderPathKey;
+    }
+    return 'coach_${uid}_$_clientExportFolderPathKey';
+  }
 
   static Future<void> saveFoodBank(List<Map<String, dynamic>> meals) async {
     final prefs = await SharedPreferences.getInstance();
@@ -76,27 +85,32 @@ class LocalStorageService {
     final normalized = path.trim();
 
     if (normalized.isEmpty) {
-      await prefs.remove(_clientExportFolderPathKey);
+      await prefs.remove(_scopedExportFolderKey());
       return;
     }
 
-    await prefs.setString(_clientExportFolderPathKey, normalized);
+    await prefs.setString(_scopedExportFolderKey(), normalized);
   }
 
   static Future<String?> loadClientExportFolderPath() async {
     final prefs = await SharedPreferences.getInstance();
-    final path = prefs.getString(_clientExportFolderPathKey)?.trim();
 
-    if (path == null || path.isEmpty) {
-      return null;
+    final scopedPath = prefs.getString(_scopedExportFolderKey())?.trim();
+    if (scopedPath != null && scopedPath.isNotEmpty) {
+      return scopedPath;
     }
 
-    return path;
+    final legacyPath = prefs.getString(_clientExportFolderPathKey)?.trim();
+    if (legacyPath != null && legacyPath.isNotEmpty) {
+      return legacyPath;
+    }
+
+    return null;
   }
 
   static Future<void> clearClientExportFolderPath() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_clientExportFolderPathKey);
+    await prefs.remove(_scopedExportFolderKey());
   }
 
   static Future<List<SavedMealPlan>> loadSavedMealPlans() async {
@@ -124,10 +138,6 @@ class LocalStorageService {
     final jsonStr = jsonEncode(plans.map((e) => e.toJson()).toList());
     await prefs.setString(_savedMealPlansKey, jsonStr);
   }
-
-  // =========================
-  // CUSTOM FOOD COMBOS
-  // =========================
 
   static Future<List<Map<String, dynamic>>> loadCustomFoodCombos() async {
     final prefs = await SharedPreferences.getInstance();

@@ -38,7 +38,7 @@ class CoachAuthController extends AsyncNotifier<void> {
 
       debugPrint('AUTH SIGN IN OK -> uid=${cred.user?.uid}');
 
-      final report = await CoachCloudSyncService.safePullMergeToLocal();
+      final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
       debugPrint(
         'AUTH SIGN IN SYNC -> success=${report.success} processed=${report.processedKeys} warnings=${report.warnings}',
       );
@@ -69,7 +69,7 @@ class CoachAuthController extends AsyncNotifier<void> {
 
       debugPrint('AUTH REGISTER OK -> uid=${cred.user?.uid}');
 
-      final report = await CoachCloudSyncService.safePullMergeToLocal();
+      final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
       debugPrint(
         'AUTH REGISTER SYNC -> success=${report.success} processed=${report.processedKeys} warnings=${report.warnings}',
       );

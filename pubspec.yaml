@@ -30,14 +30,13 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   integration_test:
     sdk: flutter
-  
+
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/app_icon.png"
-
-  assets:
-    - assets/fonts/

@@ -313,9 +313,6 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.role != widget.role) {
-      debugPrint(
-        'APP BOOTSTRAP -> role changed ${oldWidget.role} -> ${widget.role}',
-      );
       Future.microtask(_runBootstrap);
     }
   }
@@ -503,7 +500,7 @@ class _CoachSessionBootstrapState
 
       debugPrint('COACH SESSION SYNC -> start uid=$uid');
 
-      final report = await CoachCloudSyncService.safePullMergeToLocal();
+      final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
 
       debugPrint(
         'COACH SESSION SYNC -> success=${report.success} processed=${report.processedKeys} warnings=${report.warnings}',
