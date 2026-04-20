@@ -9,6 +9,7 @@ import '../core/training/training_plan_models.dart';
 import '../core/training/training_set.dart';
 import '../models/exercise_performance.dart';
 import '../providers/coach/active_client_provider.dart';
+import '../providers/coach/custom_training_plan_provider.dart';
 import '../providers/performance_provider.dart';
 import '../providers/training_session_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -22,7 +23,6 @@ class TrainingLogService {
     required List<ActualSet> actualSets,
   }) {
     final date = todayBaseSession.date;
-
     final clientId = ref.read(activeClientIdProvider).value;
 
     ref.read(trainingSessionProvider.notifier).upsertEntry(
@@ -52,6 +52,15 @@ class TrainingLogService {
               clientId: clientId,
             ),
           );
+
+      if (clientId != null && clientId.trim().isNotEmpty) {
+        ref.read(customTrainingPlanProvider.notifier).updateLastUsedWeightForActivePlan(
+              clientId: clientId,
+              dayName: todayBaseSession.dayPlan.focus,
+              exerciseKey: exerciseKey,
+              weightKg: top.weightKg!,
+            );
+      }
     }
 
     final profile = ref.read(userProfileProvider);

@@ -24,7 +24,11 @@ class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>>
 
       final raw = json.decode(jsonString) as List;
       state = raw
-          .map((e) => CustomTrainingPlan.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map(
+            (e) => CustomTrainingPlan.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
           .toList();
     } catch (e) {
       print('Chyba při načítání custom plánů: $e');
@@ -282,6 +286,71 @@ class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>>
 
     state = [...state, duplicated];
     await _saveToPrefs();
+  }
+
+  Future<void> updateLastUsedWeightForActivePlan({
+    required String clientId,
+    required String dayName,
+    required String exerciseKey,
+    required double weightKg,
+  }) async {
+    final normalizedDayName = dayName.trim().toLowerCase();
+    final normalizedExerciseKey = exerciseKey.trim().toLowerCase();
+
+    var changed = false;
+
+    state = state.map((plan) {
+      if (plan.clientId != clientId || !plan.isActive) {
+        return plan;
+      }
+
+      final updatedDays = [...plan.days];
+
+      for (int dayIndex = 0; dayIndex < updatedDays.length; dayIndex++) {
+        final day = updatedDays[dayIndex];
+        final dayMatches = day.name.trim().toLowerCase() == normalizedDayName;
+
+        if (!dayMatches) continue;
+
+        final updatedExercises = [...day.exercises];
+
+        for (int exerciseIndex = 0;
+            exerciseIndex < updatedExercises.length;
+            exerciseIndex++) {
+          final exercise = updatedExercises[exerciseIndex];
+          final currentKey =
+              (exercise.exerciseId ?? exercise.customName).trim().toLowerCase();
+
+          if (currentKey != normalizedExerciseKey) continue;
+
+          updatedExercises[exerciseIndex] = exercise.copyWith(
+            weightKg: weightKg,
+          );
+          updatedDays[dayIndex] = day.copyWith(
+            exercises: updatedExercises,
+          );
+          changed = true;
+          break;
+        }
+
+        if (changed) {
+          break;
+        }
+      }
+
+      if (!changed) {
+        return plan;
+      }
+
+      return plan.copyWith(
+        days: updatedDays,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+
+    if (changed) {
+      await _saveToPrefs();
+    }
   }
 }
 
