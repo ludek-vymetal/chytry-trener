@@ -5,7 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/custom_training_plan.dart';
 
-class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>> {
+class CustomTrainingPlanNotifier
+    extends StateNotifier<List<CustomTrainingPlan>> {
   CustomTrainingPlanNotifier() : super([]) {
     _loadFromPrefs();
   }
@@ -48,6 +49,10 @@ class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>>
     }
   }
 
+  Future<void> saveExternally() async {
+    await _saveToPrefs();
+  }
+
   List<CustomTrainingPlan> getPlansForClient(String clientId) {
     return state.where((p) => p.clientId == clientId).toList();
   }
@@ -64,6 +69,11 @@ class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>>
   Future<void> importPlans(List<CustomTrainingPlan> plans) async {
     if (plans.isEmpty) return;
     state = [...state, ...plans];
+    await _saveToPrefs();
+  }
+
+  Future<void> addImportedPlan(CustomTrainingPlan plan) async {
+    state = [...state, plan];
     await _saveToPrefs();
   }
 
@@ -297,20 +307,22 @@ class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>>
     final normalizedDayName = dayName.trim().toLowerCase();
     final normalizedExerciseKey = exerciseKey.trim().toLowerCase();
 
-    var changed = false;
+    bool changed = false;
 
-    state = state.map((plan) {
+    final updatedState = state.map((plan) {
       if (plan.clientId != clientId || !plan.isActive) {
         return plan;
       }
 
+      bool planChanged = false;
       final updatedDays = [...plan.days];
 
       for (int dayIndex = 0; dayIndex < updatedDays.length; dayIndex++) {
         final day = updatedDays[dayIndex];
-        final dayMatches = day.name.trim().toLowerCase() == normalizedDayName;
 
-        if (!dayMatches) continue;
+        if (day.name.trim().toLowerCase() != normalizedDayName) {
+          continue;
+        }
 
         final updatedExercises = [...day.exercises];
 
@@ -321,24 +333,29 @@ class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>>
           final currentKey =
               (exercise.exerciseId ?? exercise.customName).trim().toLowerCase();
 
-          if (currentKey != normalizedExerciseKey) continue;
+          if (currentKey != normalizedExerciseKey) {
+            continue;
+          }
 
           updatedExercises[exerciseIndex] = exercise.copyWith(
             weightKg: weightKg,
           );
+
           updatedDays[dayIndex] = day.copyWith(
             exercises: updatedExercises,
           );
+
           changed = true;
+          planChanged = true;
           break;
         }
 
-        if (changed) {
+        if (planChanged) {
           break;
         }
       }
 
-      if (!changed) {
+      if (!planChanged) {
         return plan;
       }
 
@@ -348,9 +365,10 @@ class CustomTrainingPlanNotifier extends StateNotifier<List<CustomTrainingPlan>>
       );
     }).toList();
 
-    if (changed) {
-      await _saveToPrefs();
-    }
+    if (!changed) return;
+
+    state = updatedState;
+    await _saveToPrefs();
   }
 }
 

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/custom_training_plan.dart';
-import '../../providers/coach/active_client_provider.dart';
-import '../../providers/coach/custom_training_plan_provider.dart';
 import '../../core/training/exercises/exercise.dart';
 import '../../core/training/exercises/exercise_db.dart';
+import '../../models/custom_training_plan.dart';
+import '../../models/shared_training_template.dart';
+import '../../providers/coach/active_client_provider.dart';
+import '../../providers/coach/custom_training_plan_provider.dart';
+import '../../providers/shared_training_templates_provider.dart';
 import 'training_plan_screen.dart';
 
 class CustomTrainingPlanScreen extends ConsumerWidget {
@@ -15,6 +17,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeClientAsync = ref.watch(activeClientIdProvider);
     final allPlans = ref.watch(customTrainingPlanProvider);
+    final sharedTemplates = ref.watch(sharedTrainingTemplatesProvider);
 
     return activeClientAsync.when(
       loading: () => const Scaffold(
@@ -53,67 +56,70 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             icon: const Icon(Icons.add),
             label: const Text('Nový plán'),
           ),
-          body: clientPlans.isEmpty
-              ? Center(
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              FilledButton.icon(
+                onPressed: () =>
+                    _insertConstantinCutPlan(context, ref, clientId),
+                icon: const Icon(Icons.local_fire_department),
+                label: const Text('🔥 VLOŽIT 90DENNÍ VYRÝSOVÁNÍ'),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.tonalIcon(
+                onPressed: () =>
+                    _insertPowerliftingMeetPrepPlan(context, ref, clientId),
+                icon: const Icon(Icons.fitness_center),
+                label: const Text('🏋️ VLOŽIT PŘÍPRAVU NA ZÁVODY – TROJBOJ'),
+              ),
+              const SizedBox(height: 20),
+
+              Text(
+                'Sdílené šablony',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+
+              if (sharedTemplates.isEmpty)
+                const Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Zatím nemáš žádný vlastní plán.\n\n'
-                          'Klikni na „Nový plán“ a vytvoř první.',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: () =>
-                              _insertConstantinCutPlan(context, ref, clientId),
-                          icon: const Icon(Icons.local_fire_department),
-                          label: const Text('🔥 VLOŽIT 90DENNÍ VYRÝSOVÁNÍ'),
-                        ),
-                        const SizedBox(height: 12),
-                        FilledButton.tonalIcon(
-                          onPressed: () => _insertPowerliftingMeetPrepPlan(
-                            context,
-                            ref,
-                            clientId,
-                          ),
-                          icon: const Icon(Icons.fitness_center),
-                          label: const Text(
-                            '🏋️ VLOŽIT PŘÍPRAVU NA ZÁVODY – TROJBOJ',
-                          ),
-                        ),
-                      ],
+                    padding: EdgeInsets.all(16),
+                    child: Text('Zatím nemáš žádné sdílené šablony.'),
+                  ),
+                )
+              else
+                ...sharedTemplates.map(
+                  (template) => _SharedTemplateCard(
+                    template: template,
+                    clientId: clientId,
+                  ),
+                ),
+
+              const SizedBox(height: 20),
+
+              Text(
+                'Plány klienta',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+
+              if (clientPlans.isEmpty)
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Zatím nemáš žádný vlastní plán.\n\n'
+                      'Klikni na „Nový plán“ a vytvoř první.',
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    FilledButton.icon(
-                      onPressed: () =>
-                          _insertConstantinCutPlan(context, ref, clientId),
-                      icon: const Icon(Icons.local_fire_department),
-                      label: const Text('🔥 VLOŽIT 90DENNÍ VYRÝSOVÁNÍ'),
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton.tonalIcon(
-                      onPressed: () => _insertPowerliftingMeetPrepPlan(
-                        context,
-                        ref,
-                        clientId,
-                      ),
-                      icon: const Icon(Icons.fitness_center),
-                      label: const Text(
-                        '🏋️ VLOŽIT PŘÍPRAVU NA ZÁVODY – TROJBOJ',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    for (final plan in clientPlans) _PlanCard(plan: plan),
-                    const SizedBox(height: 80),
-                  ],
-                ),
+              else
+                ...clientPlans.map((plan) => _PlanCard(plan: plan)),
+
+              const SizedBox(height: 80),
+            ],
+          ),
         );
       },
     );
@@ -1046,215 +1052,58 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
   }
 }
 
-class _PowerWeekConfig {
-  final int week;
-  final String phaseLabel;
-  final double squatPct;
-  final double benchPct;
-  final double deadliftPct;
-  final double? topSinglePct;
-  final String squatSets;
-  final String squatReps;
-  final String benchHeavySets;
-  final String benchHeavyReps;
-  final String deadliftSets;
-  final String deadliftReps;
+class _SharedTemplateCard extends ConsumerWidget {
+  final SharedTrainingTemplate template;
+  final String clientId;
 
-  const _PowerWeekConfig({
-    required this.week,
-    required this.phaseLabel,
-    required this.squatPct,
-    required this.benchPct,
-    required this.deadliftPct,
-    this.topSinglePct,
-    required this.squatSets,
-    required this.squatReps,
-    required this.benchHeavySets,
-    required this.benchHeavyReps,
-    required this.deadliftSets,
-    required this.deadliftReps,
+  const _SharedTemplateCard({
+    required this.template,
+    required this.clientId,
   });
-}
-
-class _PowerliftingMaxes {
-  final double squat1rm;
-  final double bench1rm;
-  final double deadlift1rm;
-  final DateTime meetDate;
-
-  const _PowerliftingMaxes({
-    required this.squat1rm,
-    required this.bench1rm,
-    required this.deadlift1rm,
-    required this.meetDate,
-  });
-}
-
-class _PowerliftingMaxesDialog extends StatefulWidget {
-  const _PowerliftingMaxesDialog();
 
   @override
-  State<_PowerliftingMaxesDialog> createState() =>
-      _PowerliftingMaxesDialogState();
-}
-
-class _PowerliftingMaxesDialogState extends State<_PowerliftingMaxesDialog> {
-  final _squatCtrl = TextEditingController();
-  final _benchCtrl = TextEditingController();
-  final _deadliftCtrl = TextEditingController();
-
-  DateTime? _meetDate;
-
-  @override
-  void dispose() {
-    _squatCtrl.dispose();
-    _benchCtrl.dispose();
-    _deadliftCtrl.dispose();
-    super.dispose();
-  }
-
-  double? _parse(String value) {
-    return double.tryParse(value.trim().replaceAll(',', '.'));
-  }
-
-  String _fmtDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.'
-        '${date.month.toString().padLeft(2, '0')}.'
-        '${date.year}';
-  }
-
-  Future<void> _pickMeetDate() async {
-    final now = DateTime.now();
-    final initialDate = _meetDate ?? now.add(const Duration(days: 84));
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 730)),
-      helpText: 'DATUM ZÁVODU',
-    );
-
-    if (picked == null) return;
-
-    setState(() {
-      _meetDate = picked;
-    });
-  }
-
-  void _submit() {
-    final squat = _parse(_squatCtrl.text);
-    final bench = _parse(_benchCtrl.text);
-    final deadlift = _parse(_deadliftCtrl.text);
-
-    if (squat == null || squat <= 0) {
-      _toast('Vyplň platný dřep 1RM.');
-      return;
-    }
-    if (bench == null || bench <= 0) {
-      _toast('Vyplň platný bench 1RM.');
-      return;
-    }
-    if (deadlift == null || deadlift <= 0) {
-      _toast('Vyplň platný mrtvý tah 1RM.');
-      return;
-    }
-    if (_meetDate == null) {
-      _toast('Vyber datum závodu.');
-      return;
-    }
-
-    Navigator.of(context).pop(
-      _PowerliftingMaxes(
-        squat1rm: squat,
-        bench1rm: bench,
-        deadlift1rm: deadlift,
-        meetDate: _meetDate!,
-      ),
-    );
-  }
-
-  void _toast(String text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Maximálky pro trojboj'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        title: Text(template.name),
+        subtitle: Text('Počet dnů: ${template.days.length}'),
+        trailing: Wrap(
+          spacing: 8,
           children: [
-            TextField(
-              controller: _squatCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Dřep 1RM (kg)',
-                border: OutlineInputBorder(),
-              ),
+            IconButton(
+              tooltip: 'Smazat šablonu',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                await ref
+                    .read(sharedTrainingTemplatesProvider.notifier)
+                    .deleteTemplate(template.id);
+              },
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _benchCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Bench press 1RM (kg)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _deadliftCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Mrtvý tah 1RM (kg)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: _pickMeetDate,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Datum závodu',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                child: Text(
-                  _meetDate == null
-                      ? 'Vybrat datum závodu'
-                      : _fmtDate(_meetDate!),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Bench používá training max = 90 %, dřep a mrtvý tah jedou z reálného 1RM. Zaokrouhlení je na 2.5 kg.',
-                style: TextStyle(fontSize: 12),
-              ),
+            FilledButton(
+              onPressed: () async {
+                await ref
+                    .read(sharedTrainingTemplatesProvider.notifier)
+                    .createPlanFromTemplate(
+                      clientId: clientId,
+                      template: template,
+                      ref: ref,
+                    );
+
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Šablona "${template.name}" byla vložena ke klientovi.',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Vložit'),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Zrušit'),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Vložit plán'),
-        ),
-      ],
     );
   }
 }
@@ -1283,12 +1132,23 @@ class _PlanCard extends ConsumerWidget {
     );
   }
 
+  Future<void> _openPlanDetail(
+    BuildContext context,
+  ) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _PlanDetailScreen(planId: plan.id),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: ExpansionTile(
-        initiallyExpanded: plan.isActive,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
         title: Row(
           children: [
             Expanded(
@@ -1316,14 +1176,88 @@ class _PlanCard extends ConsumerWidget {
               ),
           ],
         ),
-        subtitle: Text('Počet dnů: ${plan.days.length}'),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text('Počet dnů: ${plan.days.length}'),
+        ),
+        onTap: () => _openPlanDetail(context),
+        trailing: Wrap(
+          spacing: 8,
+          children: [
+            FilledButton(
+              onPressed: () => _activateAndOpen(context, ref),
+              child: const Text('Otevřít'),
+            ),
+            OutlinedButton(
+              onPressed: () {
+                ref.read(customTrainingPlanProvider.notifier).setActivePlan(
+                      clientId: plan.clientId,
+                      planId: plan.id,
+                    );
+              },
+              child: const Text('Aktivovat'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanDetailScreen extends ConsumerWidget {
+  final String planId;
+
+  const _PlanDetailScreen({
+    required this.planId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allPlans = ref.watch(customTrainingPlanProvider);
+
+    CustomTrainingPlan? plan;
+    for (final p in allPlans) {
+      if (p.id == planId) {
+        plan = p;
+        break;
+      }
+    }
+
+    if (plan == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Detail plánu')),
+        body: const Center(
+          child: Text('Plán nebyl nalezen.'),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(plan.name),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
           Row(
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => _activateAndOpen(context, ref),
+                  onPressed: () async {
+                    await ref.read(customTrainingPlanProvider.notifier).setActivePlan(
+                          clientId: plan!.clientId,
+                          planId: plan.id,
+                        );
+
+                    if (!context.mounted) return;
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TrainingPlanScreen(),
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Aktivovat a otevřít'),
                 ),
@@ -1335,73 +1269,67 @@ class _PlanCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    ref.read(customTrainingPlanProvider.notifier).setActivePlan(
-                          clientId: plan.clientId,
-                          planId: plan.id,
-                        );
+                  onPressed: () async {
+                    await ref
+                        .read(sharedTrainingTemplatesProvider.notifier)
+                        .addTemplateFromPlan(plan!);
+
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Plán "${plan.name}" byl uložen jako sdílená šablona.',
+                        ),
+                      ),
+                    );
                   },
-                  icon: const Icon(Icons.check_circle),
-                  label: const Text('Nastavit aktivní'),
+                  icon: const Icon(Icons.share),
+                  label: const Text('Sdílet jako šablonu'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _addDayDialog(context, ref, plan),
+                  onPressed: () => _addDayDialog(context, ref, plan!),
                   icon: const Icon(Icons.add),
                   label: const Text('Přidat den'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           if (plan.days.isEmpty)
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Tento plán zatím nemá žádné dny.'),
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Tento plán zatím nemá žádné dny.'),
+              ),
             )
           else
-            Column(
-              children: [
-                for (int dayIndex = 0; dayIndex < plan.days.length; dayIndex++)
-                  _DayCard(
-                    plan: plan,
-                    dayIndex: dayIndex,
-                  ),
-              ],
+            ...List.generate(
+              plan.days.length,
+              (dayIndex) => _DayCard(
+                plan: plan!,
+                dayIndex: dayIndex,
+              ),
             ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ref.read(customTrainingPlanProvider.notifier).duplicatePlan(
-                          sourcePlanId: plan.id,
-                          newName: '${plan.name} (kopie)',
-                        );
-                  },
-                  icon: const Icon(Icons.copy),
-                  label: const Text('Duplikovat'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _confirmDeletePlan(context, ref),
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Smazat'),
-                ),
-              ),
-            ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => _confirmDeletePlan(context, ref, plan!),
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Smazat celý plán'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _confirmDeletePlan(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmDeletePlan(
+    BuildContext context,
+    WidgetRef ref,
+    CustomTrainingPlan plan,
+  ) async {
     final first = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -1447,6 +1375,9 @@ class _PlanCard extends ConsumerWidget {
 
     if (second == true) {
       await ref.read(customTrainingPlanProvider.notifier).deletePlan(plan.id);
+
+      if (!context.mounted) return;
+      Navigator.pop(context);
     }
   }
 
@@ -2051,6 +1982,219 @@ class _ExerciseDatabasePickerScreenState
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PowerWeekConfig {
+  final int week;
+  final String phaseLabel;
+  final double squatPct;
+  final double benchPct;
+  final double deadliftPct;
+  final double? topSinglePct;
+  final String squatSets;
+  final String squatReps;
+  final String benchHeavySets;
+  final String benchHeavyReps;
+  final String deadliftSets;
+  final String deadliftReps;
+
+  const _PowerWeekConfig({
+    required this.week,
+    required this.phaseLabel,
+    required this.squatPct,
+    required this.benchPct,
+    required this.deadliftPct,
+    this.topSinglePct,
+    required this.squatSets,
+    required this.squatReps,
+    required this.benchHeavySets,
+    required this.benchHeavyReps,
+    required this.deadliftSets,
+    required this.deadliftReps,
+  });
+}
+
+class _PowerliftingMaxes {
+  final double squat1rm;
+  final double bench1rm;
+  final double deadlift1rm;
+  final DateTime meetDate;
+
+  const _PowerliftingMaxes({
+    required this.squat1rm,
+    required this.bench1rm,
+    required this.deadlift1rm,
+    required this.meetDate,
+  });
+}
+
+class _PowerliftingMaxesDialog extends StatefulWidget {
+  const _PowerliftingMaxesDialog();
+
+  @override
+  State<_PowerliftingMaxesDialog> createState() =>
+      _PowerliftingMaxesDialogState();
+}
+
+class _PowerliftingMaxesDialogState extends State<_PowerliftingMaxesDialog> {
+  final _squatCtrl = TextEditingController();
+  final _benchCtrl = TextEditingController();
+  final _deadliftCtrl = TextEditingController();
+
+  DateTime? _meetDate;
+
+  @override
+  void dispose() {
+    _squatCtrl.dispose();
+    _benchCtrl.dispose();
+    _deadliftCtrl.dispose();
+    super.dispose();
+  }
+
+  double? _parse(String value) {
+    return double.tryParse(value.trim().replaceAll(',', '.'));
+  }
+
+  String _fmtDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.'
+        '${date.month.toString().padLeft(2, '0')}.'
+        '${date.year}';
+  }
+
+  Future<void> _pickMeetDate() async {
+    final now = DateTime.now();
+    final initialDate = _meetDate ?? now.add(const Duration(days: 84));
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 730)),
+      helpText: 'DATUM ZÁVODU',
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      _meetDate = picked;
+    });
+  }
+
+  void _submit() {
+    final squat = _parse(_squatCtrl.text);
+    final bench = _parse(_benchCtrl.text);
+    final deadlift = _parse(_deadliftCtrl.text);
+
+    if (squat == null || squat <= 0) {
+      _toast('Vyplň platný dřep 1RM.');
+      return;
+    }
+    if (bench == null || bench <= 0) {
+      _toast('Vyplň platný bench 1RM.');
+      return;
+    }
+    if (deadlift == null || deadlift <= 0) {
+      _toast('Vyplň platný mrtvý tah 1RM.');
+      return;
+    }
+    if (_meetDate == null) {
+      _toast('Vyber datum závodu.');
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _PowerliftingMaxes(
+        squat1rm: squat,
+        bench1rm: bench,
+        deadlift1rm: deadlift,
+        meetDate: _meetDate!,
+      ),
+    );
+  }
+
+  void _toast(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Maximálky pro trojboj'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _squatCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Dřep 1RM (kg)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _benchCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Bench press 1RM (kg)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _deadliftCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Mrtvý tah 1RM (kg)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _pickMeetDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Datum závodu',
+                  border: OutlineInputBorder(),
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  _meetDate == null
+                      ? 'Vybrat datum závodu'
+                      : _fmtDate(_meetDate!),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Bench používá training max = 90 %, dřep a mrtvý tah jedou z reálného 1RM. Zaokrouhlení je na 2.5 kg.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Zrušit'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Vložit plán'),
+        ),
+      ],
     );
   }
 }

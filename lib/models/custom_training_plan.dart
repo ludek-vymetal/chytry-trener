@@ -46,13 +46,8 @@ class CustomTrainingMaxes {
 }
 
 class CustomTrainingExercise {
-  /// Pokud je cvik z databáze
   final String? exerciseId;
-
-  /// Zobrazený název cviku.
-  /// Když je exerciseId null, používá se customName.
   final String customName;
-
   final String sets;
   final String reps;
   final String rir;
@@ -156,20 +151,11 @@ class CustomTrainingPlan {
   final String clientId;
   final String name;
   final List<CustomTrainingDay> days;
-
-  /// jestli je to aktivní plán klienta
   final bool isActive;
-
   final DateTime createdAt;
   final DateTime updatedAt;
-
-  /// Typ vlastního plánu
   final CustomTrainingPlanType type;
-
-  /// Datum závodu – používá se hlavně pro trojbojovou přípravu
   final DateTime? meetDate;
-
-  /// Maximálky / PR – používají se hlavně pro trojbojovou přípravu
   final CustomTrainingMaxes? maxes;
 
   const CustomTrainingPlan({
