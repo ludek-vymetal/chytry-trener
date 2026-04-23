@@ -101,6 +101,7 @@ class CustomTrainingPlanNotifier
       type: type,
       meetDate: meetDate,
       maxes: maxes,
+      overrideDayIndex: null,
     );
 
     state = [...state, plan];
@@ -166,6 +167,39 @@ class CustomTrainingPlanNotifier
     await _saveToPrefs();
   }
 
+  Future<void> setOverrideDayForPlan({
+    required String planId,
+    required int dayIndex,
+  }) async {
+    state = state.map((p) {
+      if (p.id != planId) return p;
+      if (dayIndex < 0 || dayIndex >= p.days.length) return p;
+
+      return p.copyWith(
+        overrideDayIndex: dayIndex,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+
+    await _saveToPrefs();
+  }
+
+  Future<void> clearOverrideDayForPlan({
+    required String planId,
+  }) async {
+    state = state.map((p) {
+      if (p.id != planId) return p;
+      if (p.overrideDayIndex == null) return p;
+
+      return p.copyWith(
+        clearOverrideDayIndex: true,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+
+    await _saveToPrefs();
+  }
+
   Future<void> addDay({
     required String planId,
     required String dayName,
@@ -200,8 +234,21 @@ class CustomTrainingPlanNotifier
 
       final updatedDays = [...p.days]..removeAt(dayIndex);
 
+      int? updatedOverrideDayIndex = p.overrideDayIndex;
+      bool clearOverrideDayIndex = false;
+
+      if (updatedOverrideDayIndex != null) {
+        if (updatedOverrideDayIndex == dayIndex) {
+          clearOverrideDayIndex = true;
+        } else if (updatedOverrideDayIndex > dayIndex) {
+          updatedOverrideDayIndex = updatedOverrideDayIndex - 1;
+        }
+      }
+
       return p.copyWith(
         days: updatedDays,
+        overrideDayIndex: updatedOverrideDayIndex,
+        clearOverrideDayIndex: clearOverrideDayIndex,
         updatedAt: DateTime.now(),
       );
     }).toList();
@@ -321,6 +368,7 @@ class CustomTrainingPlanNotifier
       isActive: false,
       createdAt: now,
       updatedAt: now,
+      clearOverrideDayIndex: true,
     );
 
     state = [...state, duplicated];

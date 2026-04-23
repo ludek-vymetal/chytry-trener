@@ -98,7 +98,7 @@ class TrainingPlanScreen extends ConsumerWidget {
       );
     }
 
-    final List<TrainingDayPlan> plan = activeCustomPlan != null
+    final List<TrainingDayPlan> basePlan = activeCustomPlan != null
         ? CustomTrainingPlanMapper.toWeeklyPlan(activeCustomPlan)
         : TrainingPlanService.buildWeeklyPlan(
             effectiveProfile,
@@ -108,9 +108,15 @@ class TrainingPlanScreen extends ConsumerWidget {
     final bool usingCustomPlan = activeCustomPlan != null;
     final bool usingCoachGoal = !usingCustomPlan && activeCoachGoal != null;
 
+    final int? overrideDayIndex =
+        _resolveValidOverrideDayIndex(activeCustomPlan, basePlan.length);
+
+    final List<_DisplayedTrainingDay> displayedPlan =
+        _buildDisplayedPlan(basePlan, overrideDayIndex);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Týdenní plán')),
-      body: plan.isEmpty
+      body: displayedPlan.isEmpty
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -124,9 +130,10 @@ class TrainingPlanScreen extends ConsumerWidget {
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
-              itemCount: plan.length,
+              itemCount: displayedPlan.length,
               itemBuilder: (context, index) {
-                final day = plan[index];
+                final displayedDay = displayedPlan[index];
+                final day = displayedDay.day;
                 final isSpecialDay = _isSpecialDay(day);
 
                 return Card(
@@ -134,10 +141,16 @@ class TrainingPlanScreen extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                     side: BorderSide(
-                      color: isSpecialDay
+                      color: displayedDay.isOverrideSelected
                           ? colorScheme.primary
-                          : colorScheme.outlineVariant,
-                      width: isSpecialDay ? 1.4 : 1,
+                          : isSpecialDay
+                              ? colorScheme.primary
+                              : colorScheme.outlineVariant,
+                      width: displayedDay.isOverrideSelected
+                          ? 1.8
+                          : isSpecialDay
+                              ? 1.4
+                              : 1,
                     ),
                   ),
                   child: Padding(
@@ -145,24 +158,71 @@ class TrainingPlanScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (usingCustomPlan)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Vlastní plán: ${activeCustomPlan!.name}',
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                        if (usingCustomPlan && activeCustomPlan != null)
+                          Builder(
+                            builder: (context) {
+                              final selectedPlan = activeCustomPlan!;
+
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Colors.green.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'Vlastní plán: ${selectedPlan.name}',
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  PopupMenuButton<String>(
+                                    tooltip: 'Možnosti dne',
+                                    onSelected: (value) async {
+                                      if (value == 'select_other_day') {
+                                        await _showDayPickerSheet(
+                                          context: context,
+                                          ref: ref,
+                                          activePlan: selectedPlan,
+                                        );
+                                      } else if (value == 'clear_override') {
+                                        await ref
+                                            .read(
+                                              customTrainingPlanProvider
+                                                  .notifier,
+                                            )
+                                            .clearOverrideDayForPlan(
+                                              planId: selectedPlan.id,
+                                            );
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem<String>(
+                                        value: 'select_other_day',
+                                        child: Text('Vybrat jiný den'),
+                                      ),
+                                      if (overrideDayIndex != null)
+                                        const PopupMenuItem<String>(
+                                          value: 'clear_override',
+                                          child: Text('Vrátit původní den'),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         if (usingCoachGoal)
                           Container(
@@ -184,6 +244,27 @@ class TrainingPlanScreen extends ConsumerWidget {
                               ),
                             ),
                           ),
+                        if (usingCustomPlan && overrideDayIndex != null) ...[
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer
+                                  .withValues(alpha: 0.75),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Text(
+                              displayedDay.isOverrideSelected
+                                  ? 'Dočasně zvolený den pro dnešní trénink'
+                                  : 'Níže je původní pořadí plánu, ale pro dnešek máš dočasně vybraný jiný den.',
+                              style: TextStyle(
+                                color: colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -197,11 +278,25 @@ class TrainingPlanScreen extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                            if (displayedDay.isOverrideSelected)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: _DayBadge(
+                                  label: 'DNES ZVOLENO',
+                                  background: colorScheme.primaryContainer,
+                                  foreground: colorScheme.onPrimaryContainer,
+                                ),
+                              ),
                             if (_isPeakDay(day))
-                              _DayBadge(
-                                label: 'PEAK / CNS',
-                                background: colorScheme.tertiaryContainer,
-                                foreground: colorScheme.onTertiaryContainer,
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  left: displayedDay.isOverrideSelected ? 8 : 0,
+                                ),
+                                child: _DayBadge(
+                                  label: 'PEAK / CNS',
+                                  background: colorScheme.tertiaryContainer,
+                                  foreground: colorScheme.onTertiaryContainer,
+                                ),
                               ),
                             if (_isTaperDay(day))
                               Padding(
@@ -240,25 +335,178 @@ class TrainingPlanScreen extends ConsumerWidget {
     );
   }
 
+  int? _resolveValidOverrideDayIndex(
+    CustomTrainingPlan? activeCustomPlan,
+    int planLength,
+  ) {
+    final overrideDayIndex = activeCustomPlan?.overrideDayIndex;
+    if (overrideDayIndex == null) return null;
+    if (overrideDayIndex < 0 || overrideDayIndex >= planLength) return null;
+    return overrideDayIndex;
+  }
+
+  List<_DisplayedTrainingDay> _buildDisplayedPlan(
+    List<TrainingDayPlan> plan,
+    int? overrideDayIndex,
+  ) {
+    final items = <_DisplayedTrainingDay>[];
+
+    for (int i = 0; i < plan.length; i++) {
+      items.add(
+        _DisplayedTrainingDay(
+          day: plan[i],
+          originalIndex: i,
+          isOverrideSelected: overrideDayIndex == i,
+        ),
+      );
+    }
+
+    if (overrideDayIndex == null) {
+      return items;
+    }
+
+    items.sort((a, b) {
+      if (a.isOverrideSelected && !b.isOverrideSelected) return -1;
+      if (!a.isOverrideSelected && b.isOverrideSelected) return 1;
+      return a.originalIndex.compareTo(b.originalIndex);
+    });
+
+    return items;
+  }
+
+  Future<void> _showDayPickerSheet({
+    required BuildContext context,
+    required WidgetRef ref,
+    required CustomTrainingPlan activePlan,
+  }) async {
+    if (activePlan.days.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Plán zatím nemá žádné dny.'),
+        ),
+      );
+      return;
+    }
+
+    final selectedIndex = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Vyber jiný den pro dnešní trénink',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Původní dny v plánu se nemažou. Jen dočasně otevřeš jiný den jako dnešní.',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...List.generate(activePlan.days.length, (index) {
+                  final day = activePlan.days[index];
+                  final isSelected = activePlan.overrideDayIndex == index;
+
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      child: Text('${index + 1}'),
+                    ),
+                    title: Text(day.name),
+                    subtitle: Text(
+                      day.exercises.isEmpty
+                          ? 'Bez cviků'
+                          : '${day.exercises.length} cviků',
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle)
+                        : const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.of(context).pop(index);
+                    },
+                  );
+                }),
+                if (activePlan.overrideDayIndex != null) ...[
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(-1);
+                      },
+                      child: const Text('Vrátit původní den'),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedIndex == null) return;
+
+    final notifier = ref.read(customTrainingPlanProvider.notifier);
+
+    if (selectedIndex == -1) {
+      await notifier.clearOverrideDayForPlan(planId: activePlan.id);
+      return;
+    }
+
+    await notifier.setOverrideDayForPlan(
+      planId: activePlan.id,
+      dayIndex: selectedIndex,
+    );
+  }
+
   bool _isSpecialDay(TrainingDayPlan day) {
-    final text = '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
-        .toLowerCase();
+    final text =
+        '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
+            .toLowerCase();
     return text.contains('peak') ||
         text.contains('cns') ||
         text.contains('taper');
   }
 
   bool _isPeakDay(TrainingDayPlan day) {
-    final text = '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
-        .toLowerCase();
+    final text =
+        '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
+            .toLowerCase();
     return text.contains('peak') || text.contains('cns');
   }
 
   bool _isTaperDay(TrainingDayPlan day) {
-    final text = '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
-        .toLowerCase();
+    final text =
+        '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
+            .toLowerCase();
     return text.contains('taper');
   }
+}
+
+class _DisplayedTrainingDay {
+  final TrainingDayPlan day;
+  final int originalIndex;
+  final bool isOverrideSelected;
+
+  const _DisplayedTrainingDay({
+    required this.day,
+    required this.originalIndex,
+    required this.isOverrideSelected,
+  });
 }
 
 class _ExerciseCard extends StatelessWidget {

@@ -170,6 +170,7 @@ class CustomTrainingPlan {
   final CustomTrainingPlanType type;
   final DateTime? meetDate;
   final CustomTrainingMaxes? maxes;
+  final int? overrideDayIndex;
 
   const CustomTrainingPlan({
     required this.id,
@@ -184,6 +185,7 @@ class CustomTrainingPlan {
     this.type = CustomTrainingPlanType.standard,
     this.meetDate,
     this.maxes,
+    this.overrideDayIndex,
   });
 
   CustomTrainingPlan copyWith({
@@ -202,6 +204,8 @@ class CustomTrainingPlan {
     bool clearMeetDate = false,
     CustomTrainingMaxes? maxes,
     bool clearMaxes = false,
+    int? overrideDayIndex,
+    bool clearOverrideDayIndex = false,
   }) {
     return CustomTrainingPlan(
       id: id ?? this.id,
@@ -216,6 +220,9 @@ class CustomTrainingPlan {
       type: type ?? this.type,
       meetDate: clearMeetDate ? null : (meetDate ?? this.meetDate),
       maxes: clearMaxes ? null : (maxes ?? this.maxes),
+      overrideDayIndex: clearOverrideDayIndex
+          ? null
+          : (overrideDayIndex ?? this.overrideDayIndex),
     );
   }
 
@@ -237,6 +244,7 @@ class CustomTrainingPlan {
         'type': type.name,
         'meetDate': meetDate?.toIso8601String(),
         'maxes': maxes?.toJson(),
+        'overrideDayIndex': overrideDayIndex,
       };
 
   factory CustomTrainingPlan.fromJson(Map<String, dynamic> json) {
@@ -264,6 +272,16 @@ class CustomTrainingPlan {
 
     final rawMeetDate = (json['meetDate'] as String?)?.trim();
     final rawMaxes = json['maxes'];
+    final rawOverrideDayIndex = json['overrideDayIndex'];
+
+    int? resolvedOverrideDayIndex;
+    if (rawOverrideDayIndex is int) {
+      resolvedOverrideDayIndex = rawOverrideDayIndex;
+    } else if (rawOverrideDayIndex is num) {
+      resolvedOverrideDayIndex = rawOverrideDayIndex.toInt();
+    } else {
+      resolvedOverrideDayIndex = null;
+    }
 
     return CustomTrainingPlan(
       id: json['id'] as String,
@@ -292,6 +310,7 @@ class CustomTrainingPlan {
       maxes: rawMaxes is Map
           ? CustomTrainingMaxes.fromJson(Map<String, dynamic>.from(rawMaxes))
           : null,
+      overrideDayIndex: resolvedOverrideDayIndex,
     );
   }
 }
