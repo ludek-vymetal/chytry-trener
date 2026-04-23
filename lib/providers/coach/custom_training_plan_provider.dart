@@ -80,6 +80,11 @@ class CustomTrainingPlanNotifier
   Future<void> createPlan({
     required String clientId,
     required String name,
+    String? description,
+    CustomTrainingCategory category = CustomTrainingCategory.custom,
+    CustomTrainingPlanType type = CustomTrainingPlanType.standard,
+    DateTime? meetDate,
+    CustomTrainingMaxes? maxes,
   }) async {
     final now = DateTime.now();
 
@@ -87,13 +92,37 @@ class CustomTrainingPlanNotifier
       id: 'plan_${now.microsecondsSinceEpoch}',
       clientId: clientId,
       name: name,
+      description: description,
+      category: category,
       days: const [],
       createdAt: now,
       updatedAt: now,
       isActive: false,
+      type: type,
+      meetDate: meetDate,
+      maxes: maxes,
     );
 
     state = [...state, plan];
+    await _saveToPrefs();
+  }
+
+  Future<void> updatePlanMeta({
+    required String planId,
+    required String name,
+    String? description,
+    required CustomTrainingCategory category,
+  }) async {
+    state = state.map((p) {
+      if (p.id != planId) return p;
+      return p.copyWith(
+        name: name,
+        description: description,
+        category: category,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+
     await _saveToPrefs();
   }
 

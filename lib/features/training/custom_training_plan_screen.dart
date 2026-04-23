@@ -47,6 +47,9 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         final clientPlans =
             allPlans.where((p) => p.clientId == clientId).toList();
 
+        final groupedTemplates = _groupTemplatesByCategory(sharedTemplates);
+        final groupedPlans = _groupPlansByCategory(clientPlans);
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Vlastní trénink'),
@@ -72,14 +75,12 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                 icon: const Icon(Icons.fitness_center),
                 label: const Text('🏋️ VLOŽIT PŘÍPRAVU NA ZÁVODY – TROJBOJ'),
               ),
-              const SizedBox(height: 20),
-
+              const SizedBox(height: 24),
               Text(
                 'Sdílené šablony',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 8),
-
+              const SizedBox(height: 10),
               if (sharedTemplates.isEmpty)
                 const Card(
                   child: Padding(
@@ -88,21 +89,19 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                   ),
                 )
               else
-                ...sharedTemplates.map(
-                  (template) => _SharedTemplateCard(
-                    template: template,
+                ...groupedTemplates.entries.map(
+                  (entry) => _TemplateCategorySection(
+                    category: entry.key,
+                    templates: entry.value,
                     clientId: clientId,
                   ),
                 ),
-
-              const SizedBox(height: 20),
-
+              const SizedBox(height: 24),
               Text(
                 'Plány klienta',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 8),
-
+              const SizedBox(height: 10),
               if (clientPlans.isEmpty)
                 const Card(
                   child: Padding(
@@ -115,8 +114,12 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                   ),
                 )
               else
-                ...clientPlans.map((plan) => _PlanCard(plan: plan)),
-
+                ...groupedPlans.entries.map(
+                  (entry) => _PlanCategorySection(
+                    category: entry.key,
+                    plans: entry.value,
+                  ),
+                ),
               const SizedBox(height: 80),
             ],
           ),
@@ -125,42 +128,112 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     );
   }
 
+  Map<CustomTrainingCategory, List<SharedTrainingTemplate>>
+      _groupTemplatesByCategory(List<SharedTrainingTemplate> templates) {
+    final map = <CustomTrainingCategory, List<SharedTrainingTemplate>>{};
+
+    for (final template in templates) {
+      map.putIfAbsent(template.category, () => []);
+      map[template.category]!.add(template);
+    }
+
+    return map;
+  }
+
+  Map<CustomTrainingCategory, List<CustomTrainingPlan>> _groupPlansByCategory(
+    List<CustomTrainingPlan> plans,
+  ) {
+    final map = <CustomTrainingCategory, List<CustomTrainingPlan>>{};
+
+    for (final plan in plans) {
+      map.putIfAbsent(plan.category, () => []);
+      map[plan.category]!.add(plan);
+    }
+
+    return map;
+  }
+
   Future<void> _createPlanDialog(
     BuildContext context,
     WidgetRef ref,
     String clientId,
   ) async {
-    final ctrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    final descriptionCtrl = TextEditingController();
+    CustomTrainingCategory selectedCategory = CustomTrainingCategory.custom;
 
     final ok = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Nový plán'),
-        content: TextField(
-          controller: ctrl,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Název plánu',
-            hintText: 'Např. Hrudník + triceps',
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Nový plán'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                DropdownButtonFormField<CustomTrainingCategory>(
+                  initialValue: selectedCategory,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Kategorie',
+                  ),
+                  items: CustomTrainingCategory.values.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(_categoryLabel(category)),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      selectedCategory = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Název plánu',
+                    hintText: 'Např. Obrovské prsa',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descriptionCtrl,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Na co slouží / v čem je zvláštní',
+                    hintText: 'Např. síla hrudníku, objem prsních svalů...',
+                  ),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Zrušit'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Vytvořit'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Zrušit'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Vytvořit'),
-          ),
-        ],
       ),
     );
 
-    if (ok == true && ctrl.text.trim().isNotEmpty) {
+    if (ok == true && nameCtrl.text.trim().isNotEmpty) {
       await ref.read(customTrainingPlanProvider.notifier).createPlan(
             clientId: clientId,
-            name: ctrl.text.trim(),
+            name: nameCtrl.text.trim(),
+            description: descriptionCtrl.text.trim().isEmpty
+                ? null
+                : descriptionCtrl.text.trim(),
+            category: selectedCategory,
           );
     }
   }
@@ -179,6 +252,9 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     await ref.read(customTrainingPlanProvider.notifier).createPlan(
           clientId: clientId,
           name: newName,
+          description: 'Shazovací plán zaměřený na spalování tuku a kondici.',
+          category: CustomTrainingCategory.cut,
+          type: CustomTrainingPlanType.cut90,
         );
 
     final updatedPlans = ref.read(customTrainingPlanProvider);
@@ -252,6 +328,16 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     await ref.read(customTrainingPlanProvider.notifier).createPlan(
           clientId: clientId,
           name: newName,
+          description:
+              'Silový plán pro přípravu na závody v trojboji podle zadaných maximálek.',
+          category: CustomTrainingCategory.powerlifting,
+          type: CustomTrainingPlanType.powerliftingMeetPrep,
+          meetDate: maxes.meetDate,
+          maxes: CustomTrainingMaxes(
+            squat1rm: maxes.squat1rm,
+            bench1rm: maxes.bench1rm,
+            deadlift1rm: maxes.deadlift1rm,
+          ),
         );
 
     final updatedPlans = ref.read(customTrainingPlanProvider);
@@ -1052,6 +1138,65 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
   }
 }
 
+class _TemplateCategorySection extends StatelessWidget {
+  final CustomTrainingCategory category;
+  final List<SharedTrainingTemplate> templates;
+  final String clientId;
+
+  const _TemplateCategorySection({
+    required this.category,
+    required this.templates,
+    required this.clientId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          _categoryLabel(category),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        ...templates.map(
+          (template) => _SharedTemplateCard(
+            template: template,
+            clientId: clientId,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlanCategorySection extends StatelessWidget {
+  final CustomTrainingCategory category;
+  final List<CustomTrainingPlan> plans;
+
+  const _PlanCategorySection({
+    required this.category,
+    required this.plans,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          _categoryLabel(category),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        ...plans.map((plan) => _PlanCard(plan: plan)),
+      ],
+    );
+  }
+}
+
 class _SharedTemplateCard extends ConsumerWidget {
   final SharedTrainingTemplate template;
   final String clientId;
@@ -1066,8 +1211,18 @@ class _SharedTemplateCard extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
-        title: Text(template.name),
-        subtitle: Text('Počet dnů: ${template.days.length}'),
+        contentPadding: const EdgeInsets.all(12),
+        title: Text(
+          template.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            '${template.description ?? 'Bez popisu'}\nPočet dnů: ${template.days.length}',
+          ),
+        ),
+        isThreeLine: true,
         trailing: Wrap(
           spacing: 8,
           children: [
@@ -1178,8 +1333,11 @@ class _PlanCard extends ConsumerWidget {
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Text('Počet dnů: ${plan.days.length}'),
+          child: Text(
+            '${plan.description ?? 'Bez popisu'}\nPočet dnů: ${plan.days.length}',
+          ),
         ),
+        isThreeLine: true,
         onTap: () => _openPlanDetail(context),
         trailing: Wrap(
           spacing: 8,
@@ -1239,6 +1397,17 @@ class _PlanDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Kategorie: ${_categoryLabel(plan.category)}\n'
+                'Popis: ${plan.description ?? 'Bez popisu'}\n'
+                'Počet dnů: ${plan.days.length}',
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -1291,6 +1460,18 @@ class _PlanDetailScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
+                  onPressed: () => _editPlanMetaDialog(context, ref, plan!),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Upravit info'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
                   onPressed: () => _addDayDialog(context, ref, plan!),
                   icon: const Icon(Icons.add),
                   label: const Text('Přidat den'),
@@ -1323,6 +1504,89 @@ class _PlanDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _editPlanMetaDialog(
+    BuildContext context,
+    WidgetRef ref,
+    CustomTrainingPlan plan,
+  ) async {
+    final nameCtrl = TextEditingController(text: plan.name);
+    final descriptionCtrl = TextEditingController(text: plan.description ?? '');
+    CustomTrainingCategory selectedCategory = plan.category;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Upravit plán'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                DropdownButtonFormField<CustomTrainingCategory>(
+                  initialValue: selectedCategory,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Kategorie',
+                  ),
+                  items: CustomTrainingCategory.values.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(_categoryLabel(category)),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      selectedCategory = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Název plánu',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descriptionCtrl,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Popis',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Zrušit'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Uložit'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (ok == true && nameCtrl.text.trim().isNotEmpty) {
+      await ref.read(customTrainingPlanProvider.notifier).updatePlanMeta(
+            planId: plan.id,
+            name: nameCtrl.text.trim(),
+            description: descriptionCtrl.text.trim().isEmpty
+                ? null
+                : descriptionCtrl.text.trim(),
+            category: selectedCategory,
+          );
+    }
   }
 
   Future<void> _confirmDeletePlan(
@@ -2196,5 +2460,26 @@ class _PowerliftingMaxesDialogState extends State<_PowerliftingMaxesDialog> {
         ),
       ],
     );
+  }
+}
+
+String _categoryLabel(CustomTrainingCategory category) {
+  switch (category) {
+    case CustomTrainingCategory.strength:
+      return 'Silové tréninky';
+    case CustomTrainingCategory.bulk:
+      return 'Nabírací';
+    case CustomTrainingCategory.cut:
+      return 'Shazovací';
+    case CustomTrainingCategory.recomp:
+      return 'Rekompozice';
+    case CustomTrainingCategory.conditioning:
+      return 'Kondice';
+    case CustomTrainingCategory.powerlifting:
+      return 'Trojboj';
+    case CustomTrainingCategory.bodybuilding:
+      return 'Bodybuilding';
+    case CustomTrainingCategory.custom:
+      return 'Ostatní';
   }
 }

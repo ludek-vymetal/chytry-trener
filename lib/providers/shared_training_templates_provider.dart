@@ -100,16 +100,25 @@ class SharedTrainingTemplatesNotifier
       id: planId,
       clientId: clientId,
       name: template.name,
+      description: template.description,
+      category: template.category,
       days: template.days
           .map(
             (d) => d.copyWith(
-              exercises: d.exercises.map((e) => e.copyWith()).toList(),
+              exercises: d.exercises
+                  .map(
+                    (e) => e.copyWith(),
+                  )
+                  .toList(),
             ),
           )
           .toList(),
       createdAt: now,
       updatedAt: now,
       isActive: false,
+      type: CustomTrainingPlanType.standard,
+      meetDate: null,
+      maxes: null,
     );
 
     await customPlansNotifier.addImportedPlan(newPlan);

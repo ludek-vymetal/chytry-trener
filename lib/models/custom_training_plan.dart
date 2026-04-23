@@ -4,6 +4,17 @@ enum CustomTrainingPlanType {
   powerliftingMeetPrep,
 }
 
+enum CustomTrainingCategory {
+  strength,
+  bulk,
+  cut,
+  recomp,
+  conditioning,
+  powerlifting,
+  bodybuilding,
+  custom,
+}
+
 class CustomTrainingMaxes {
   final double? squat1rm;
   final double? bench1rm;
@@ -150,6 +161,8 @@ class CustomTrainingPlan {
   final String id;
   final String clientId;
   final String name;
+  final String? description;
+  final CustomTrainingCategory category;
   final List<CustomTrainingDay> days;
   final bool isActive;
   final DateTime createdAt;
@@ -162,6 +175,8 @@ class CustomTrainingPlan {
     required this.id,
     required this.clientId,
     required this.name,
+    this.description,
+    this.category = CustomTrainingCategory.custom,
     required this.days,
     required this.createdAt,
     required this.updatedAt,
@@ -175,6 +190,9 @@ class CustomTrainingPlan {
     String? id,
     String? clientId,
     String? name,
+    String? description,
+    bool clearDescription = false,
+    CustomTrainingCategory? category,
     List<CustomTrainingDay>? days,
     bool? isActive,
     DateTime? createdAt,
@@ -189,6 +207,8 @@ class CustomTrainingPlan {
       id: id ?? this.id,
       clientId: clientId ?? this.clientId,
       name: name ?? this.name,
+      description: clearDescription ? null : (description ?? this.description),
+      category: category ?? this.category,
       days: days ?? this.days,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
@@ -208,6 +228,8 @@ class CustomTrainingPlan {
         'id': id,
         'clientId': clientId,
         'name': name,
+        'description': description,
+        'category': category.name,
         'days': days.map((d) => d.toJson()).toList(),
         'isActive': isActive,
         'createdAt': createdAt.toIso8601String(),
@@ -222,13 +244,22 @@ class CustomTrainingPlan {
 
     final rawType = (json['type'] as String?)?.trim();
     CustomTrainingPlanType resolvedType;
-
     try {
       resolvedType = rawType == null || rawType.isEmpty
           ? CustomTrainingPlanType.standard
           : CustomTrainingPlanType.values.byName(rawType);
     } catch (_) {
       resolvedType = CustomTrainingPlanType.standard;
+    }
+
+    final rawCategory = (json['category'] as String?)?.trim();
+    CustomTrainingCategory resolvedCategory;
+    try {
+      resolvedCategory = rawCategory == null || rawCategory.isEmpty
+          ? CustomTrainingCategory.custom
+          : CustomTrainingCategory.values.byName(rawCategory);
+    } catch (_) {
+      resolvedCategory = CustomTrainingCategory.custom;
     }
 
     final rawMeetDate = (json['meetDate'] as String?)?.trim();
@@ -238,6 +269,8 @@ class CustomTrainingPlan {
       id: json['id'] as String,
       clientId: json['clientId'] as String,
       name: (json['name'] as String?) ?? 'Můj plán',
+      description: json['description'] as String?,
+      category: resolvedCategory,
       days: rawDays
           .map(
             (d) => CustomTrainingDay.fromJson(
