@@ -16,14 +16,10 @@ class AppRoleNotifier extends StateNotifier<AppRole?> {
     _initialized = true;
 
     final prefs = await SharedPreferences.getInstance();
-    final savedRole = prefs.getString(_key);
+    await prefs.remove(_key);
 
-    AppRole? loadedRole;
-    if (savedRole == 'user') loadedRole = AppRole.user;
-    if (savedRole == 'coach') loadedRole = AppRole.coach;
-
-    if (state == null) {
-      state = loadedRole;
+    if (state != null) {
+      state = null;
     }
   }
 

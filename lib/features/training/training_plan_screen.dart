@@ -345,6 +345,12 @@ class TrainingPlanScreen extends ConsumerWidget {
     return overrideDayIndex;
   }
 
+  int? _defaultTodayDayIndex(int length) {
+    if (length <= 0) return null;
+    final weekday = DateTime.now().weekday;
+    return (weekday - 1) % length;
+  }
+
   List<_DisplayedTrainingDay> _buildDisplayedPlan(
     List<TrainingDayPlan> plan,
     int? overrideDayIndex,
@@ -410,7 +416,7 @@ class TrainingPlanScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Původní dny v plánu se nemažou. Jen dočasně otevřeš jiný den jako dnešní.',
+                  'Původní dny v plánu se nemažou. Přeskočený den se později nabídne k docvičení.',
                   style: TextStyle(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -470,6 +476,7 @@ class TrainingPlanScreen extends ConsumerWidget {
     await notifier.setOverrideDayForPlan(
       planId: activePlan.id,
       dayIndex: selectedIndex,
+      originalDayIndex: _defaultTodayDayIndex(activePlan.days.length),
     );
   }
 
@@ -537,9 +544,8 @@ class _ExerciseCard extends StatelessWidget {
             ? colorScheme.tertiary.withValues(alpha: 0.35)
             : colorScheme.outlineVariant;
 
-    final weightText = hasWeight
-        ? '${exercise.weightKg!.toStringAsFixed(1)} kg'
-        : '—';
+    final weightText =
+        hasWeight ? '${exercise.weightKg!.toStringAsFixed(1)} kg' : '—';
 
     return Container(
       width: double.infinity,

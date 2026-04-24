@@ -102,6 +102,7 @@ class CustomTrainingPlanNotifier
       meetDate: meetDate,
       maxes: maxes,
       overrideDayIndex: null,
+      pendingDayIndex: null,
     );
 
     state = [...state, plan];
@@ -170,13 +171,28 @@ class CustomTrainingPlanNotifier
   Future<void> setOverrideDayForPlan({
     required String planId,
     required int dayIndex,
+    int? originalDayIndex,
   }) async {
     state = state.map((p) {
       if (p.id != planId) return p;
       if (dayIndex < 0 || dayIndex >= p.days.length) return p;
 
+      int? nextPendingDayIndex = p.pendingDayIndex;
+      bool clearPendingDayIndex = false;
+
+      if (originalDayIndex != null &&
+          originalDayIndex >= 0 &&
+          originalDayIndex < p.days.length &&
+          originalDayIndex != dayIndex) {
+        nextPendingDayIndex = originalDayIndex;
+      } else if (originalDayIndex != null && originalDayIndex == dayIndex) {
+        clearPendingDayIndex = true;
+      }
+
       return p.copyWith(
         overrideDayIndex: dayIndex,
+        pendingDayIndex: nextPendingDayIndex,
+        clearPendingDayIndex: clearPendingDayIndex,
         updatedAt: DateTime.now(),
       );
     }).toList();
@@ -189,10 +205,52 @@ class CustomTrainingPlanNotifier
   }) async {
     state = state.map((p) {
       if (p.id != planId) return p;
-      if (p.overrideDayIndex == null) return p;
+      if (p.overrideDayIndex == null && p.pendingDayIndex == null) return p;
 
       return p.copyWith(
         clearOverrideDayIndex: true,
+        clearPendingDayIndex: true,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+
+    await _saveToPrefs();
+  }
+
+  Future<void> clearPendingDayForPlan({
+    required String planId,
+  }) async {
+    state = state.map((p) {
+      if (p.id != planId) return p;
+      if (p.pendingDayIndex == null) return p;
+
+      return p.copyWith(
+        clearPendingDayIndex: true,
+        updatedAt: DateTime.now(),
+      );
+    }).toList();
+
+    await _saveToPrefs();
+  }
+
+  Future<void> usePendingDayForPlan({
+    required String planId,
+  }) async {
+    state = state.map((p) {
+      if (p.id != planId) return p;
+
+      final pendingDayIndex = p.pendingDayIndex;
+      if (pendingDayIndex == null) return p;
+      if (pendingDayIndex < 0 || pendingDayIndex >= p.days.length) {
+        return p.copyWith(
+          clearPendingDayIndex: true,
+          updatedAt: DateTime.now(),
+        );
+      }
+
+      return p.copyWith(
+        overrideDayIndex: pendingDayIndex,
+        clearPendingDayIndex: true,
         updatedAt: DateTime.now(),
       );
     }).toList();
@@ -245,10 +303,23 @@ class CustomTrainingPlanNotifier
         }
       }
 
+      int? updatedPendingDayIndex = p.pendingDayIndex;
+      bool clearPendingDayIndex = false;
+
+      if (updatedPendingDayIndex != null) {
+        if (updatedPendingDayIndex == dayIndex) {
+          clearPendingDayIndex = true;
+        } else if (updatedPendingDayIndex > dayIndex) {
+          updatedPendingDayIndex = updatedPendingDayIndex - 1;
+        }
+      }
+
       return p.copyWith(
         days: updatedDays,
         overrideDayIndex: updatedOverrideDayIndex,
         clearOverrideDayIndex: clearOverrideDayIndex,
+        pendingDayIndex: updatedPendingDayIndex,
+        clearPendingDayIndex: clearPendingDayIndex,
         updatedAt: DateTime.now(),
       );
     }).toList();
@@ -369,6 +440,7 @@ class CustomTrainingPlanNotifier
       createdAt: now,
       updatedAt: now,
       clearOverrideDayIndex: true,
+      clearPendingDayIndex: true,
     );
 
     state = [...state, duplicated];

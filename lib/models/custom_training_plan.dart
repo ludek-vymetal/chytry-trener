@@ -171,6 +171,7 @@ class CustomTrainingPlan {
   final DateTime? meetDate;
   final CustomTrainingMaxes? maxes;
   final int? overrideDayIndex;
+  final int? pendingDayIndex;
 
   const CustomTrainingPlan({
     required this.id,
@@ -186,6 +187,7 @@ class CustomTrainingPlan {
     this.meetDate,
     this.maxes,
     this.overrideDayIndex,
+    this.pendingDayIndex,
   });
 
   CustomTrainingPlan copyWith({
@@ -206,6 +208,8 @@ class CustomTrainingPlan {
     bool clearMaxes = false,
     int? overrideDayIndex,
     bool clearOverrideDayIndex = false,
+    int? pendingDayIndex,
+    bool clearPendingDayIndex = false,
   }) {
     return CustomTrainingPlan(
       id: id ?? this.id,
@@ -223,6 +227,9 @@ class CustomTrainingPlan {
       overrideDayIndex: clearOverrideDayIndex
           ? null
           : (overrideDayIndex ?? this.overrideDayIndex),
+      pendingDayIndex: clearPendingDayIndex
+          ? null
+          : (pendingDayIndex ?? this.pendingDayIndex),
     );
   }
 
@@ -245,6 +252,7 @@ class CustomTrainingPlan {
         'meetDate': meetDate?.toIso8601String(),
         'maxes': maxes?.toJson(),
         'overrideDayIndex': overrideDayIndex,
+        'pendingDayIndex': pendingDayIndex,
       };
 
   factory CustomTrainingPlan.fromJson(Map<String, dynamic> json) {
@@ -272,16 +280,6 @@ class CustomTrainingPlan {
 
     final rawMeetDate = (json['meetDate'] as String?)?.trim();
     final rawMaxes = json['maxes'];
-    final rawOverrideDayIndex = json['overrideDayIndex'];
-
-    int? resolvedOverrideDayIndex;
-    if (rawOverrideDayIndex is int) {
-      resolvedOverrideDayIndex = rawOverrideDayIndex;
-    } else if (rawOverrideDayIndex is num) {
-      resolvedOverrideDayIndex = rawOverrideDayIndex.toInt();
-    } else {
-      resolvedOverrideDayIndex = null;
-    }
 
     return CustomTrainingPlan(
       id: json['id'] as String,
@@ -310,7 +308,14 @@ class CustomTrainingPlan {
       maxes: rawMaxes is Map
           ? CustomTrainingMaxes.fromJson(Map<String, dynamic>.from(rawMaxes))
           : null,
-      overrideDayIndex: resolvedOverrideDayIndex,
+      overrideDayIndex: _readNullableInt(json['overrideDayIndex']),
+      pendingDayIndex: _readNullableInt(json['pendingDayIndex']),
     );
+  }
+
+  static int? _readNullableInt(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
   }
 }

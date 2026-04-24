@@ -1,3 +1,5 @@
+import 'dart:io' show Platform, exit;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +23,32 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => PaywallScreen(target: target)),
     );
+  }
+
+  Future<void> _confirmExit(BuildContext context) async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Ukončit aplikaci'),
+          content: const Text('Opravdu chceš aplikaci zavřít?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Ne'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Ano, ukončit'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldExit == true) {
+      exit(0);
+    }
   }
 
   Future<void> _prepareForUserMode() async {
@@ -122,7 +150,17 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
     final subAsync = ref.watch(subscriptionProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chytrý trenér')),
+      appBar: AppBar(
+        title: const Text('Chytrý trenér'),
+        actions: [
+          if (Platform.isWindows)
+            IconButton(
+              tooltip: 'Ukončit aplikaci',
+              icon: const Icon(Icons.close),
+              onPressed: () => _confirmExit(context),
+            ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
@@ -188,7 +226,9 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
                                 ? const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Text(
                                     clientLocked
@@ -213,7 +253,9 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
                                 ? const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Text(
                                     coachLocked
@@ -232,7 +274,8 @@ class _RoleSelectScreenState extends ConsumerState<RoleSelectScreen> {
                                 _openPaywall(context, PaywallTarget.client),
                             child: const Text('Odemknout Client (Paywall)'),
                           ),
-                        ] else if (sub.clientUnlocked && !sub.coachUnlocked) ...[
+                        ] else if (sub.clientUnlocked &&
+                            !sub.coachUnlocked) ...[
                           TextButton(
                             onPressed: () =>
                                 _openPaywall(context, PaywallTarget.coach),

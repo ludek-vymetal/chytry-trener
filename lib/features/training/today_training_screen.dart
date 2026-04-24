@@ -96,6 +96,188 @@ class TodayTrainingScreen extends ConsumerWidget {
     }
   }
 
+  int? _validIndex(int? index, int length) {
+    if (index == null) return null;
+    if (index < 0 || index >= length) return null;
+    return index;
+  }
+
+  int? _defaultTodayDayIndex(int length) {
+    if (length <= 0) return null;
+    final weekday = DateTime.now().weekday;
+    return (weekday - 1) % length;
+  }
+
+  int? _effectiveCustomDayIndex(CustomTrainingPlan plan) {
+    final overrideIndex = _validIndex(plan.overrideDayIndex, plan.days.length);
+    if (overrideIndex != null) return overrideIndex;
+    return _defaultTodayDayIndex(plan.days.length);
+  }
+
+  Future<void> _showPendingDayDialog({
+    required BuildContext context,
+    required WidgetRef ref,
+    required CustomTrainingPlan plan,
+  }) async {
+    final pendingIndex = _validIndex(plan.pendingDayIndex, plan.days.length);
+    if (pendingIndex == null) return;
+
+    final pendingDay = plan.days[pendingIndex];
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Přeskočený den'),
+          content: Text(
+            'Minule jsi přeskočil/a den „${pendingDay.name}“. Chceš ho dnes docvičit?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await ref
+                    .read(customTrainingPlanProvider.notifier)
+                    .clearOverrideDayForPlan(planId: plan.id);
+              },
+              child: const Text('Zrušit změnu'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await ref
+                    .read(customTrainingPlanProvider.notifier)
+                    .clearPendingDayForPlan(planId: plan.id);
+              },
+              child: const Text('Pokračovat takhle'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await ref
+                    .read(customTrainingPlanProvider.notifier)
+                    .usePendingDayForPlan(planId: plan.id);
+              },
+              child: const Text('Docvičit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showDayPickerSheet({
+    required BuildContext context,
+    required WidgetRef ref,
+    required CustomTrainingPlan activePlan,
+  }) async {
+    if (activePlan.days.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Plán zatím nemá žádné dny.'),
+        ),
+      );
+      return;
+    }
+
+    final selectedIndex = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.75,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Vyber jiný den pro dnešní trénink',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Přeskočený den se uloží a později se nabídne k docvičení.',
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: activePlan.days.length,
+                      itemBuilder: (context, index) {
+                        final day = activePlan.days[index];
+                        final isSelected =
+                            activePlan.overrideDayIndex == index;
+
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            child: Text('${index + 1}'),
+                          ),
+                          title: Text(day.name),
+                          subtitle: Text(
+                            day.exercises.isEmpty
+                                ? 'Bez cviků'
+                                : '${day.exercises.length} cviků',
+                          ),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_circle)
+                              : const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.of(context).pop(index);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  if (activePlan.overrideDayIndex != null) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(-1);
+                        },
+                        child: const Text('Vrátit původní den'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedIndex == null) return;
+
+    final notifier = ref.read(customTrainingPlanProvider.notifier);
+
+    if (selectedIndex == -1) {
+      await notifier.clearOverrideDayForPlan(planId: activePlan.id);
+      return;
+    }
+
+    await notifier.setOverrideDayForPlan(
+      planId: activePlan.id,
+      dayIndex: selectedIndex,
+      originalDayIndex: _defaultTodayDayIndex(activePlan.days.length),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -165,16 +347,30 @@ class TodayTrainingScreen extends ConsumerWidget {
     TrainingSession? session;
 
     if (activeCustomPlan != null) {
-      final customDay =
-          CustomTrainingPlanMapper.pickDayForDate(activeCustomPlan, today);
+      final weeklyPlan = CustomTrainingPlanMapper.toWeeklyPlan(activeCustomPlan);
+      final customIndex = _effectiveCustomDayIndex(activeCustomPlan);
 
-      if (customDay != null) {
+      if (customIndex != null &&
+          customIndex >= 0 &&
+          customIndex < weeklyPlan.length) {
         session = TrainingSession(
           date: today,
-          dayPlan: customDay,
+          dayPlan: weeklyPlan[customIndex],
           entries: const [],
           completed: false,
         );
+      } else {
+        final customDay =
+            CustomTrainingPlanMapper.pickDayForDate(activeCustomPlan, today);
+
+        if (customDay != null) {
+          session = TrainingSession(
+            date: today,
+            dayPlan: customDay,
+            entries: const [],
+            completed: false,
+          );
+        }
       }
     } else {
       session = TodayTrainingService.buildTodaySession(
@@ -204,6 +400,26 @@ class TodayTrainingScreen extends ConsumerWidget {
     }
 
     final usingCustomPlan = activeCustomPlan != null;
+    final activePlanForPrompt = activeCustomPlan;
+    final pendingIndex =
+        activePlanForPrompt == null ? null : _validIndex(
+              activePlanForPrompt.pendingDayIndex,
+              activePlanForPrompt.days.length,
+            );
+
+    if (activePlanForPrompt != null && pendingIndex != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        final route = ModalRoute.of(context);
+        if (route != null && !route.isCurrent) return;
+
+        _showPendingDayDialog(
+          context: context,
+          ref: ref,
+          plan: activePlanForPrompt,
+        );
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dnešní trénink')),
@@ -217,21 +433,57 @@ class TodayTrainingScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (usingCustomPlan)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Vlastní plán: ${activeCustomPlan.name}',
+                              style: TextStyle(
+                                color: colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () async {
+                            await _showDayPickerSheet(
+                              context: context,
+                              ref: ref,
+                              activePlan: activeCustomPlan!,
+                            );
+                          },
+                          child: const Text('Změnit den'),
+                        ),
+                      ],
+                    ),
+                  if (usingCustomPlan && activeCustomPlan.overrideDayIndex != null)
                     Container(
+                      width: double.infinity,
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(20),
+                        color:
+                            colorScheme.secondaryContainer.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Vlastní plán: ${activeCustomPlan.name}',
+                        'Dnes je dočasně zvolený jiný den z plánu.',
                         style: TextStyle(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
