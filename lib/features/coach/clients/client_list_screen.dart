@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +21,8 @@ class ClientListScreen extends ConsumerStatefulWidget {
 }
 
 class _ClientListScreenState extends ConsumerState<ClientListScreen> {
+  bool _showArchived = false;
+
   Future<void> _setActiveClient(String clientId) async {
     final messenger = ScaffoldMessenger.of(context);
     final colorScheme = Theme.of(context).colorScheme;
@@ -100,6 +104,104 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
     messenger.showSnackBar(
       SnackBar(
         content: const Text('PDF export byl otevřen pro tisk / uložení.'),
+        backgroundColor: colorScheme.primary,
+      ),
+    );
+  }
+
+  Future<void> _importArchivedClientsFromCsvFile() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    try {
+      const typeGroup = XTypeGroup(
+        label: 'CSV',
+        extensions: ['csv'],
+      );
+
+      final file = await openFile(
+        acceptedTypeGroups: const [typeGroup],
+        confirmButtonText: 'Vybrat CSV',
+      );
+
+      if (file == null) return;
+
+      final bytes = await file.readAsBytes();
+
+      String csvString;
+      try {
+        csvString = utf8.decode(bytes);
+      } catch (_) {
+        csvString = latin1.decode(bytes);
+      }
+
+      final count = await ref
+          .read(coachClientsControllerProvider.notifier)
+          .importArchivedClientsFromCsv(csvString);
+
+      if (!mounted) return;
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            count == 0
+                ? 'Z CSV nebyl importován žádný nový archivní klient.'
+                : 'Import hotový. Přidáno archivních klientů: $count',
+          ),
+          backgroundColor:
+              count == 0 ? colorScheme.tertiary : colorScheme.primary,
+        ),
+      );
+
+      if (count > 0) {
+        setState(() => _showArchived = true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Import CSV do archivu selhal: $e'),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _restoreArchivedClient(
+    CoachClientWithStats clientWithStats,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final client = clientWithStats.client;
+
+    await ref
+        .read(coachClientsControllerProvider.notifier)
+        .restoreArchivedClient(client.clientId);
+
+    if (!mounted) return;
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Klient "${client.displayName}" byl obnoven mezi aktivní.'),
+        backgroundColor: colorScheme.primary,
+      ),
+    );
+  }
+
+  Future<void> _archiveClient(CoachClientWithStats clientWithStats) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final client = clientWithStats.client;
+
+    await ref
+        .read(coachClientsControllerProvider.notifier)
+        .archiveClient(client.clientId);
+
+    if (!mounted) return;
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Klient "${client.displayName}" byl přesunut do archivu.'),
         backgroundColor: colorScheme.primary,
       ),
     );
@@ -343,6 +445,13 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Chyba: $e')),
       data: (clients) {
+        final activeClients =
+            clients.where((c) => !c.client.isArchived).toList();
+        final archivedClients =
+            clients.where((c) => c.client.isArchived).toList();
+
+        final displayedClients = _showArchived ? archivedClients : activeClients;
+
         return Stack(
           children: [
             Padding(
@@ -356,7 +465,7 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                         return const Iterable<CoachClientWithStats>.empty();
                       }
 
-                      return clients.where(
+                      return displayedClients.where(
                         (c) =>
                             c.client.displayName.toLowerCase().contains(q) ||
                             c.client.clientId.toLowerCase().contains(q) ||
@@ -382,10 +491,12 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                       return TextField(
                         controller: ctrl,
                         focusNode: focusNode,
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search),
-                          hintText: 'Hledej jméno, email nebo ID…',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.search),
+                          hintText: _showArchived
+                              ? 'Hledej v archivu podle jména, emailu nebo ID…'
+                              : 'Hledej jméno, email nebo ID…',
+                          border: const OutlineInputBorder(),
                         ),
                       );
                     },
@@ -397,23 +508,69 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
+                        ToggleButtons(
+                          isSelected: [
+                            !_showArchived,
+                            _showArchived,
+                          ],
+                          onPressed: (index) {
+                            setState(() {
+                              _showArchived = index == 1;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(14),
+                          children: [
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.people, size: 18),
+                                  const SizedBox(width: 6),
+                                  Text('Aktivní (${activeClients.length})'),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.archive, size: 18),
+                                  const SizedBox(width: 6),
+                                  Text('Archiv (${archivedClients.length})'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                         OutlinedButton.icon(
-                          onPressed:
-                              clients.isEmpty ? null : () => _copyEmails(clients),
+                          onPressed: displayedClients.isEmpty
+                              ? null
+                              : () => _copyEmails(displayedClients),
                           icon: const Icon(Icons.copy),
                           label: const Text('Kopírovat emaily'),
                         ),
                         OutlinedButton.icon(
-                          onPressed:
-                              clients.isEmpty ? null : () => _exportCsv(clients),
+                          onPressed: displayedClients.isEmpty
+                              ? null
+                              : () => _exportCsv(displayedClients),
                           icon: const Icon(Icons.table_view),
                           label: const Text('Export CSV'),
                         ),
                         OutlinedButton.icon(
-                          onPressed:
-                              clients.isEmpty ? null : () => _exportPdf(clients),
+                          onPressed: displayedClients.isEmpty
+                              ? null
+                              : () => _exportPdf(displayedClients),
                           icon: const Icon(Icons.picture_as_pdf),
                           label: const Text('Export PDF'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _importArchivedClientsFromCsvFile,
+                          icon: const Icon(Icons.archive_outlined),
+                          label: const Text('Import CSV do archivu'),
                         ),
                         OutlinedButton.icon(
                           onPressed: _importClientFromJsonFile,
@@ -430,138 +587,205 @@ class _ClientListScreenState extends ConsumerState<ClientListScreen> {
                   ),
                   const SizedBox(height: 12),
                   Expanded(
-                    child: ListView.separated(
-                      itemCount: clients.length,
-                      separatorBuilder: (_, __) => Divider(
-                        height: 1,
-                        color: colorScheme.outlineVariant,
-                      ),
-                      itemBuilder: (context, i) {
-                        final c = clients[i];
-                        final name = c.client.displayName;
-                        final email = c.client.email.trim();
-
-                        final tileColor = c.isInactive7d
-                            ? colorScheme.errorContainer.withValues(alpha: 0.45)
-                            : null;
-
-                        final titleColor = c.isInactive7d
-                            ? colorScheme.onErrorContainer
-                            : colorScheme.onSurface;
-
-                        final subtitleColor = c.isInactive7d
-                            ? colorScheme.onErrorContainer
-                            : colorScheme.onSurfaceVariant;
-
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: tileColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                    child: displayedClients.isEmpty
+                        ? Center(
+                            child: Text(
+                              _showArchived
+                                  ? 'Archiv zatím neobsahuje žádné klienty.'
+                                  : 'Zatím nemáš žádné aktivní klienty.',
+                              textAlign: TextAlign.center,
                             ),
-                            title: Text(
-                              '$name (${c.client.clientId})',
-                              style: TextStyle(
-                                color: titleColor,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          )
+                        : ListView.separated(
+                            itemCount: displayedClients.length,
+                            separatorBuilder: (_, __) => Divider(
+                              height: 1,
+                              color: colorScheme.outlineVariant,
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Odcvičeno za 7 dní: ${c.completedDaysInLast7}/7 • '
-                                  'Věk: ${c.client.age}, ${c.client.heightCm} cm'
-                                  '${c.client.isEatingDisorderSupport ? '' : ', ${c.client.weightKg.toStringAsFixed(1)} kg'}',
-                                  style: TextStyle(
-                                    color: subtitleColor,
-                                  ),
+                            itemBuilder: (context, i) {
+                              final c = displayedClients[i];
+                              final name = c.client.displayName;
+                              final email = c.client.email.trim();
+
+                              final tileColor = c.client.isArchived
+                                  ? colorScheme.secondaryContainer
+                                      .withValues(alpha: 0.35)
+                                  : c.isInactive7d
+                                      ? colorScheme.errorContainer
+                                          .withValues(alpha: 0.45)
+                                      : null;
+
+                              final titleColor = c.client.isArchived
+                                  ? colorScheme.onSecondaryContainer
+                                  : c.isInactive7d
+                                      ? colorScheme.onErrorContainer
+                                      : colorScheme.onSurface;
+
+                              final subtitleColor = c.client.isArchived
+                                  ? colorScheme.onSecondaryContainer
+                                  : c.isInactive7d
+                                      ? colorScheme.onErrorContainer
+                                      : colorScheme.onSurfaceVariant;
+
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: tileColor,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  email.isEmpty ? 'Email: —' : 'Email: $email',
-                                  style: TextStyle(
-                                    color: subtitleColor,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    if (c.isInactive7d)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.error,
-                                          borderRadius: BorderRadius.circular(999),
-                                        ),
-                                        child: Text(
-                                          'NECVIČIL 7+ DNÍ',
-                                          style: TextStyle(
-                                            color: colorScheme.onError,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                  title: Text(
+                                    '$name (${c.client.clientId})',
+                                    style: TextStyle(
+                                      color: titleColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Odcvičeno za 7 dní: ${c.completedDaysInLast7}/7 • '
+                                        'Věk: ${c.client.age}, ${c.client.heightCm} cm'
+                                        '${c.client.isEatingDisorderSupport ? '' : ', ${c.client.weightKg.toStringAsFixed(1)} kg'}',
+                                        style: TextStyle(
+                                          color: subtitleColor,
                                         ),
                                       ),
-                                    if (c.client.isEatingDisorderSupport) ...[
-                                      if (c.isInactive7d) const SizedBox(width: 8),
-                                      Icon(
-                                        Icons.shield,
-                                        color: c.isInactive7d
-                                            ? colorScheme.onErrorContainer
-                                            : colorScheme.tertiary,
-                                        size: 18,
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        email.isEmpty
+                                            ? 'Email: —'
+                                            : 'Email: $email',
+                                        style: TextStyle(
+                                          color: subtitleColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          if (c.client.isArchived)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 3,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: colorScheme.secondary,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              child: Text(
+                                                'ARCHIV',
+                                                style: TextStyle(
+                                                  color:
+                                                      colorScheme.onSecondary,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          if (!c.client.isArchived &&
+                                              c.isInactive7d)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 3,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: colorScheme.error,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              child: Text(
+                                                'NECVIČIL 7+ DNÍ',
+                                                style: TextStyle(
+                                                  color: colorScheme.onError,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          if (c.client
+                                              .isEatingDisorderSupport) ...[
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              Icons.shield,
+                                              color: c.isInactive7d
+                                                  ? colorScheme
+                                                      .onErrorContainer
+                                                  : colorScheme.tertiary,
+                                              size: 18,
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ],
-                                  ],
-                                ),
-                              ],
-                            ),
-                            trailing: Icon(
-                              Icons.chevron_right,
-                              color: subtitleColor,
-                            ),
-                            onTap: () async {
-                              final navigator = Navigator.of(context);
+                                  ),
+                                  trailing: c.client.isArchived
+                                      ? FilledButton(
+                                          onPressed: () =>
+                                              _restoreArchivedClient(c),
+                                          child: const Text('Obnovit'),
+                                        )
+                                      : PopupMenuButton<String>(
+                                          tooltip: 'Možnosti klienta',
+                                          onSelected: (value) async {
+                                            if (value == 'archive') {
+                                              await _archiveClient(c);
+                                            }
+                                          },
+                                          itemBuilder: (context) => const [
+                                            PopupMenuItem<String>(
+                                              value: 'archive',
+                                              child:
+                                                  Text('Přesunout do archivu'),
+                                            ),
+                                          ],
+                                        ),
+                                  onTap: () async {
+                                    final navigator = Navigator.of(context);
 
-                              await _setActiveClient(c.client.clientId);
-                              if (!mounted) return;
+                                    await _setActiveClient(c.client.clientId);
+                                    if (!mounted) return;
 
-                              navigator.push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ClientDetailScreen(client: c.client),
+                                    navigator.push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            ClientDetailScreen(client: c.client),
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),
             ),
-            Positioned(
-              right: 16,
-              bottom: 16,
-              child: FloatingActionButton.extended(
-                icon: const Icon(Icons.person_add),
-                label: const Text('Přidat klienta'),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AddClientScreen()),
-                  );
-                },
+            if (!_showArchived)
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: FloatingActionButton.extended(
+                  icon: const Icon(Icons.person_add),
+                  label: const Text('Přidat klienta'),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const AddClientScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         );
       },

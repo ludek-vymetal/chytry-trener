@@ -80,6 +80,7 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
         heightCm: profile.height,
         weightKg: profile.weight,
         isEatingDisorderSupport: _isSensitive(profile),
+        isArchived: false,
         updatedAt: now,
         version: existing.version + 1,
         updatedByDeviceId: deviceId,
@@ -106,6 +107,7 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
       heightCm: profile.height,
       weightKg: profile.weight,
       isEatingDisorderSupport: _isSensitive(profile),
+      isArchived: false,
       linkedAt: now,
       completedDays: const [],
       lastWorkoutAt: null,
@@ -170,19 +172,7 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
 
     final deviceId = await _ensureDeviceId();
     final allClients = await CoachStorageService.loadClients();
-
-    int next = await _getNextClientNumber();
-    String newId;
-
-    while (true) {
-      newId = 'C${next.toString().padLeft(4, '0')}';
-      final exists = allClients.any((c) => c.clientId == newId);
-      if (!exists) break;
-
-      next++;
-      await CoachStorageService.saveInt(_idCounterKey, next);
-    }
-
+    final newId = await _reserveNextClientId(allClients);
     final now = DateTime.now();
 
     final newClient = CoachClient(
@@ -195,6 +185,7 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
       heightCm: heightCm,
       weightKg: weightKg,
       isEatingDisorderSupport: isEatingDisorderSupport,
+      isArchived: false,
       linkedAt: now,
       completedDays: const [],
       lastWorkoutAt: null,
@@ -211,6 +202,180 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
     final updated = [...allClients, newClient];
     await CoachStorageService.saveClients(updated);
 
+    state = AsyncData(await _mapWithStats(_visibleClients(updated)));
+  }
+
+  Future<int> importArchivedClientsFromCsv(String csvString) async {
+    state = const AsyncLoading();
+
+    final deviceId = await _ensureDeviceId();
+    final allClients = await CoachStorageService.loadClients();
+    final rows = _parseCsv(csvString);
+
+    if (rows.isEmpty) {
+      state = AsyncData(await _mapWithStats(_visibleClients(allClients)));
+      return 0;
+    }
+
+    final importedClients = <CoachClient>[];
+    final existingKeys = allClients
+        .map(
+          (c) =>
+              '${c.firstName.trim().toLowerCase()}|${c.lastName.trim().toLowerCase()}|${c.email.trim().toLowerCase()}',
+        )
+        .toSet();
+
+    var workingClients = [...allClients];
+
+    for (final row in rows) {
+      final firstName = (_value(row, const [
+        'jmeno',
+        'jméno',
+        'firstname',
+        'firstName',
+        'first_name',
+      ])).trim();
+
+      final lastName = (_value(row, const [
+        'prijmeni',
+        'příjmení',
+        'lastname',
+        'lastName',
+        'last_name',
+      ])).trim();
+
+      final email = (_value(row, const [
+        'email',
+        'e-mail',
+        'mail',
+      ])).trim();
+
+      if (firstName.isEmpty && lastName.isEmpty && email.isEmpty) {
+        continue;
+      }
+
+      final duplicateKey =
+          '${firstName.toLowerCase()}|${lastName.toLowerCase()}|${email.toLowerCase()}';
+
+      if (existingKeys.contains(duplicateKey)) {
+        continue;
+      }
+
+      final linkedAt = _parseDate(
+            _value(row, const [
+              'datum_zapisu',
+              'datum zápisu',
+              'datum',
+              'linkedAt',
+              'linked_at',
+            ]),
+          ) ??
+          DateTime.now();
+
+      final newId = await _reserveNextClientId(workingClients);
+
+      final client = CoachClient(
+        clientId: newId,
+        firstName: firstName.isEmpty ? '—' : firstName,
+        lastName: lastName.isEmpty ? '—' : lastName,
+        email: email,
+        gender: 'other',
+        age: _intOrZero(
+          _value(row, const [
+            'vek',
+            'věk',
+            'age',
+          ]),
+        ),
+        heightCm: _intOrZero(
+          _value(row, const [
+            'heightCm',
+            'height',
+            'vyska',
+            'výška',
+          ]),
+        ),
+        weightKg: _doubleOrZero(
+          _value(row, const [
+            'vaha',
+            'váha',
+            'weightKg',
+            'weight',
+          ]),
+        ),
+        isEatingDisorderSupport: false,
+        isArchived: true,
+        linkedAt: linkedAt,
+        completedDays: const [],
+        lastWorkoutAt: null,
+        photosDelivered: false,
+        dietFollowed: false,
+        communicationOk: false,
+        createdAt: linkedAt,
+        updatedAt: DateTime.now(),
+        deletedAt: null,
+        version: 1,
+        updatedByDeviceId: deviceId,
+      );
+
+      importedClients.add(client);
+      workingClients = [...workingClients, client];
+      existingKeys.add(duplicateKey);
+    }
+
+    if (importedClients.isEmpty) {
+      state = AsyncData(await _mapWithStats(_visibleClients(allClients)));
+      return 0;
+    }
+
+    final updated = [...allClients, ...importedClients];
+    await CoachStorageService.saveClients(updated);
+
+    state = AsyncData(await _mapWithStats(_visibleClients(updated)));
+    return importedClients.length;
+  }
+
+  Future<void> restoreArchivedClient(String clientId) async {
+    state = const AsyncLoading();
+
+    final deviceId = await _ensureDeviceId();
+    final now = DateTime.now();
+    final allClients = await CoachStorageService.loadClients();
+
+    final updated = allClients.map((client) {
+      if (client.clientId != clientId) return client;
+
+      return client.copyWith(
+        isArchived: false,
+        updatedAt: now,
+        version: client.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
+    await CoachStorageService.saveClients(updated);
+    state = AsyncData(await _mapWithStats(_visibleClients(updated)));
+  }
+
+  Future<void> archiveClient(String clientId) async {
+    state = const AsyncLoading();
+
+    final deviceId = await _ensureDeviceId();
+    final now = DateTime.now();
+    final allClients = await CoachStorageService.loadClients();
+
+    final updated = allClients.map((client) {
+      if (client.clientId != clientId) return client;
+
+      return client.copyWith(
+        isArchived: true,
+        updatedAt: now,
+        version: client.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
+    await CoachStorageService.saveClients(updated);
     state = AsyncData(await _mapWithStats(_visibleClients(updated)));
   }
 
@@ -359,6 +524,23 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
     return next;
   }
 
+  Future<String> _reserveNextClientId(List<CoachClient> allClients) async {
+    int next = await _getNextClientNumber();
+
+    while (true) {
+      final newId = 'C${next.toString().padLeft(4, '0')}';
+      final exists = allClients.any((c) => c.clientId == newId);
+
+      if (!exists) {
+        await CoachStorageService.saveInt(_idCounterKey, next);
+        return newId;
+      }
+
+      next++;
+      await CoachStorageService.saveInt(_idCounterKey, next);
+    }
+  }
+
   Future<String> _ensureDeviceId() async {
     final existing = await CoachStorageService.loadDeviceId();
     if (existing != null && existing.trim().isNotEmpty) {
@@ -409,6 +591,10 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
       if (a.client.clientId == 'local_user') return -1;
       if (b.client.clientId == 'local_user') return 1;
 
+      if (a.client.isArchived != b.client.isArchived) {
+        return a.client.isArchived ? 1 : -1;
+      }
+
       if (a.isInactive7d != b.isInactive7d) {
         return a.isInactive7d ? -1 : 1;
       }
@@ -438,6 +624,150 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
     }
 
     return unique.length;
+  }
+
+  List<Map<String, String>> _parseCsv(String csvString) {
+    final lines = csvString
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    if (lines.isEmpty) return [];
+
+    final delimiter = _detectDelimiter(lines.first);
+    final headers = _splitCsvLine(lines.first, delimiter)
+        .map(_normalizeHeader)
+        .toList();
+
+    final rows = <Map<String, String>>[];
+
+    for (int i = 1; i < lines.length; i++) {
+      final values = _splitCsvLine(lines[i], delimiter);
+      final row = <String, String>{};
+
+      for (int j = 0; j < headers.length; j++) {
+        final key = headers[j];
+        if (key.isEmpty) continue;
+
+        row[key] = j < values.length ? values[j].trim() : '';
+      }
+
+      rows.add(row);
+    }
+
+    return rows;
+  }
+
+  String _detectDelimiter(String headerLine) {
+    final commaCount = ','.allMatches(headerLine).length;
+    final semicolonCount = ';'.allMatches(headerLine).length;
+
+    return semicolonCount > commaCount ? ';' : ',';
+  }
+
+  List<String> _splitCsvLine(String line, String delimiter) {
+    final values = <String>[];
+    final buffer = StringBuffer();
+    var insideQuotes = false;
+
+    for (int i = 0; i < line.length; i++) {
+      final char = line[i];
+
+      if (char == '"') {
+        final isEscapedQuote =
+            insideQuotes && i + 1 < line.length && line[i + 1] == '"';
+
+        if (isEscapedQuote) {
+          buffer.write('"');
+          i++;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+
+        continue;
+      }
+
+      if (char == delimiter && !insideQuotes) {
+        values.add(buffer.toString());
+        buffer.clear();
+        continue;
+      }
+
+      buffer.write(char);
+    }
+
+    values.add(buffer.toString());
+    return values;
+  }
+
+  String _normalizeHeader(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll('"', '')
+        .replaceAll('á', 'a')
+        .replaceAll('č', 'c')
+        .replaceAll('ď', 'd')
+        .replaceAll('é', 'e')
+        .replaceAll('ě', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ň', 'n')
+        .replaceAll('ó', 'o')
+        .replaceAll('ř', 'r')
+        .replaceAll('š', 's')
+        .replaceAll('ť', 't')
+        .replaceAll('ú', 'u')
+        .replaceAll('ů', 'u')
+        .replaceAll('ý', 'y')
+        .replaceAll('ž', 'z');
+  }
+
+  String _value(Map<String, String> row, List<String> keys) {
+    for (final key in keys) {
+      final normalizedKey = _normalizeHeader(key);
+
+      if (row.containsKey(normalizedKey)) {
+        return row[normalizedKey] ?? '';
+      }
+    }
+
+    return '';
+  }
+
+  int _intOrZero(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 0;
+
+    return int.tryParse(trimmed) ?? 0;
+  }
+
+  double _doubleOrZero(String value) {
+    final trimmed = value.trim().replaceAll(',', '.');
+    if (trimmed.isEmpty) return 0.0;
+
+    return double.tryParse(trimmed) ?? 0.0;
+  }
+
+  DateTime? _parseDate(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+
+    final isoDate = DateTime.tryParse(trimmed);
+    if (isoDate != null) return isoDate;
+
+    final parts = trimmed.split('.');
+    if (parts.length == 3) {
+      final day = int.tryParse(parts[0].trim());
+      final month = int.tryParse(parts[1].trim());
+      final year = int.tryParse(parts[2].trim());
+
+      if (day != null && month != null && year != null) {
+        return DateTime(year, month, day);
+      }
+    }
+
+    return null;
   }
 
   static DateTime _normalizeDate(DateTime value) {

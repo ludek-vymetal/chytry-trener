@@ -15,6 +15,9 @@ class CoachClient {
   /// bezpečnostní flag pro UI guardrails
   final bool isEatingDisorderSupport;
 
+  /// Archivní / spící klient.
+  final bool isArchived;
+
   final DateTime linkedAt;
 
   // --------------------------
@@ -45,6 +48,7 @@ class CoachClient {
     required this.heightCm,
     required this.weightKg,
     required this.isEatingDisorderSupport,
+    this.isArchived = false,
     required this.linkedAt,
     required this.completedDays,
     required this.lastWorkoutAt,
@@ -72,6 +76,7 @@ class CoachClient {
     int? heightCm,
     double? weightKg,
     bool? isEatingDisorderSupport,
+    bool? isArchived,
     DateTime? linkedAt,
     List<DateTime>? completedDays,
     DateTime? lastWorkoutAt,
@@ -97,6 +102,7 @@ class CoachClient {
       weightKg: weightKg ?? this.weightKg,
       isEatingDisorderSupport:
           isEatingDisorderSupport ?? this.isEatingDisorderSupport,
+      isArchived: isArchived ?? this.isArchived,
       linkedAt: linkedAt ?? this.linkedAt,
       completedDays: completedDays ?? this.completedDays,
       lastWorkoutAt:
@@ -122,6 +128,7 @@ class CoachClient {
         'heightCm': heightCm,
         'weightKg': weightKg,
         'isEatingDisorderSupport': isEatingDisorderSupport,
+        'isArchived': isArchived,
         'linkedAt': linkedAt.toIso8601String(),
         'completedDays': completedDays
             .map((date) => _normalizeDate(date).toIso8601String())
@@ -173,6 +180,7 @@ class CoachClient {
       weightKg: (json['weightKg'] as num?)?.toDouble() ?? 0.0,
       isEatingDisorderSupport:
           (json['isEatingDisorderSupport'] as bool?) ?? false,
+      isArchived: (json['isArchived'] as bool?) ?? false,
       linkedAt: linkedAt,
       completedDays: uniqueCompletedDays,
       lastWorkoutAt: (json['lastWorkoutAt'] as String?) == null
