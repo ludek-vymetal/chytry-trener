@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../models/custom_training_plan.dart';
+import '../../models/shared_training_template.dart';
 import '../../models/coach/coach_body_diagnostic_entry.dart';
 import '../../models/coach/coach_circumference_entry.dart';
 import '../../models/coach/coach_client.dart';
@@ -26,6 +28,9 @@ class CoachStorageService {
   static const diagnosticsKey = 'coach_diagnostics_v1';
   static const trainingSessionsKey = 'training_session_storage_v1';
   static const dailyHistoryKey = 'daily_history_v1';
+  static const customTrainingPlansKey = 'coach_custom_training_plans_v1';
+  static const sharedTrainingTemplatesKey =
+      'coach_shared_training_templates_v1';
 
   static const _clientsKey = clientsKey;
   static const _notesKey = notesKey;
@@ -37,6 +42,8 @@ class CoachStorageService {
   static const _diagnosticsKey = diagnosticsKey;
   static const _trainingSessionsKey = trainingSessionsKey;
   static const _dailyHistoryKey = dailyHistoryKey;
+  static const _customTrainingPlansKey = customTrainingPlansKey;
+  static const _sharedTrainingTemplatesKey = sharedTrainingTemplatesKey;
 
   static const _deviceIdKey = 'coach_device_id_v1';
   static const _lastCloudSyncAtKey = 'coach_last_cloud_sync_at_v1';
@@ -56,6 +63,8 @@ class CoachStorageService {
     diagnosticsKey,
     trainingSessionsKey,
     dailyHistoryKey,
+    customTrainingPlansKey,
+    sharedTrainingTemplatesKey,
   ];
 
   static const _uuid = Uuid();
@@ -377,6 +386,43 @@ class CoachStorageService {
     await _safeUploadSnapshot(
       key: _dailyHistoryKey,
       items: items,
+    );
+  }
+
+  static Future<List<CustomTrainingPlan>> loadCustomTrainingPlans() async {
+    final raw = await _loadRawList(_customTrainingPlansKey);
+    return raw.map(CustomTrainingPlan.fromJson).toList();
+  }
+
+  static Future<void> saveCustomTrainingPlans(
+    List<CustomTrainingPlan> plans,
+  ) async {
+    final raw = plans.map((p) => p.toJson()).toList();
+
+    await _saveRawList(_customTrainingPlansKey, raw);
+
+    await _safeUploadSnapshot(
+      key: _customTrainingPlansKey,
+      items: raw,
+    );
+  }
+
+  static Future<List<SharedTrainingTemplate>>
+      loadSharedTrainingTemplates() async {
+    final raw = await _loadRawList(_sharedTrainingTemplatesKey);
+    return raw.map(SharedTrainingTemplate.fromJson).toList();
+  }
+
+  static Future<void> saveSharedTrainingTemplates(
+    List<SharedTrainingTemplate> templates,
+  ) async {
+    final raw = templates.map((t) => t.toJson()).toList();
+
+    await _saveRawList(_sharedTrainingTemplatesKey, raw);
+
+    await _safeUploadSnapshot(
+      key: _sharedTrainingTemplatesKey,
+      items: raw,
     );
   }
 

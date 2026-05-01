@@ -5,28 +5,55 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/custom_training_plan.dart';
 import '../models/shared_training_template.dart';
+import '../services/coach/coach_storage_service.dart';
 import 'coach/custom_training_plan_provider.dart';
 
 class SharedTrainingTemplatesNotifier
     extends StateNotifier<List<SharedTrainingTemplate>> {
   SharedTrainingTemplatesNotifier() : super([]) {
-    _loadFromPrefs();
+    _load();
   }
 
-  static const String _storageKey = 'shared_training_templates_storage';
+  static const String _oldStorageKey = 'shared_training_templates_storage';
 
-  Future<void> _loadFromPrefs() async {
+  Future<void> _load() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_storageKey);
+      final cloudReadyTemplates =
+          await CoachStorageService.loadSharedTrainingTemplates();
 
-      if (jsonString == null || jsonString.isEmpty) {
-        state = [];
+      if (cloudReadyTemplates.isNotEmpty) {
+        state = cloudReadyTemplates;
         return;
       }
 
+      final migrated = await _loadOldTemplatesFromPrefs();
+
+      if (migrated.isNotEmpty) {
+        state = migrated;
+        await CoachStorageService.saveSharedTrainingTemplates(state);
+        await CoachStorageService.pushAllLocalSnapshotsToCloud();
+        return;
+      }
+
+      state = [];
+    } catch (e) {
+      print('Chyba při načítání sdílených šablon: $e');
+      state = [];
+    }
+  }
+
+  Future<List<SharedTrainingTemplate>> _loadOldTemplatesFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_oldStorageKey);
+
+      if (jsonString == null || jsonString.isEmpty) {
+        return [];
+      }
+
       final raw = json.decode(jsonString) as List;
-      state = raw
+
+      return raw
           .map(
             (e) => SharedTrainingTemplate.fromJson(
               Map<String, dynamic>.from(e as Map),
@@ -34,18 +61,15 @@ class SharedTrainingTemplatesNotifier
           )
           .toList();
     } catch (e) {
-      print('Chyba při načítání sdílených šablon: $e');
-      state = [];
+      print('Chyba při migraci starých sdílených šablon: $e');
+      return [];
     }
   }
 
-  Future<void> _saveToPrefs() async {
+  Future<void> _save() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = json.encode(
-        state.map((e) => e.toJson()).toList(),
-      );
-      await prefs.setString(_storageKey, jsonString);
+      await CoachStorageService.saveSharedTrainingTemplates(state);
+      await CoachStorageService.pushAllLocalSnapshotsToCloud();
     } catch (e) {
       print('Chyba při ukládání sdílených šablon: $e');
     }
@@ -58,17 +82,15 @@ class SharedTrainingTemplatesNotifier
       (t) => t.name.trim().toLowerCase() == template.name.trim().toLowerCase(),
     );
 
-    if (alreadyExists) {
-      return;
-    }
+    if (alreadyExists) return;
 
     state = [...state, template];
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> deleteTemplate(String templateId) async {
     state = state.where((t) => t.id != templateId).toList();
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> renameTemplate({
@@ -77,13 +99,14 @@ class SharedTrainingTemplatesNotifier
   }) async {
     state = state.map((t) {
       if (t.id != templateId) return t;
+
       return t.copyWith(
         name: newName,
         updatedAt: DateTime.now(),
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> createPlanFromTemplate({
@@ -105,11 +128,7 @@ class SharedTrainingTemplatesNotifier
       days: template.days
           .map(
             (d) => d.copyWith(
-              exercises: d.exercises
-                  .map(
-                    (e) => e.copyWith(),
-                  )
-                  .toList(),
+              exercises: d.exercises.map((e) => e.copyWith()).toList(),
             ),
           )
           .toList(),
@@ -119,9 +138,12 @@ class SharedTrainingTemplatesNotifier
       type: CustomTrainingPlanType.standard,
       meetDate: null,
       maxes: null,
+      overrideDayIndex: null,
+      pendingDayIndex: null,
     );
 
     await customPlansNotifier.addImportedPlan(newPlan);
+    await CoachStorageService.pushAllLocalSnapshotsToCloud();
   }
 }
 

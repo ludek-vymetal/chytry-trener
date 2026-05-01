@@ -20,19 +20,29 @@ class CarbCyclingCalculator {
 
   /// Sacharidové vlny mají vlastní logiku.
   /// NENAPOJOVAT na centrální calorie target service.
+  ///
+  /// Logika:
+  /// - bílkoviny: 2.2 g / kg
+  /// - tuky: 0.8 g / kg
+  /// - sacharidy: zbytek kalorií
+  /// - sacharidy se následně rozvlní v rámci 7 dní
   static CarbCyclingPlan calculate({required UserProfile profile}) {
     final double targetCalories = profile.tdee * 0.9;
-    final double protein = profile.weight * 2.0;
 
-    const double avgTarget = 239.0;
-    const double weeklyBank = avgTarget * 7;
-    const double lowDay = 50.0;
+    final double protein = profile.weight * 2.2;
+    final double fats = profile.weight * 0.8;
 
-    final double fatCalories = targetCalories - (protein * 4) - (lowDay * 4);
-    final double fats = fatCalories / 9;
+    final double carbsCalories =
+        targetCalories - (protein * 4) - (fats * 9);
+
+    final double avgCarbs = (carbsCalories / 4).clamp(50.0, 400.0).toDouble();
+    final double weeklyBank = avgCarbs * 7;
+
+    final double lowDay = (avgCarbs * 0.25).clamp(50.0, 120.0).toDouble();
 
     final double remainingBank = weeklyBank - (2 * lowDay);
     final double baseShare = remainingBank / 5;
+
     const multipliers = [0.65, 0.85, 1.0, 1.15, 1.35];
 
     final rawCarbs = [
@@ -47,11 +57,14 @@ class CarbCyclingCalculator {
 
     final dailyCarbs = rawCarbs.map((g) => (g / 5).round() * 5.0).toList();
 
+    final roundedWeeklyBank =
+        dailyCarbs.fold<double>(0.0, (sum, value) => sum + value);
+
     final provisional = CarbCyclingPlan(
       dailyCarbs: dailyCarbs,
       protein: protein,
       fats: fats,
-      weeklyBank: weeklyBank,
+      weeklyBank: roundedWeeklyBank,
     );
 
     final mealPlan = generateWeeklyMealPlan(

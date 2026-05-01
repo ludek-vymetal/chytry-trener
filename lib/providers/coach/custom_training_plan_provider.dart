@@ -1,56 +1,34 @@
-import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/custom_training_plan.dart';
+import '../../services/coach/coach_storage_service.dart';
 
 class CustomTrainingPlanNotifier
     extends StateNotifier<List<CustomTrainingPlan>> {
   CustomTrainingPlanNotifier() : super([]) {
-    _loadFromPrefs();
+    _load();
   }
 
-  static const String _storageKey = 'custom_training_plans_storage';
-
-  Future<void> _loadFromPrefs() async {
+  Future<void> _load() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = prefs.getString(_storageKey);
-
-      if (jsonString == null || jsonString.isEmpty) {
-        state = [];
-        return;
-      }
-
-      final raw = json.decode(jsonString) as List;
-      state = raw
-          .map(
-            (e) => CustomTrainingPlan.fromJson(
-              Map<String, dynamic>.from(e as Map),
-            ),
-          )
-          .toList();
+      state = await CoachStorageService.loadCustomTrainingPlans();
     } catch (e) {
       print('Chyba při načítání custom plánů: $e');
       state = [];
     }
   }
 
-  Future<void> _saveToPrefs() async {
+  Future<void> _save() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final jsonString = json.encode(
-        state.map((e) => e.toJson()).toList(),
-      );
-      await prefs.setString(_storageKey, jsonString);
+      await CoachStorageService.saveCustomTrainingPlans(state);
+      await CoachStorageService.pushAllLocalSnapshotsToCloud();
     } catch (e) {
       print('Chyba při ukládání custom plánů: $e');
     }
   }
 
   Future<void> saveExternally() async {
-    await _saveToPrefs();
+    await _save();
   }
 
   List<CustomTrainingPlan> getPlansForClient(String clientId) {
@@ -69,12 +47,12 @@ class CustomTrainingPlanNotifier
   Future<void> importPlans(List<CustomTrainingPlan> plans) async {
     if (plans.isEmpty) return;
     state = [...state, ...plans];
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> addImportedPlan(CustomTrainingPlan plan) async {
     state = [...state, plan];
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> createPlan({
@@ -106,7 +84,7 @@ class CustomTrainingPlanNotifier
     );
 
     state = [...state, plan];
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> updatePlanMeta({
@@ -125,17 +103,17 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> deletePlan(String planId) async {
     state = state.where((p) => p.id != planId).toList();
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> deletePlansForClient(String clientId) async {
     state = state.where((p) => p.clientId != clientId).toList();
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> renamePlan({
@@ -150,7 +128,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> setActivePlan({
@@ -165,7 +143,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> setOverrideDayForPlan({
@@ -197,7 +175,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> clearOverrideDayForPlan({
@@ -214,7 +192,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> clearPendingDayForPlan({
@@ -230,7 +208,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> usePendingDayForPlan({
@@ -255,7 +233,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> addDay({
@@ -279,7 +257,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> removeDay({
@@ -324,7 +302,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> addExerciseToDay({
@@ -349,7 +327,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> updateExerciseInDay({
@@ -382,7 +360,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> removeExerciseFromDay({
@@ -413,7 +391,7 @@ class CustomTrainingPlanNotifier
       );
     }).toList();
 
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> duplicatePlan({
@@ -444,7 +422,7 @@ class CustomTrainingPlanNotifier
     );
 
     state = [...state, duplicated];
-    await _saveToPrefs();
+    await _save();
   }
 
   Future<void> updateLastUsedWeightForActivePlan({
@@ -517,7 +495,7 @@ class CustomTrainingPlanNotifier
     if (!changed) return;
 
     state = updatedState;
-    await _saveToPrefs();
+    await _save();
   }
 }
 

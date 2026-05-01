@@ -33,6 +33,10 @@ class CoachCloudSyncService {
     CoachStorageService.diagnosticsKey: ['entryId', 'id'],
     CoachStorageService.trainingSessionsKey: ['sessionId', 'date', 'id'],
     CoachStorageService.dailyHistoryKey: ['dateKey', 'id'],
+
+    // NOVÉ SYNC ENTITY
+    CoachStorageService.customTrainingPlansKey: ['id'],
+    CoachStorageService.sharedTrainingTemplatesKey: ['id'],
   };
 
   static Future<CoachCloudSyncReport> safePushAllFromLocal() async {
@@ -82,10 +86,6 @@ class CoachCloudSyncService {
       final finishedAt = DateTime.now();
       await CoachStorageService.saveLastCloudSyncAt(finishedAt);
 
-      debugPrint(
-        'PUSH END -> success processed=$processedKeys warnings=$warnings',
-      );
-
       return CoachCloudSyncReport(
         success: true,
         startedAt: startedAt,
@@ -130,21 +130,15 @@ class CoachCloudSyncService {
 
       for (final key in CoachStorageService.syncStorageKeys) {
         try {
-          debugPrint('SYNC LOOP -> begin key=$key');
-
           final cloudItems = await _loadCloudSnapshotItems(uid, key);
-
-          debugPrint(
-            'SYNC LOOP -> cloud loaded key=$key count=${cloudItems?.length}',
-          );
 
           if (cloudItems == null) {
             warnings.add('Cloud snapshot missing for uid=$uid key=$key');
-            debugPrint('SYNC LOOP -> no cloud snapshot key=$key');
             continue;
           }
 
           final localItems = await CoachStorageService.loadRawItemsForKey(key);
+
           final mergedItems = _mergeLists(
             key: key,
             localItems: localItems,
@@ -170,10 +164,6 @@ class CoachCloudSyncService {
 
       final finishedAt = DateTime.now();
       await CoachStorageService.saveLastCloudSyncAt(finishedAt);
-
-      debugPrint(
-        'SYNC END -> success processed=$processedKeys warnings=$warnings',
-      );
 
       return CoachCloudSyncReport(
         success: true,
@@ -225,10 +215,6 @@ class CoachCloudSyncService {
           final cloudItems = await _loadCloudSnapshotItems(uid, key);
 
           if (cloudItems == null) {
-            debugPrint(
-              'RECONCILE -> cloud snapshot missing, uploading local key=$key local=${localItems.length}',
-            );
-
             await _uploadCloudSnapshotItems(
               uid: uid,
               key: key,
@@ -271,10 +257,6 @@ class CoachCloudSyncService {
       final finishedAt = DateTime.now();
       await CoachStorageService.saveLastCloudSyncAt(finishedAt);
 
-      debugPrint(
-        'RECONCILE END -> success processed=$processedKeys warnings=$warnings',
-      );
-
       return CoachCloudSyncReport(
         success: true,
         startedAt: startedAt,
@@ -302,8 +284,7 @@ class CoachCloudSyncService {
     required String key,
     required List<Map<String, dynamic>> items,
   }) async {
-    final deviceId =
-        await CoachStorageService.loadDeviceId() ?? 'unknown_device';
+    final deviceId = await CoachStorageService.loadDeviceId() ?? 'unknown_device';
     final now = DateTime.now();
     final payloadJson = jsonEncode(items);
 
@@ -326,19 +307,12 @@ class CoachCloudSyncService {
     String uid,
     String key,
   ) async {
-    debugPrint('PULL DOC -> start uid=$uid key=$key');
-    debugPrint(
-      'PULL DOC -> path ${CoachStorageService.cloudCoachesCollection}/$uid/${CoachStorageService.cloudSnapshotsCollection}/$key',
-    );
-
     final doc = await FirebaseFirestore.instance
         .collection(CoachStorageService.cloudCoachesCollection)
         .doc(uid)
         .collection(CoachStorageService.cloudSnapshotsCollection)
         .doc(key)
         .get();
-
-    debugPrint('PULL DOC -> fetched key=$key exists=${doc.exists}');
 
     if (!doc.exists) {
       return null;
@@ -370,6 +344,22 @@ class CoachCloudSyncService {
     required List<Map<String, dynamic>> localItems,
     required List<Map<String, dynamic>> cloudItems,
   }) {
+    if (localItems.isEmpty && cloudItems.isNotEmpty) {
+      final result = cloudItems
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      result.sort(_compareRecordsDesc);
+      return result;
+    }
+
+    if (cloudItems.isEmpty && localItems.isNotEmpty) {
+      final result = localItems
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      result.sort(_compareRecordsDesc);
+      return result;
+    }
+
     final mergedById = <String, Map<String, dynamic>>{};
 
     for (final item in localItems) {
