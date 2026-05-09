@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../providers/coach/coach_auth_provider.dart';
 import '../../../providers/coach/coach_setup_provider.dart';
@@ -36,24 +37,53 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
     super.dispose();
   }
 
+  Future<String> _getIosClientsFolderPath() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final dir = Directory(p.join(appDir.path, 'Klienti'));
+
+    if (!dir.existsSync()) {
+      await dir.create(recursive: true);
+    }
+
+    return dir.path;
+  }
+
   Future<void> _pickExportFolder() async {
     try {
-      final selectedPath = await getDirectoryPath(
-        confirmButtonText: 'Vybrat složku',
-      );
+      String selectedPath;
 
-      if (selectedPath == null || selectedPath.trim().isEmpty) return;
+      if (Platform.isIOS) {
+        selectedPath = await _getIosClientsFolderPath();
+      } else {
+        final pickedPath = await getDirectoryPath(
+          confirmButtonText: 'Vybrat složku',
+        );
 
-      final dir = Directory(selectedPath);
-      if (!dir.existsSync()) {
-        await dir.create(recursive: true);
+        if (pickedPath == null || pickedPath.trim().isEmpty) return;
+
+        final dir = Directory(pickedPath);
+        if (!dir.existsSync()) {
+          await dir.create(recursive: true);
+        }
+
+        selectedPath = pickedPath.trim();
       }
 
       if (!mounted) return;
 
       setState(() {
-        _exportFolderController.text = selectedPath.trim();
+        _exportFolderController.text = selectedPath;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Platform.isIOS
+                ? 'Na iPhonu bude použita interní složka aplikace Klienti.'
+                : 'Exportní složka byla vybrána.',
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -67,16 +97,23 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
 
   Future<void> _fillSuggestedDocumentsFolder() async {
     try {
-      final home = Platform.environment['USERPROFILE'] ??
-          Platform.environment['HOME'] ??
-          '';
-      if (home.trim().isEmpty) return;
+      String suggested;
 
-      final suggested = p.join(home, 'Documents', 'Klienti');
+      if (Platform.isIOS) {
+        suggested = await _getIosClientsFolderPath();
+      } else {
+        final home = Platform.environment['USERPROFILE'] ??
+            Platform.environment['HOME'] ??
+            '';
 
-      final dir = Directory(suggested);
-      if (!dir.existsSync()) {
-        await dir.create(recursive: true);
+        if (home.trim().isEmpty) return;
+
+        suggested = p.join(home, 'Documents', 'Klienti');
+
+        final dir = Directory(suggested);
+        if (!dir.existsSync()) {
+          await dir.create(recursive: true);
+        }
       }
 
       if (!mounted) return;
@@ -84,6 +121,16 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
       setState(() {
         _exportFolderController.text = suggested;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Platform.isIOS
+                ? 'Na iPhonu bude použita interní složka aplikace Klienti.'
+                : 'Složka Dokumenty/Klienti byla připravena.',
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -234,7 +281,9 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                           const SizedBox(height: 12),
                         ],
                         Text(
-                          'Teď si nastavíme tvoje jméno, bezpečnostní kód a hlavně složku, kam se budou ukládat archivy klientů.',
+                          Platform.isIOS
+                              ? 'Teď si nastavíme tvoje jméno, bezpečnostní kód a interní složku Klienti pro archiv klientů.'
+                              : 'Teď si nastavíme tvoje jméno, bezpečnostní kód a hlavně složku, kam se budou ukládat archivy klientů.',
                           style: theme.textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 24),
@@ -290,8 +339,7 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                             suffixIcon: IconButton(
                               onPressed: () {
                                 setState(() {
-                                  _confirmPinObscured =
-                                      !_confirmPinObscured;
+                                  _confirmPinObscured = !_confirmPinObscured;
                                 });
                               },
                               icon: Icon(
@@ -322,13 +370,22 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                             OutlinedButton.icon(
                               onPressed: _isSaving ? null : _pickExportFolder,
                               icon: const Icon(Icons.folder_open),
-                              label: const Text('Vybrat vlastní složku'),
+                              label: Text(
+                                Platform.isIOS
+                                    ? 'Použít složku v aplikaci'
+                                    : 'Vybrat vlastní složku',
+                              ),
                             ),
                             TextButton.icon(
-                              onPressed:
-                                  _isSaving ? null : _fillSuggestedDocumentsFolder,
+                              onPressed: _isSaving
+                                  ? null
+                                  : _fillSuggestedDocumentsFolder,
                               icon: const Icon(Icons.folder),
-                              label: const Text('Použít Dokumenty/Klienti'),
+                              label: Text(
+                                Platform.isIOS
+                                    ? 'Použít Klienti'
+                                    : 'Použít Dokumenty/Klienti',
+                              ),
                             ),
                           ],
                         ),
@@ -340,8 +397,10 @@ class _CoachSetupScreenState extends ConsumerState<CoachSetupScreen> {
                             borderRadius: BorderRadius.circular(14),
                             color: theme.colorScheme.surfaceContainerHighest,
                           ),
-                          child: const Text(
-                            'Doporučení: vyber si vlastní archivní složku, ideálně v Google Drive nebo OneDrive synchronizované složce. Pak budeš mít klientské archivy dostupné i mimo tento počítač.',
+                          child: Text(
+                            Platform.isIOS
+                                ? 'Na iPhonu Apple nedovoluje vybírat libovolné složky jako na počítači. Archivy se proto uloží do interní složky aplikace Klienti.'
+                                : 'Doporučení: vyber si vlastní archivní složku, ideálně v Google Drive nebo OneDrive synchronizované složce. Pak budeš mít klientské archivy dostupné i mimo tento počítač.',
                           ),
                         ),
                         const SizedBox(height: 20),

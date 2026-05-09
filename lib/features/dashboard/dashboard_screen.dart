@@ -473,58 +473,115 @@ class _ExportFolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasCustomPath = currentPath != null && currentPath!.trim().isNotEmpty;
+
+    final hasCustomPath =
+        currentPath != null && currentPath!.trim().isNotEmpty;
 
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: colorScheme.outlineVariant,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Archivace klientů',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isLoading
-                  ? 'Načítám nastavení exportní složky...'
-                  : hasCustomPath
-                      ? 'Aktuální exportní složka:\n$currentPath'
-                      : 'Není vybraná vlastní exportní složka.\nPoužije se výchozí Documents/Klienti.',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 12),
             Row(
               children: [
+                Icon(
+                  Icons.folder_copy_outlined,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: isBusy ? null : onPickFolder,
-                    icon: isBusy
-                        ? SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: colorScheme.onPrimary,
-                            ),
-                          )
-                        : const Icon(Icons.folder_open),
-                    label: const Text('Vybrat exportní složku'),
+                  child: Text(
+                    'Archivace klientů',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
-                if (hasCustomPath) ...[
-                  const SizedBox(width: 12),
-                  OutlinedButton(
-                    onPressed: isBusy ? null : onClearFolder,
-                    child: const Text('Zrušit vlastní cestu'),
-                  ),
-                ],
               ],
             ),
+
+            const SizedBox(height: 14),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.45,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: colorScheme.outlineVariant,
+                ),
+              ),
+              child: SelectableText(
+                isLoading
+                    ? 'Načítám nastavení exportní složky...'
+                    : hasCustomPath
+                        ? 'Aktuální exportní složka:\n\n$currentPath'
+                        : 'Není vybraná vlastní exportní složka.\n\nPoužije se výchozí Documents/Klienti.',
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.45,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: isBusy ? null : onPickFolder,
+                icon: isBusy
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.onPrimary,
+                        ),
+                      )
+                    : const Icon(Icons.folder_open),
+                label: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Text(
+                    'Vybrat exportní složku',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+
+            if (hasCustomPath) ...[
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: isBusy ? null : onClearFolder,
+                  icon: const Icon(Icons.close),
+                  label: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Text(
+                      'Zrušit vlastní cestu',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -548,32 +605,51 @@ class _MetricCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: colorScheme.outlineVariant,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
+              softWrap: true,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 6),
+
+            const SizedBox(height: 8),
+
             Text(
               value,
+              softWrap: true,
+              overflow: TextOverflow.visible,
               style: TextStyle(
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
+                color: colorScheme.primary,
               ),
             ),
-            const SizedBox(height: 4),
+
+            const SizedBox(height: 8),
+
             Text(
               subtitle,
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+              softWrap: true,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -603,20 +679,36 @@ class _MacroDebugCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
+            flex: 2,
             child: Text(
               left,
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
+              softWrap: true,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 14,
+              ),
             ),
           ),
-          Text(
-            right,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            flex: 3,
+            child: Text(
+              right,
+              textAlign: TextAlign.right,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -629,29 +721,70 @@ class _MacroDebugCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(
+          color: colorScheme.outlineVariant,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Debug – z jaké váhy se počítá',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
+            Row(
+              children: [
+                Icon(
+                  Icons.analytics_outlined,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Debug – z jaké váhy se počítá',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 16),
+
             _row(context, 'Aktuální váha', _kg(currentKg)),
+
             _row(
               context,
               'Cílová váha',
               targetKg == null ? 'nenastaveno' : _kg(targetKg!),
             ),
-            Divider(height: 18, color: colorScheme.outlineVariant),
-            _row(context, 'Váha pro kalorie', _kg(weightForCaloriesKg)),
-            _row(context, 'Váha pro protein', _kg(weightForProteinKg)),
-            Divider(height: 18, color: colorScheme.outlineVariant),
+
+            Divider(
+              height: 24,
+              color: colorScheme.outlineVariant,
+            ),
+
+            _row(
+              context,
+              'Váha pro kalorie',
+              _kg(weightForCaloriesKg),
+            ),
+
+            _row(
+              context,
+              'Váha pro protein',
+              _kg(weightForProteinKg),
+            ),
+
+            Divider(
+              height: 24,
+              color: colorScheme.outlineVariant,
+            ),
+
             _row(context, 'Fáze', macro.phaseLabel),
             _row(context, 'Režim', macro.planModeLabel),
             _row(context, 'Týdny do cíle', '${macro.weeksToTarget}'),

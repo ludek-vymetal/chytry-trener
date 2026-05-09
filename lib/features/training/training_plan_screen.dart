@@ -67,6 +67,7 @@ class TrainingPlanScreen extends ConsumerWidget {
     final String? activeClientId = activeClientAsync.asData?.value;
 
     CustomTrainingPlan? activeCustomPlan;
+
     if (activeClientId != null) {
       for (final p in allCustomPlans) {
         if (p.clientId == activeClientId && p.isActive) {
@@ -77,7 +78,9 @@ class TrainingPlanScreen extends ConsumerWidget {
     }
 
     CoachGoal? activeCoachGoal;
+
     final coachGoals = coachGoalsAsync.asData?.value ?? const <CoachGoal>[];
+
     if (activeClientId != null) {
       for (final g in coachGoals) {
         if (g.clientId == activeClientId && !g.isDeleted) {
@@ -115,223 +118,195 @@ class TrainingPlanScreen extends ConsumerWidget {
         _buildDisplayedPlan(basePlan, overrideDayIndex);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: const Text('Týdenní plán')),
-      body: displayedPlan.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  usingCustomPlan
-                      ? 'Aktivní vlastní plán zatím neobsahuje žádné dny nebo cviky.'
-                      : 'Nepodařilo se vygenerovat plán.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: displayedPlan.length,
-              itemBuilder: (context, index) {
-                final displayedDay = displayedPlan[index];
-                final day = displayedDay.day;
-                final isSpecialDay = _isSpecialDay(day);
-
-                return Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    side: BorderSide(
-                      color: displayedDay.isOverrideSelected
-                          ? colorScheme.primary
-                          : isSpecialDay
-                              ? colorScheme.primary
-                              : colorScheme.outlineVariant,
-                      width: displayedDay.isOverrideSelected
-                          ? 1.8
-                          : isSpecialDay
-                              ? 1.4
-                              : 1,
-                    ),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: displayedPlan.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    usingCustomPlan
+                        ? 'Aktivní vlastní plán zatím neobsahuje žádné dny nebo cviky.'
+                        : 'Nepodařilo se vygenerovat plán.',
+                    textAlign: TextAlign.center,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (usingCustomPlan && activeCustomPlan != null)
-                          Builder(
-                            builder: (context) {
-                              final selectedPlan = activeCustomPlan!;
+                ),
+              )
+            : ListView.builder(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.only(
+                  left: 12,
+                  right: 12,
+                  top: 12,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 120,
+                ),
+                itemCount: displayedPlan.length,
+                itemBuilder: (context, index) {
+                  final displayedDay = displayedPlan[index];
+                  final day = displayedDay.day;
 
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            Colors.green.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        'Vlastní plán: ${selectedPlan.name}',
-                                        style: const TextStyle(
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.bold,
+                  return Card(
+                    elevation: 0,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                      side: BorderSide(
+                        color: displayedDay.isOverrideSelected
+                            ? colorScheme.primary
+                            : colorScheme.outlineVariant,
+                        width:
+                            displayedDay.isOverrideSelected ? 1.8 : 1,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (usingCustomPlan &&
+                              activeCustomPlan != null)
+                            Builder(
+                              builder: (context) {
+                                final selectedPlan = activeCustomPlan!;
+
+                                return Row(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8),
+                                        padding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green
+                                              .withValues(alpha: 0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          'Vlastní plán: ${selectedPlan.name}',
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  PopupMenuButton<String>(
-                                    tooltip: 'Možnosti dne',
-                                    onSelected: (value) async {
-                                      if (value == 'select_other_day') {
-                                        await _showDayPickerSheet(
-                                          context: context,
-                                          ref: ref,
-                                          activePlan: selectedPlan,
-                                        );
-                                      } else if (value == 'clear_override') {
-                                        await ref
-                                            .read(
-                                              customTrainingPlanProvider
-                                                  .notifier,
-                                            )
-                                            .clearOverrideDayForPlan(
-                                              planId: selectedPlan.id,
-                                            );
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem<String>(
-                                        value: 'select_other_day',
-                                        child: Text('Vybrat jiný den'),
-                                      ),
-                                      if (overrideDayIndex != null)
+                                    const SizedBox(width: 8),
+                                    PopupMenuButton<String>(
+                                      tooltip: 'Možnosti dne',
+                                      onSelected: (value) async {
+                                        if (value ==
+                                            'select_other_day') {
+                                          await _showDayPickerSheet(
+                                            context: context,
+                                            ref: ref,
+                                            activePlan: selectedPlan,
+                                          );
+                                        } else if (value ==
+                                            'clear_override') {
+                                          await ref
+                                              .read(
+                                                customTrainingPlanProvider
+                                                    .notifier,
+                                              )
+                                              .clearOverrideDayForPlan(
+                                                planId: selectedPlan.id,
+                                              );
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
                                         const PopupMenuItem<String>(
-                                          value: 'clear_override',
-                                          child: Text('Vrátit původní den'),
+                                          value: 'select_other_day',
+                                          child:
+                                              Text('Vybrat jiný den'),
                                         ),
-                                    ],
-                                  ),
-                                ],
-                              );
-                            },
+                                        if (overrideDayIndex != null)
+                                          const PopupMenuItem<String>(
+                                            value: 'clear_override',
+                                            child: Text(
+                                                'Vrátit původní den'),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+
+                          if (usingCoachGoal)
+                            Container(
+                              margin:
+                                  const EdgeInsets.only(bottom: 8),
+                              padding:
+                                  const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.deepOrange
+                                    .withValues(alpha: 0.12),
+                                borderRadius:
+                                    BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Coach goal: ${activeCoachGoal!.goalType}'
+                                '${activeCoachGoal.goalDetail.trim().isEmpty ? '' : ' • ${activeCoachGoal.goalDetail}'}',
+                                style: const TextStyle(
+                                  color: Colors.deepOrange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                          Text(
+                            '${day.dayLabel} – ${day.focus}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
-                        if (usingCoachGoal)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.deepOrange.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Coach goal: ${activeCoachGoal!.goalType}'
-                              '${activeCoachGoal.goalDetail.trim().isEmpty ? '' : ' • ${activeCoachGoal.goalDetail}'}',
-                              style: const TextStyle(
-                                color: Colors.deepOrange,
-                                fontWeight: FontWeight.bold,
+
+                          const SizedBox(height: 12),
+
+                          ...day.exercises.map(
+                            (exercise) => Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 10),
+                              child: _ExerciseCard(
+                                exercise: exercise,
+                                colorScheme: colorScheme,
                               ),
                             ),
                           ),
-                        if (usingCustomPlan && overrideDayIndex != null) ...[
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer
-                                  .withValues(alpha: 0.75),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Text(
-                              displayedDay.isOverrideSelected
-                                  ? 'Dočasně zvolený den pro dnešní trénink'
-                                  : 'Níže je původní pořadí plánu, ale pro dnešek máš dočasně vybraný jiný den.',
-                              style: TextStyle(
-                                color: colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.w600,
-                              ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            usingCustomPlan
+                                ? 'Formát: série | opakování / čas | RIR'
+                                : 'Formát: série | opakování | RIR | kg',
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                              fontSize: 12,
                             ),
                           ),
                         ],
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${day.dayLabel} – ${day.focus}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 17,
-                                  color: colorScheme.onSurface,
-                                ),
-                              ),
-                            ),
-                            if (displayedDay.isOverrideSelected)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8),
-                                child: _DayBadge(
-                                  label: 'DNES ZVOLENO',
-                                  background: colorScheme.primaryContainer,
-                                  foreground: colorScheme.onPrimaryContainer,
-                                ),
-                              ),
-                            if (_isPeakDay(day))
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  left: displayedDay.isOverrideSelected ? 8 : 0,
-                                ),
-                                child: _DayBadge(
-                                  label: 'PEAK / CNS',
-                                  background: colorScheme.tertiaryContainer,
-                                  foreground: colorScheme.onTertiaryContainer,
-                                ),
-                              ),
-                            if (_isTaperDay(day))
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8),
-                                child: _DayBadge(
-                                  label: 'TAPER',
-                                  background: colorScheme.secondaryContainer,
-                                  foreground: colorScheme.onSecondaryContainer,
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        ...day.exercises.map(
-                          (exercise) => _ExerciseCard(
-                            exercise: exercise,
-                            colorScheme: colorScheme,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          usingCustomPlan
-                              ? 'Formát: série | opakování / čas | RIR'
-                              : 'Formát: série | opakování | RIR | kg',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
+      ),
     );
   }
 
@@ -340,14 +315,22 @@ class TrainingPlanScreen extends ConsumerWidget {
     int planLength,
   ) {
     final overrideDayIndex = activeCustomPlan?.overrideDayIndex;
+
     if (overrideDayIndex == null) return null;
-    if (overrideDayIndex < 0 || overrideDayIndex >= planLength) return null;
+
+    if (overrideDayIndex < 0 ||
+        overrideDayIndex >= planLength) {
+      return null;
+    }
+
     return overrideDayIndex;
   }
 
   int? _defaultTodayDayIndex(int length) {
     if (length <= 0) return null;
+
     final weekday = DateTime.now().weekday;
+
     return (weekday - 1) % length;
   }
 
@@ -372,9 +355,19 @@ class TrainingPlanScreen extends ConsumerWidget {
     }
 
     items.sort((a, b) {
-      if (a.isOverrideSelected && !b.isOverrideSelected) return -1;
-      if (!a.isOverrideSelected && b.isOverrideSelected) return 1;
-      return a.originalIndex.compareTo(b.originalIndex);
+      if (a.isOverrideSelected &&
+          !b.isOverrideSelected) {
+        return -1;
+      }
+
+      if (!a.isOverrideSelected &&
+          b.isOverrideSelected) {
+        return 1;
+      }
+
+      return a.originalIndex.compareTo(
+        b.originalIndex,
+      );
     });
 
     return items;
@@ -391,21 +384,26 @@ class TrainingPlanScreen extends ConsumerWidget {
           content: Text('Plán zatím nemá žádné dny.'),
         ),
       );
+
       return;
     }
 
-    final selectedIndex = await showModalBottomSheet<int>(
+    final selectedIndex =
+        await showModalBottomSheet<int>(
       context: context,
       showDragHandle: true,
       builder: (context) {
-        final colorScheme = Theme.of(context).colorScheme;
+        final colorScheme =
+            Theme.of(context).colorScheme;
 
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding:
+                const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Vyber jiný den pro dnešní trénink',
@@ -416,47 +414,49 @@ class TrainingPlanScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Původní dny v plánu se nemažou. Přeskočený den se později nabídne k docvičení.',
+                  'Původní dny v plánu se nemažou.',
                   style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
+                    color:
+                        colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 16),
-                ...List.generate(activePlan.days.length, (index) {
-                  final day = activePlan.days[index];
-                  final isSelected = activePlan.overrideDayIndex == index;
+                ...List.generate(
+                  activePlan.days.length,
+                  (index) {
+                    final day =
+                        activePlan.days[index];
 
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      child: Text('${index + 1}'),
-                    ),
-                    title: Text(day.name),
-                    subtitle: Text(
-                      day.exercises.isEmpty
-                          ? 'Bez cviků'
-                          : '${day.exercises.length} cviků',
-                    ),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_circle)
-                        : const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.of(context).pop(index);
-                    },
-                  );
-                }),
-                if (activePlan.overrideDayIndex != null) ...[
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(-1);
+                    final isSelected =
+                        activePlan.overrideDayIndex ==
+                            index;
+
+                    return ListTile(
+                      contentPadding:
+                          EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        child: Text(
+                          '${index + 1}',
+                        ),
+                      ),
+                      title: Text(day.name),
+                      subtitle: Text(
+                        day.exercises.isEmpty
+                            ? 'Bez cviků'
+                            : '${day.exercises.length} cviků',
+                      ),
+                      trailing: isSelected
+                          ? const Icon(
+                              Icons.check_circle)
+                          : const Icon(
+                              Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context)
+                            .pop(index);
                       },
-                      child: const Text('Vrátit původní den'),
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -466,41 +466,15 @@ class TrainingPlanScreen extends ConsumerWidget {
 
     if (selectedIndex == null) return;
 
-    final notifier = ref.read(customTrainingPlanProvider.notifier);
-
-    if (selectedIndex == -1) {
-      await notifier.clearOverrideDayForPlan(planId: activePlan.id);
-      return;
-    }
+    final notifier =
+        ref.read(customTrainingPlanProvider.notifier);
 
     await notifier.setOverrideDayForPlan(
       planId: activePlan.id,
       dayIndex: selectedIndex,
-      originalDayIndex: _defaultTodayDayIndex(activePlan.days.length),
+      originalDayIndex:
+          _defaultTodayDayIndex(activePlan.days.length),
     );
-  }
-
-  bool _isSpecialDay(TrainingDayPlan day) {
-    final text =
-        '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
-            .toLowerCase();
-    return text.contains('peak') ||
-        text.contains('cns') ||
-        text.contains('taper');
-  }
-
-  bool _isPeakDay(TrainingDayPlan day) {
-    final text =
-        '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
-            .toLowerCase();
-    return text.contains('peak') || text.contains('cns');
-  }
-
-  bool _isTaperDay(TrainingDayPlan day) {
-    final text =
-        '${day.dayLabel} ${day.focus} ${day.exercises.map((e) => e.note ?? '').join(' ')}'
-            .toLowerCase();
-    return text.contains('taper');
   }
 }
 
@@ -528,65 +502,79 @@ class _ExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasWeight = exercise.weightKg != null;
-    final hasNote = exercise.note != null && exercise.note!.trim().isNotEmpty;
-    final isMainLift = _isMainLift(exercise.name);
-    final isSpecial = _isSpecialExercise(exercise);
+
+    final hasNote =
+        exercise.note != null &&
+            exercise.note!.trim().isNotEmpty;
+
+    final isMainLift =
+        _isMainLift(exercise.name);
+
+    final isSpecial =
+        _isSpecialExercise(exercise);
 
     final cardBackground = isMainLift
-        ? colorScheme.primaryContainer.withValues(alpha: 0.45)
+        ? colorScheme.primaryContainer
+            .withValues(alpha: 0.45)
         : isSpecial
-            ? colorScheme.tertiaryContainer.withValues(alpha: 0.35)
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35);
+            ? colorScheme.tertiaryContainer
+                .withValues(alpha: 0.35)
+            : colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.35);
 
     final borderColor = isMainLift
-        ? colorScheme.primary.withValues(alpha: 0.45)
+        ? colorScheme.primary
+            .withValues(alpha: 0.45)
         : isSpecial
-            ? colorScheme.tertiary.withValues(alpha: 0.35)
+            ? colorScheme.tertiary
+                .withValues(alpha: 0.35)
             : colorScheme.outlineVariant;
 
-    final weightText =
-        hasWeight ? '${exercise.weightKg!.toStringAsFixed(1)} kg' : '—';
+    final weightText = hasWeight
+        ? '${exercise.weightKg!.toStringAsFixed(1)} kg'
+        : '—';
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cardBackground,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
+        borderRadius:
+            BorderRadius.circular(14),
+        border:
+            Border.all(color: borderColor),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 exercise.name,
                 style: TextStyle(
-                  fontWeight: isMainLift ? FontWeight.w800 : FontWeight.w600,
-                  fontSize: isMainLift ? 15.5 : 14.5,
-                  color: colorScheme.onSurface,
+                  fontWeight: isMainLift
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                  fontSize:
+                      isMainLift ? 15.5 : 14.5,
                 ),
               ),
               if (isMainLift)
                 _MiniBadge(
                   label: 'HLAVNÍ LIFT',
-                  background: colorScheme.primary,
-                  foreground: colorScheme.onPrimary,
-                ),
-              if (hasWeight)
-                _MiniBadge(
-                  label: weightText,
-                  background: colorScheme.secondaryContainer,
-                  foreground: colorScheme.onSecondaryContainer,
+                  background:
+                      colorScheme.primary,
+                  foreground:
+                      colorScheme.onPrimary,
                 ),
             ],
           ),
+
           const SizedBox(height: 10),
+
           Row(
             children: [
               Expanded(
@@ -598,7 +586,7 @@ class _ExerciseCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _MetricBox(
-                  label: 'Opakování / čas',
+                  label: 'Opakování',
                   value: exercise.reps,
                 ),
               ),
@@ -619,22 +607,15 @@ class _ExerciseCard extends StatelessWidget {
               ),
             ],
           ),
+
           if (hasNote) ...[
             const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.03),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                exercise.note!,
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 12.5,
-                  height: 1.35,
-                ),
+            Text(
+              exercise.note!,
+              style: TextStyle(
+                color:
+                    colorScheme.onSurfaceVariant,
+                fontSize: 12.5,
               ),
             ),
           ],
@@ -645,20 +626,23 @@ class _ExerciseCard extends StatelessWidget {
 
   bool _isMainLift(String name) {
     final n = name.toLowerCase();
+
     return n.contains('dřep') ||
         n.contains('bench') ||
         n.contains('mrtvý tah') ||
-        n.contains('deadlift') ||
-        n.contains('pause bench');
+        n.contains('deadlift');
   }
 
-  bool _isSpecialExercise(PlannedExercise exercise) {
-    final text = '${exercise.name} ${exercise.note ?? ''}'.toLowerCase();
+  bool _isSpecialExercise(
+    PlannedExercise exercise,
+  ) {
+    final text =
+        '${exercise.name} ${exercise.note ?? ''}'
+            .toLowerCase();
+
     return text.contains('peak') ||
         text.contains('cns') ||
-        text.contains('taper') ||
-        text.contains('training max') ||
-        text.contains('%');
+        text.contains('taper');
   }
 }
 
@@ -675,39 +659,40 @@ class _MetricBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         color: emphasize
-            ? colorScheme.secondaryContainer.withValues(alpha: 0.75)
+            ? colorScheme.secondaryContainer
+                .withValues(alpha: 0.75)
             : colorScheme.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: emphasize
-              ? colorScheme.secondary.withValues(alpha: 0.35)
-              : colorScheme.outlineVariant,
-        ),
+        borderRadius:
+            BorderRadius.circular(10),
       ),
       child: Column(
         children: [
           Text(
             label,
-            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
-              color: colorScheme.onSurfaceVariant,
+              color:
+                  colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: emphasize ? 14 : 13,
-              fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
-              color: colorScheme.onSurface,
+              fontWeight: emphasize
+                  ? FontWeight.w800
+                  : FontWeight.w600,
             ),
           ),
         ],
@@ -730,41 +715,14 @@ class _MiniBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: foreground,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
-
-class _DayBadge extends StatelessWidget {
-  final String label;
-  final Color background;
-  final Color foreground;
-
-  const _DayBadge({
-    required this.label,
-    required this.background,
-    required this.foreground,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius:
+            BorderRadius.circular(999),
       ),
       child: Text(
         label,
