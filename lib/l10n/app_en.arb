@@ -1,0 +1,80 @@
+{
+"dashboard": "Dashboard",
+"addClient": "Add Client",
+"todayFood": "Today's Food",
+"trainingMode": "Training Mode",
+"changeGoal": "Change Goal",
+"retry": "Try Again",
+"enterAllNumbers": "Please enter all numbers (use a dot instead of a comma)",
+"addNewCircumferences": "Add New Circumferences",
+"fitnessApp": "Fitness App",
+"userMode": "User Mode",
+"coachMode": "Coach Mode",
+"switchToThisProfile": "SWITCH TO THIS PROFILE",
+"profileActivatedUserMode": "Profile activated. Mode: User.",
+"appName": "Smart Coach",
+"exitApp": "Exit App",
+"subscriptionError": "Subscription Error",
+"subscriptionInactive": "Subscription is not active.",
+"activeCoachClient": "Active: Coach + Client ✅",
+"activeClientCoachLocked": "Active: Client ✅ (Coach locked)",
+"noAccess": "No access",
+"selectMode": "Select Mode",
+"modeDescription": "Regular user = onboarding + AI plan.\nCoach mode = client management.",
+"userModeLocked": "User Mode (locked)",
+"coachModeLocked": "Coach Mode (locked)",
+"unlockClient": "Unlock Client (Paywall)",
+"unlockCoach": "Unlock Coach (upgrade)",
+
+"exportFolderSaved": "Export folder has been saved.",
+"customExportFolderRemoved": "Custom export folder has been removed. Default Documents/Clients folder will be used.",
+"profileNotFound": "Profile not found",
+
+"changeGoalDescription": "Are you sure you want to change your goal? Changing the goal may modify strategy, phases and recommendations.",
+
+"yes": "Yes",
+"no": "No",
+
+"automatic": "Automatic",
+"czech": "Czech",
+"english": "English",
+
+"switchToLightMode": "Switch to light mode",
+"switchToDarkMode": "Switch to dark mode",
+
+"changeMode": "Change mode",
+
+"addMeasurement": "Add Measurement",
+"bodyCircumference": "Body Circumference",
+"addCircumference": "Add Circumference",
+"performance": "Performance / PR",
+"dailyMacros": "Daily Macros",
+"dietPlanStyle": "Diet Plan Style",
+"phaseLogicTest": "Phase Logic Test",
+
+"folderPickFailed": "Failed to select folder: {error}",
+"newMeasurement": "New Measurement",
+"date": "Date",
+"weightKg": "Weight (kg)",
+"muscleMassOptional": "Muscle Mass (kg) – optional",
+"fatMassOptional": "Fat Mass (kg) – optional",
+"saveMeasurement": "Save Measurement",
+"enterValidWeight": "Enter valid weight",
+"noMeasurementsYet": "No measurements yet",
+"history": "History",
+"waistChart": "Chart (Waist)",
+"waistTrend": "Waist circumference trend",
+"waistChartDescription": "The chart shows waist progress over time (left to right)",
+"waist": "Waist",
+"chest": "Chest",
+"biceps": "Biceps",
+"thigh": "Thigh",
+"neck": "Neck",
+
+
+"@folderPickFailed": {
+"placeholders": {
+"error": {}
+}
+}
+}

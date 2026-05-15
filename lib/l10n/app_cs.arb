@@ -1,0 +1,81 @@
+{
+"dashboard": "Dashboard",
+"addClient": "Přidat klienta",
+"todayFood": "Dnešní jídlo",
+"trainingMode": "Tréninkový režim",
+"changeGoal": "Změnit cíl",
+"retry": "Zkusit znovu",
+"enterAllNumbers": "Zadej prosím všechna čísla (používej tečku místo čárky)",
+"addNewCircumferences": "Zadat nové obvody",
+"fitnessApp": "Fitness Aplikace",
+"userMode": "Uživatelský mód",
+"coachMode": "Trenérský mód",
+"switchToThisProfile": "PŘEPNOUT NA TENTO PROFIL",
+"profileActivatedUserMode": "Profil aktivován. Režim: Uživatel.",
+"appName": "Chytrý trenér",
+"exitApp": "Ukončit aplikaci",
+"subscriptionError": "Chyba předplatného",
+"subscriptionInactive": "Předplatné není aktivní.",
+"activeCoachClient": "Aktivní: Coach + Client ✅",
+"activeClientCoachLocked": "Aktivní: Client ✅ (Coach zamčený)",
+"noAccess": "Bez přístupu",
+"selectMode": "Vyber režim",
+"modeDescription": "Běžný uživatel = onboarding + AI plán.\nTrenérský mód = správa klientů.",
+"userModeLocked": "Běžný uživatel (zamčeno)",
+"coachModeLocked": "Trenérský mód (zamčeno)",
+"unlockClient": "Odemknout Client (Paywall)",
+"unlockCoach": "Odemknout Coach (upgrade)",
+
+"exportFolderSaved": "Exportní složka byla uložena.",
+"customExportFolderRemoved": "Vlastní exportní složka byla smazána. Použije se výchozí Documents/Klienti.",
+"profileNotFound": "Profil nenalezen",
+
+"changeGoalDescription": "Opravdu chceš změnit cíl? Při změně cíle se může upravit strategie, fáze a doporučení.",
+
+"yes": "Ano",
+"no": "Ne",
+
+"automatic": "Automaticky",
+"czech": "Čeština",
+"english": "English",
+
+"switchToLightMode": "Přepnout na světlý režim",
+"switchToDarkMode": "Přepnout na tmavý režim",
+
+"changeMode": "Změnit režim",
+
+"addMeasurement": "Přidat měření",
+"bodyCircumference": "Obvody těla",
+"addCircumference": "Přidat obvody",
+"performance": "Výkonnost / PR",
+"dailyMacros": "Denní makra",
+"dietPlanStyle": "Styl jídelního plánu",
+"phaseLogicTest": "Test logiky fází",
+
+"folderPickFailed": "Nepodařilo se vybrat složku: {error}",
+"addNewCircumferences": "Zadat nové obvody",
+"enterAllNumbers": "Zadej prosím všechna čísla (používej tečku místo čárky)",
+"newMeasurement": "Nové měření",
+"date": "Datum",
+"weightKg": "Váha (kg)",
+"muscleMassOptional": "Svalová hmota (kg) – volitelné",
+"fatMassOptional": "Tuková hmota (kg) – volitelné",
+"saveMeasurement": "Uložit měření",
+"enterValidWeight": "Zadej platnou váhu",
+"noMeasurementsYet": "Zatím nejsou žádná měření",
+"history": "Historie",
+"waistChart": "Graf (Pas)",
+"waistTrend": "Trend obvodu pasu",
+"waistChartDescription": "Graf zobrazuje vývoj pasu v čase (zleva doprava)",
+"waist": "Pas",
+"chest": "Hrudník",
+"biceps": "Biceps",
+"thigh": "Stehno",
+"neck": "Krk",
+
+"@folderPickFailed": {
+"placeholders": {
+"error": {}
+}
+}
+}

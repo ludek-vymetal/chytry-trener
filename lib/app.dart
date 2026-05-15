@@ -26,6 +26,11 @@ import 'providers/theme_provider.dart';
 import 'providers/training_session_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'services/coach/coach_cloud_sync_service.dart';
+import 'package:dart_application_1/l10n/app_localizations.dart';
+
+
+
+import 'providers/locale_provider.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -39,19 +44,27 @@ class MyApp extends ConsumerWidget {
       key: ValueKey(role),
       title: 'Chytrý trenér',
       debugShowCheckedModeBanner: false,
+
+      locale: ref.watch(localeProvider),
+
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+
+      supportedLocales: AppLocalizations.supportedLocales,
+
       themeMode: themeMode,
       theme: AppTheme.build(Brightness.light),
       darkTheme: AppTheme.build(Brightness.dark),
+
       builder: (context, child) {
         return ActiveClientProfileSync(
           child: child ?? const SizedBox.shrink(),
         );
       },
+
       home: AppBootstrap(role: role),
     );
   }
-}
-
+  }
 class AppTheme {
   static ThemeData build(Brightness brightness) {
     final base = ThemeData(
@@ -624,6 +637,8 @@ class _RetryableErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -642,14 +657,17 @@ class _RetryableErrorCard extends StatelessWidget {
                     color: colorScheme.error,
                   ),
                   const SizedBox(height: 12),
+
                   Text(
                     message,
                     textAlign: TextAlign.center,
                   ),
+
                   const SizedBox(height: 16),
+
                   FilledButton(
                     onPressed: onRetry,
-                    child: const Text('Zkusit znovu'),
+                    child: Text(l10n.retry),
                   ),
                 ],
               ),
@@ -658,5 +676,5 @@ class _RetryableErrorCard extends StatelessWidget {
         ),
       ),
     );
+   }
   }
-}

@@ -13,12 +13,16 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
     debugPrint('MAIN -> Firebase initialized');
 
     FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: false,
     );
-    debugPrint('MAIN -> Firestore settings applied: persistence=false');
+
+    debugPrint(
+      'MAIN -> Firestore settings applied: persistence=false',
+    );
   } catch (e, st) {
     debugPrint('MAIN -> Firebase init error: $e');
     debugPrint('$st');

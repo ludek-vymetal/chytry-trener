@@ -19,6 +19,7 @@ import '../../../providers/user_profile_provider.dart';
 import '../../../services/coach/coach_cloud_sync_service.dart';
 import '../../../services/local_storage_service.dart';
 import '../../help/widgets/help_and_reset_actions.dart';
+import '../../../providers/locale_provider.dart';
 
 class CoachDashboardScreen extends ConsumerStatefulWidget {
   const CoachDashboardScreen({super.key});
@@ -203,8 +204,33 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(coachTitle),
-        actions: const [
-          HelpAndResetActions(),
+        actions: [
+          PopupMenuButton<Locale?>(
+            icon: const Icon(Icons.language),
+
+            onSelected: (locale) {
+              ref.read(localeProvider.notifier).state = locale;
+            },
+
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: null,
+                child: Text('Automaticky'),
+              ),
+
+              const PopupMenuItem(
+                value: Locale('cs'),
+                child: Text('Čeština'),
+              ),
+
+              const PopupMenuItem(
+                value: Locale('en'),
+                child: Text('English'),
+              ),
+            ],
+          ),
+
+          const HelpAndResetActions(),
         ],
       ),
       body: clientsAsync.when(

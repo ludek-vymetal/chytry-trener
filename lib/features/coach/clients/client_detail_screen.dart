@@ -4,6 +4,7 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dart_application_1/l10n/app_localizations.dart';
 
 // Modely
 import '../../../models/coach/coach_client.dart';
@@ -518,6 +519,7 @@ class ClientDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final notesAsync = ref.watch(coachNotesForClientProvider(client.clientId));
     final detailsAsync =
@@ -1002,20 +1004,26 @@ class ClientDetailScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
+              
+
               icon: const Icon(Icons.rocket_launch),
-              label: const Text("PŘEPNOUT NA TENTO PROFIL"),
+
+              label: Text(l10n.switchToThisProfile),
+
               onPressed: () async {
                 try {
                   await ref
                       .read(activeClientIdProvider.notifier)
                       .setActive(liveClient.clientId);
 
-                  await ref.read(appRoleProvider.notifier).setRole(AppRole.user);
+                  await ref
+                      .read(appRoleProvider.notifier)
+                      .setRole(AppRole.user);
 
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text("Profil aktivován. Režim: Uživatel."),
+                        content: Text(l10n.profileActivatedUserMode),
                         backgroundColor: colorScheme.primary,
                       ),
                     );
