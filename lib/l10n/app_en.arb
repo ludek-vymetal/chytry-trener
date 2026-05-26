@@ -84,9 +84,7 @@
 "performancePr": "Performance / PR",
 "addPerformance": "Add Performance",
 "noPerformanceRecords": "You don't have any performance records yet.\n\nClick + to add your first exercise.",
-"records": "Records",
 "equipmentQuestion": "What equipment do you have?",
-"customTraining": "Custom Training",
 "insert90DayCutPlan": "Insert 90-Day Cutting Plan",
 "insertPowerliftingPrep": "Insert Powerlifting Meet Prep",
 "planCreationFailed": "Failed to create the plan.",
@@ -116,14 +114,12 @@
 "day": "day",
 "tdeeDescription": "Note: TDEE is energy expenditure. Target calories and macros are determined by goal, phase, and target date.",
 "profileOrGoalNotFound": "Profile or goal not found",
-"conditioning": "Conditioning",
 "powerlifting": "Powerlifting",
 "bodybuilding": "Bodybuilding",
 "other": "Other",
 "daysCount": "Days Count",
 "deleteTemplate": "Delete Template",
 "insert": "Insert",
-"active": "Active",
 "templateInserted": "Template \"{name}\" has been inserted for the client.",
 "planSavedAsTemplate": "Plan \"{name}\" has been saved as a shared template.",
 "confirmDeletePlan": "Do you really want to delete the plan \"{name}\"?",
@@ -136,34 +132,22 @@
 "benchEquipment": "Bench",
 "machineEquipment": "Machines",
 "cardioEquipment": "Cardio",
-
 "equipmentHint": "Tip: if you don't have something, the app will choose more suitable exercises.",
-
 "experienceQuestion": "What is your experience level?",
-
 "experienceHint": "This helps set appropriate difficulty.",
-
 "beginner": "Beginner",
 "intermediate": "Intermediate",
 "advanced": "Advanced",
-
 "oneRepMaxTitle": "One-rep maxes (1RM) – competition only",
-
 "squat1rm": "Squat 1RM (kg)",
 "bench1rm": "Bench press 1RM (kg)",
 "deadlift1rm": "Deadlift 1RM (kg)",
-
 "trainingMaxHint": "Note: training weights are calculated from the “training max” (90% of 1RM).",
-
 "fillAllMaxes": "Please fill in all one-rep maxes (positive numbers).",
 "carbCyclingReadinessTitle": "Readiness Analysis",
-
 "carbCyclingIntro": "This questionnaire evaluates whether it is safe for your body to transition to a carb cycling system.",
-
 "healthState": "Health Status",
-
 "healthIssuesQuestion": "Diabetes or history of eating disorders?",
-
 "healthIssuesDescription": "For safety reasons, this is a strict criterion.",
 "stressLevelQuestion": "Current stress level (1 = calm, 10 = burnout)",
 "stressLabel": "Stress",
@@ -213,7 +197,6 @@
 "customPlanEmpty": "The active custom plan does not contain any days or exercises yet.",
 "planGenerationFailed": "Failed to generate plan.",
 "coachGoal": "Coach Goal",
-"exerciseCount": "{count} exercises",
 "@exerciseCount": {
   "placeholders": {
     "count": {}
@@ -297,23 +280,18 @@
 "records": "Records",
 "enterEmail": "Enter e-mail.",
 "enterValidEmail": "Enter valid e-mail.",
-
 "enterPassword": "Enter password.",
 "passwordTooShort": "Password must contain at least 6 characters.",
-
 "confirmPassword": "Confirm password.",
 "passwordsDoNotMatch": "Passwords do not match.",
 "clientArchiving": "Client Archiving",
-
 "loadingExportFolder": "Loading export folder settings...",
-
 "currentExportFolder": "Current export folder:\n\n{path}",
 "@currentExportFolder": {
   "placeholders": {
     "path": {}
   }
 },
-
 "noCustomExportFolder": "No custom export folder selected.\n\nDefault Documents/Clients folder will be used.",
 "selectExportFolder": "Select export folder",
 "clearCustomPath": "Clear custom path",
@@ -359,14 +337,10 @@
 "dailyEnergyExpenditure": "Daily energy expenditure",
 "targetCalories": "Target calories",
 "macros": "Macros",
-"weeksToTarget": "Weeks to target",
-
 "arm": "Arm",
 "calf": "Calf",
-
 "saving": "Saving...",
 "save": "Save",
-"confirmDeleteTemplate": "Opravdu chceš smazat \"{name}\"?",
 "@confirmDeleteTemplate": {
   "placeholders": {
     "name": {}
@@ -413,7 +387,6 @@
 "basicInformation": "Basic Information",
 "tdee": "TDEE",
 "protein": "Protein",
-"carbs": "Carbohydrates",
 "carbs": "Carbs",
 "fats": "Fats",
 "firstName": "First Name",
@@ -425,19 +398,15 @@
 "clientImport": "Client import",
 "factoryReset": "Factory reset",
 "importantWarning": "Important warning",
-
 "helpStorage1": "The application works offline-first. This means data is stored locally directly on the device.",
 "helpStorage2": "Changes to clients, measurements, notes, performance and plans are not automatically sent to an external server.",
 "helpStorage3": "If you uninstall, reset or lose the device without exporting data, you may lose saved information.",
-
 "helpExport1": "Each client can be exported for backup or transfer.",
 "helpExport2": "The export contains JSON, PDF report, CSV files and a manifest.",
 "helpExport3": "It is recommended to export regularly, especially before major changes or before resetting the app.",
-
 "helpImport1": "Clients can be imported from JSON or from an archive folder.",
 "helpImport2": "If a client with the same ID already exists, the app creates a new safe ID to avoid conflicts.",
 "helpImport3": "After import, we recommend checking the client details and verifying that all data is correct.",
-
 "helpReset1": "Factory reset permanently deletes all locally stored app data.",
 "helpReset2": "Clients, notes, inbody records, circumferences, client details and internal ID counters are deleted.",
 "helpReset3": "Before resetting, always export important clients first.",
@@ -447,11 +416,6 @@
 "thursday": "Thursday",
 "friday": "Friday",
 "saturday": "Saturday",
-"sunday": "Sunday",
-"snack": "Snack",
-"lunch": "Lunch",
-"dinner": "Dinner",
-
 "firstMeal": "First meal",
 "lastMeal": "Last meal",
 "ketoShoppingListTitle": "🛒 MY KETO SHOPPING LIST",
@@ -518,36 +482,26 @@
 "eggs": "Eggs",
 "eggsPieces": "pcs eggs",
 "piecesUnit": "pcs",
-
 "vegetables": "Vegetables",
 "oliveOil": "Olive oil",
-
 "scrambledEggsWithVegetables": "Scrambled eggs with vegetables",
 "andLightFatSource": "and a light fat source",
-
 "oatmealWithProtein": "Oatmeal with protein",
 "complexCarbsForDayStart": "Complex carbohydrates to start the day.",
-
 "oats": "Oats",
 "wheyProtein": "Whey protein",
 "blueberries": "Blueberries",
-
 "skyrWithFruit": "Skyr with fruit",
 "highProteinSnack": "Light snack with high protein content.",
-
 "hamAndCheese": "Ham and cheese",
 "lowCarbSnack": "Low-carb snack.",
-
 "skyr": "Skyr",
 "banana": "Banana",
 "ham": "Ham",
 "gouda": "Gouda",
-
 "beef": "Beef",
-
 "turkeyBreast": "Turkey breast",
 "chickenBreast": "Chicken breast",
-
 "whiteRiceDry": "White rice (dry)",
 "rice": "Rice",
 "skyrBanana": "Skyr with banana",
@@ -570,83 +524,55 @@
 "gender": "Gender",
 "male": "Male",
 "female": "Female",
-"other": "Other",
-
 "age": "Age",
 "heightCm": "Height (cm)",
-
 "recoveryModeSupport": "Recovery / Eating Disorder Support",
-
 "recoveryModeDescription": "Enables safety limits (no aggressive fat loss)",
-
 "saveClient": "Save Client",
-
 "failedToSaveClient": "Failed to save client: {error}",
 "addInbodyMeasurement": "Add InBody Measurement",
 "basicData": "Basic Data",
-
 "change": "Change",
-
 "waterPreviewHint": "Tip: after entering weight and water you will also see the estimated body water percentage.",
 "yourFastingMealPlan": "Your fasting meal plan",
 "skeletalMuscleMass": "SMM – skeletal muscle mass (kg)",
 "weeklyMealPlan": "Weekly meal plan",
 "saveTemplate": "Save template",
 "bodyFat": "Body Fat",
-
 "bodyFatDescription": "Fill in either kg or %. The second value will be calculated automatically.",
-
 "fatKg": "Fat (kg)",
 "fatPercent": "Fat (%)",
-
 "totalBodyWater": "Total Body Water (kg)",
-
 "optionalValues": "Optional (if available on printout)",
-
 "fatFreeMass": "Fat Free Mass (kg)",
-
 "waistHipRatio": "Waist/Hip Ratio (WHR)",
-
 "basalMetabolism": "Basal Metabolism (kcal)",
-
 "checkDiagnosticValues": "Check the values. Weight, SMM and water must be filled in. Body fat can be entered either in kg or in %.",
 "addInbody": "Add InBody",
 "fillAllInbodyValues": "Please fill in all values according to the InBody report.",
-
 "clientHeight": "Client Height",
-
 "bodyComposition": "Body Composition",
-
 "muscleMass": "SMM – Muscle Mass (kg)",
 "bodyFatMass": "Body Fat Mass (kg)",
 "bodyWater": "Total Body Water (kg/l)",
 "leanBodyMass": "Lean Body Mass (kg)",
-
 "obesityDiagnosis": "Obesity Diagnosis",
-
 "bodyFatPercentage": "Body Fat Percentage",
-
 "segmentalMuscles": "Segmental Muscles (kg)",
-
 "leftArmMuscle": "Left Arm – Muscle (kg)",
 "rightArmMuscle": "Right Arm – Muscle (kg)",
 "trunkMuscle": "Trunk – Muscle (kg)",
 "leftLegMuscle": "Left Leg – Muscle (kg)",
 "rightLegMuscle": "Right Leg – Muscle (kg)",
-
 "segmentalFat": "Segmental Fat (kg)",
-
 "leftArmFat": "Left Arm – Fat (kg)",
 "rightArmFat": "Right Arm – Fat (kg)",
 "trunkFat": "Trunk – Fat (kg)",
 "leftLegFat": "Left Leg – Fat (kg)",
 "rightLegFat": "Right Leg – Fat (kg)",
-
 "visceralFat": "Visceral Fat (Level)",
 "inbodyScore": "InBody Score",
-
 "saveInbody": "Save InBody",
-
 "importRestoreClient": "Import / Restore Client",
 "chooseHowToRestoreOrImportClient": "Choose how to restore or import the client.",
 "close": "Close",
@@ -712,26 +638,19 @@
 "dataHiddenRecoveryMode": "Data hidden in recovery mode",
 "noMeasurements": "No measurements",
 "fat": "Fat",
-
 "proteinShort": "P",
 "carbsShort": "C",
 "fatShort": "F",
-
 "ingredients": "Ingredients",
-
 "shoppingList": "Shopping List",
 "shoppingListEmpty": "Shopping list is empty.",
-
 "trainerRecommendation": "Trainer Recommendation",
-
 "followPlanFor4Weeks": "Follow the plan for 4 weeks.",
 "nextCheckAndWeight": "Next check and weighing in 1 month",
-
 "ketoMealPlan": "Keto Meal Plan",
 "fastingMealPlan": "Fasting Meal Plan",
 "linearMealPlan": "Linear Meal Plan",
 "mealPlan": "Meal Plan",
-
 "muscles": "Muscles",
 "automaticInterpretation": "Automatic interpretation",
 "changeFromLastTime": "Change since last measurement",
@@ -796,7 +715,6 @@
 "circumferences": "Circumferences",
 "request": "Request",
 "archiveHasNoClients": "The archive does not contain any clients yet.",
-
 "noActiveClientsYet": "You don't have any active clients yet.",
 "archiveCsvImport": "CSV Archive Import",
 "copyEmails": "Copy emails",
@@ -808,67 +726,39 @@
 "clientMovedToArchive": "Client \"{name}\" was moved to archive.",
 "archiveCsvImportFailed": "CSV archive import failed: {error}",
 "selectCsv": "Select CSV",
-
 "noArchivedClientsImported": "No new archived clients were imported from CSV.",
 "selected": "Selected",
-
 "linkWithCoach": "Link with coach",
-
 "searchClientByName": "Search your client by name",
-
 "startTypingName": "Start typing the name…",
-
 "continueWithoutCoach": "Continue without coach",
-
 "linkAndContinue": "Link and continue",
-
 "loadingClientsError": "Error while loading clients",
-
 "archivedClientsImported": "Import completed. Archived clients added: {count}",
 "strengthGoal": "Strength",
-
 "physiqueGoal": "Physique",
-
 "weightLossGoal": "Weight Loss",
-
 "enduranceGoal": "Endurance",
-
 "weightGainSupportGoal": "Weight Gain / Recovery Support",
 "selectFolder": "Select Folder",
-
 "cloudBackup": "Cloud Backup",
-
 "cloudBackupDescription": "Manually uploads or downloads data between devices.",
-
 "backupToCloud": "Backup to Cloud",
-
 "restoreFromCloud": "Restore from Cloud",
-
 "cloudBackupFinished": "Cloud backup completed. Uploaded sections",
-
 "cloudBackupFailed": "Cloud backup failed",
-
 "cloudRestoreFinished": "Cloud restore completed. Loaded sections",
-
 "cloudRestoreFailed": "Cloud restore failed",
 "profile": "Profile",
-
 "loadingProfileFromCoach": "Loading profile from coach…",
 "doYouHaveCoach": "Do you have a coach?",
-
 "searchInCoachClients": "Find yourself in the client list and we will automatically load your profile.",
-
 "searchClientPlaceholder": "Type client name or ID…",
-
 "showMyDietPlan": "Show my diet plan",
 "enterValidAge": "Enter a valid age (10–100 years)",
-
 "startWithBasics": "Let's Start With Basics",
-
 "howOldAreYou": "How old are you?",
-
 "enterAge": "Enter age",
-
 "continueText": "Continue",
 "bodyMetrics": "Body Metrics",
 "enterValidHeight": "Enter valid height (120–230 cm)",
@@ -876,114 +766,63 @@
 "heightExample": "e.g. 180",
 "weightExample": "e.g. 85",
 "physiqueGoal": "Physique",
-
 "weightLossGoal": "Weight Loss",
-
 "enduranceGoal": "Endurance",
 "welcomeCoachApp": "Welcome to the coach application",
-"loggedAccount": "Signed in account",
-"coachSetupIosDescription": "Now we will set up your name, security PIN and internal Clients folder for client archives.",
 "coachSetupDesktopDescription": "Now we will set up your name, security PIN and most importantly the folder where client archives will be stored.",
-"firstNameExample": "e.g. John",
 "securityPin": "Security PIN",
-"enter4DigitPin": "Enter 4 digits",
 "enterPinAgain": "Enter the PIN again",
-"exportClientFolder": "Client export folder",
 "selectClientArchiveFolder": "Select a folder for client archives",
-"useAppFolder": "Use app folder",
 "selectCustomFolder": "Select custom folder",
-"useClientsFolder": "Use Clients folder",
 "useDocumentsClients": "Use Documents/Clients",
 "iosFolderInfo": "On iPhone, Apple does not allow selecting arbitrary folders like on desktop computers. Archives will therefore be stored in the internal Clients folder of the application.",
 "desktopFolderRecommendation": "Recommendation: choose your own archive folder, ideally inside a Google Drive or OneDrive synchronized folder. This way your client archives will also be available outside this computer.",
 "finishSetup": "Finish setup",
 "coachSetupSaved": "Coach setup has been saved.",
 "coachSetup": "Coach Setup",
-"welcomeCoachApp": "Welcome to the coach application",
 "loggedAccount": "Signed in account",
-
-"coachSetupIosDescription": "Now we will set up your name, security PIN and internal Clients folder for client archives.",
-"coachSetupDesktopDescription": "Now we will set up your name, security PIN and most importantly the folder where client archives will be stored.",
-
 "firstNameExample": "e.g. John",
-
-"securityPin": "Security PIN",
 "enter4DigitPin": "Enter 4 digits",
-"enterPinAgain": "Enter the PIN again",
-
 "exportClientFolder": "Client export folder",
-"selectClientArchiveFolder": "Select a folder for client archives",
-
 "useAppFolder": "Use app folder",
-"selectCustomFolder": "Select custom folder",
-
 "useClientsFolder": "Use Clients folder",
-"useDocumentsClients": "Use Documents/Clients",
-
-"iosFolderInfo": "On iPhone, Apple does not allow selecting arbitrary folders like on desktop computers. Archives will therefore be stored in the internal Clients folder of the application.",
-
-"desktopFolderRecommendation": "Recommendation: choose your own archive folder, ideally inside a Google Drive or OneDrive synchronized folder. This way your client archives will also be available outside this computer.",
-
-"finishSetup": "Finish setup",
-"coachSetupSaved": "Coach setup has been saved.",
-
 "enterFirstName": "Enter your first name.",
 "firstNameTooShort": "First name is too short.",
-
 "enterSecurityPin": "Enter a 4-digit security PIN.",
 "pinMustHave4Digits": "PIN must contain exactly 4 digits.",
-
 "confirmSecurityPin": "Confirm the security PIN.",
-
 "confirmPin": "Confirm PIN",
-"welcomeCoachApp": "Welcome to the coach application",
-"loggedAccount": "Signed in account",
-
 "coachSetupIosDescription": "Now we will set up your name, security PIN and internal Clients folder for client archives.",
-
-"coachSetupDesktopDescription": "Now we will set up your name, security PIN and most importantly the folder where client archives will be stored.",
-
 "weightGainSupportGoal": "Weight Gain / Recovery Support",
 "nextTimeWeight": "➡️ Next time: {weight} kg ({delta} kg)",
-
 "dietPlanSelection": "Diet Plan Selection",
-
 "savedMealPlans": "Saved Meal Plans",
 "savedMealPlansDescription": "Load your own complete weekly or monthly templates and reuse them anytime.",
 "openMealDatabase": "OPEN MEAL PLAN DATABASE",
-
 "createCustomMealPlan": "Create Custom Meal Plan",
 "createCustomMealPlanDescription": "Manually build a daily meal plan from prepared meals and save it as your own template.",
 "openDailyEditor": "OPEN DAILY EDITOR",
-
 "foodComboLibrary": "Food Combo Library",
 "foodComboLibraryDescription": "Browse, duplicate, edit and delete your saved food combos.",
 "openFoodComboLibrary": "OPEN FOOD COMBO LIBRARY",
-
 "createFoodCombo": "Create Food Combo",
 "createFoodComboDescription": "Build your own meal from individual foods and save it into the combo library.",
 "openFoodComboEditor": "OPEN FOOD COMBO EDITOR",
-
 "weekBuilder": "Build Week From Daily Templates",
 "weekBuilderDescription": "Choose a daily template for each day and create a complete weekly meal plan.",
 "openWeeklyBuilder": "OPEN WEEKLY BUILDER",
-
 "monthBuilder": "Build Month From Weeks",
 "monthBuilderDescription": "Choose 4 saved weekly meal plans and combine them into a complete monthly plan.",
 "openMonthlyBuilder": "OPEN MONTHLY BUILDER",
-
 "linearPlanTitle": "Constant Intake (Linear)",
 "linearPlanDescription": "Same macros every day. The easiest path for stable muscle growth.",
 "activateAndOpenPlan": "ACTIVATE AND OPEN PLAN",
-
 "carbCyclingTitle": "Carb Cycling",
 "carbCyclingDescription": "Carbohydrate cycling for fat loss.",
 "startAnalysisAndCycling": "START ANALYSIS AND CYCLING",
-
 "ketoDietTitle": "Keto Diet",
 "ketoDietDescription": "High fat intake with minimal carbohydrates.",
 "selectKetoAndPreferences": "SELECT KETO AND ADJUST PREFERENCES",
-
 "fastingTitle": "Intermittent Fasting",
 "fastingDescription": "Time-restricted eating window. Helps improve recovery.",
 "setMealTimes": "SET MEAL TIMES",
@@ -1002,7 +841,6 @@
 "biceps": "Biceps",
 "core": "Core",
 "conditioning": "Conditioning",
-
 "squatPattern": "Squat pattern",
 "hingePattern": "Hip hinge pattern",
 "pressPattern": "Press pattern",
@@ -1018,32 +856,25 @@
 "exerciseSelectionTest": "Exercise selection (test)",
 "movementType": "Movement type",
 "focus": "Focus",
-
 "perMuscleWeekly": "/ muscle weekly",
-
 "competitionModeNote": "Competition mode – performance/conditioning priority.",
 "weightLossStrengthNote": "During calorie deficit we maintain strength, not chase PRs.",
 "peakModeShortNote": "Peak: technique > volume, longer rests.",
-
 "generalTraining": "General training",
 "setupGoalAndDateForPeriodization": "Set your goal and target date first to enable periodization.",
-
 "automatic": "Automatic",
-
 "@perfectRecompositionTitle": {
   "description": "Trainer insight title for perfect recomposition"
 },
 "@perfectRecompositionMessage": {
   "description": "Trainer insight message for perfect recomposition"
 },
-
 "@muscleLossWarningTitle": {
   "description": "Warning title when user loses muscle mass"
 },
 "@muscleLossWarningMessage": {
   "description": "Warning message when user loses muscle mass"
 },
-
 "@armAsymmetryTitle": {
   "description": "Title for arm muscle asymmetry"
 },
@@ -1056,28 +887,23 @@
     }
   }
 },
-
 "@visceralFatWarningTitle": {
   "description": "Warning title for elevated visceral fat"
 },
 "@visceralFatWarningMessage": {
   "description": "Warning message for elevated visceral fat"
 },
-
 "@greatConditionTitle": {
   "description": "Title for great body condition"
 },
 "@greatConditionMessage": {
   "description": "Message for great body condition"
 },
-
 "trainingCompetitionMode": "Competition mode – performance and physique are the priority.",
 "trainingDeficitStrength": "During a calorie deficit we maintain strength instead of chasing PRs.",
 "trainingPeakMode": "Peak phase: technique over volume, longer rest periods.",
-
 "trainingGeneralTitle": "General Training",
 "trainingGeneralNote": "Set your goal and target date first to enable periodization.",
-
 "trainingSplitAuto": "Automatic",
 "trainingSplitFullbody": "Full Body 3×",
 "trainingSplitUpperLower": "Upper / Lower 4×",
@@ -1088,22 +914,17 @@
 "coachInsightHealthyAthletic": "Healthy athletic condition.",
 "coachInsightFatReduction": "There is room for fat reduction.",
 "coachInsightHighFat": "High body fat percentage – fat loss should be the priority.",
-
 "coachInsightVeryLean": "Body fat is already very low – focus should shift toward performance and muscle growth.",
-
 "coachInsightWaterRetention": "The body may be retaining extra water (stress, sodium, recovery).",
 "coachInsightLowWater": "Low water percentage – focus on hydration and recovery.",
-
 "coachInsightFatDown": "Body fat is decreasing – keep going.",
 "coachInsightFatUp": "Body fat is increasing – nutrition adjustments may be needed.",
-
 "coachInsightMuscleUp": "Muscle mass is increasing – training is working.",
 "coachInsightMuscleDown": "Muscle mass is decreasing – increase protein intake or reduce the calorie deficit.",
 "fullbody3x": "Fullbody 3×",
 "upperLower4x": "Upper / Lower 4×",
 "pushPullLegs6x": "Push Pull Legs 6×",
 "strength3days": "Strength 3 days",
-
 "prescription": "Prescription",
 "selectedExercise": "Selected exercise",
 "noExerciseSelected": "Selected exercise: (not selected yet)",
@@ -1112,7 +933,6 @@
 "fastingWindowQuestion": "WHEN DOES YOUR EATING WINDOW START?",
 "setGoalFirst": "Set your goal first.",
 "trainingSetupNeeded": "Before generating training, I need a short setup.",
-"openTrainingSetup": "Open training setup",
 "repetitions": "Repetitions",
 "weeklySetsPerMuscle": "Weekly sets per muscle",
 "rirReserve": "Reserve (RIR)",
@@ -1138,7 +958,6 @@
     "count": {}
   }
 },
-
 "approxMacros": "Approx macros: P {protein} g | C {carbs} g | F {fat} g | {calories} kcal",
 "@approxMacros": {
   "placeholders": {
@@ -1148,28 +967,24 @@
     "calories": {}
   }
 },
-
 "eatenCalories": "Eaten: {calories} kcal",
 "@eatenCalories": {
   "placeholders": {
     "calories": {}
   }
 },
-
 "targetCaloriesLabel": "Target: {calories} kcal",
 "@targetCaloriesLabel": {
   "placeholders": {
     "calories": {}
   }
 },
-
 "remainingGrams": "remaining {grams} g",
 "@remainingGrams": {
   "placeholders": {
     "grams": {}
   }
 },
-
 "exceededGrams": "exceeded {grams} g",
 "@exceededGrams": {
   "placeholders": {
@@ -1183,32 +998,25 @@
     "time": {}
   }
 },
-
 "ingredientsWeekTitle": "This week we will cook with:",
 "ingredientsExcludeTitle": "Select ingredients you DO NOT WANT:",
-
 "salmonOption": "Salmon (I don't like fish)",
 "eggs": "Eggs",
 "beef": "Beef",
-
 "generatePlanButton": "THAT'S FINE, GENERATE!",
-
 "editTime": "EDIT TIME ({time})",
 "@editTime": {
   "placeholders": {
     "time": {}
   }
 },
-
 "newBadge": "NEW",
-
 "nextTimeKeepWeight": "➡️ Keep {weight} kg next time",
 "@nextTimeKeepWeight": {
   "placeholders": {
     "weight": {}
   }
 },
-
 "nextTimeWeight": "➡️ Next time use {weight} kg ({delta})",
 "@nextTimeWeight": {
   "placeholders": {
@@ -1216,58 +1024,34 @@
     "delta": {}
   }
 },
-
 "pickSkippedDay": "Skipped training day",
-
 "pickSkippedDayDescription": "Last time you skipped day “{day}”. Do you want to finish it today?",
 "@pickSkippedDayDescription": {
   "placeholders": {
     "day": {}
   }
 },
-
 "cancelChange": "Cancel change",
 "continueCurrent": "Continue current",
 "finishSkippedDay": "Finish skipped day",
-
 "planHasNoDays": "The plan has no days yet.",
-
 "selectTrainingDay": "Select another training day",
-
 "selectTrainingDayDescription": "The skipped day will be saved and offered later.",
-
 "noExercises": "No exercises",
-
 "returnOriginalDay": "Return original day",
-
 "profileGoalRequired": "Set profile and goal first.",
-
-"todayTraining": "Today's training",
-
 "trainingSetupRequired": "Before generating today's training, complete the short setup.",
-
 "openTrainingSetup": "Open training setup",
-
 "todayTrainingGenerationFailed": "Failed to generate today's training.",
-
 "changeDay": "Change day",
-
 "temporaryDifferentDay": "A different training day is temporarily selected today.",
-
 "dateLabel": "Date",
-
 "performanceSaved": "Performance saved.",
-
 "log": "Log",
-
 "customTrainingFormat": "Format: sets × reps / time | RIR",
-
 "defaultTrainingFormat": "Format: sets × reps | RIR | kg",
-
 "logPerformance": "Log performance",
-
 "confirmPin": "Confirm PIN",
-"weeklyPlan": "Weekly Plan",
 "setupProfileFirst": "Set up profile first.",
 "setupGoalFirst": "Set your goal first.",
 "openSetup": "Open Setup",
@@ -1275,43 +1059,29 @@
 "customPlanEmpty": "The active custom plan does not contain any days or exercises yet.",
 "planGenerationFailed": "Failed to generate plan.",
 "customPlan": "Custom Plan",
-"dayOptions": "Day Options",
 "selectAnotherDay": "Select Another Day",
-"returnOriginalDay": "Return Original Day",
 "coachGoal": "Coach Goal",
 "trainingFormatCustom": "Format: sets | reps / time | RIR",
 "trainingFormatDefault": "Format: sets | reps | RIR | kg",
 "pickDifferentTrainingDay": "Pick a different training day for today",
 "originalDaysStaySaved": "Original days in the plan will remain saved.",
 "mainLift": "MAIN LIFT",
-"sets": "Sets",
 "reps": "Reps",
 "rir": "RIR",
 "weightLabel": "Weight",
-
-"snack": "Snack",
-"lunch": "Lunch",
-"dinner": "Dinner",
-
 "mealsCountQuestion": "How many meals do you want?",
 "howDoYouWantSuggestions": "How do you want suggestions?",
 "singleItemsFromBank": "Single food items from database",
 "completeMeals": "Complete meals",
-
 "selectMealsTotal": "Select {count} meals",
-
 "selectType": "Select type",
-
 "vegan": "Vegan",
 "veganCategoryOnly": "Only vegan meals",
-
 "savory": "Savory",
 "sweet": "Sweet",
 "anything": "Anything",
-
 "howManyGrams": "How many grams?",
 "grams": "Grams",
-
 "selectActiveClientFirst": "Select an active client first",
 "customTraining": "Custom Training",
 "sharedTemplates": "Shared Templates",
@@ -1355,17 +1125,10 @@
 "yesDelete": "Yes, Delete",
 "selectExerciseFromDatabase": "Select Exercise From Database",
 "noExerciseFound": "No Exercise Found.",
-"exerciseName": "Exercise Name",
-"sets": "Sets",
-"repsOrTime": "Reps / Time",
-"note": "Note",
 "enterValidGramRange": "Enter a valid amount between 10 and 3000 g",
-
-"addCustomExercise": "Add Custom Exercise",
 "@addCustomExercise": {
   "description": "Dialog title for adding custom exercise"
 },
-
 "exerciseName": "Exercise Name",
 "@exerciseName": {
   "description": "Exercise name field"
@@ -1421,7 +1184,7 @@
   "description": "Search exercise label"
 },
 
-"noExerciseFound": "No exercise found.",
+"noExerciseFound": "No exercise found",
 "@noExerciseFound": {
   "description": "No exercise found message"
 },
@@ -1439,10 +1202,27 @@
 "completed": "Completed ✅",
 
 "noMealsInCategory": "No meals in category {category}",
+"@noMealsInCategory": {
+  "placeholders": {
+    "category": {}
+  }
+},
 
 "selectMeal": "Select meal for {slot} ({category})",
+"@selectMeal": {
+  "placeholders": {
+    "slot": {},
+    "category": {}
+  }
+},
 
 "addedMeal": "{meal} added ({grams} g)",
+"@addedMeal": {
+  "placeholders": {
+    "meal": {},
+    "grams": {}
+  }
+},
 
 "planSummary": "Plan Summary",
 
@@ -1465,31 +1245,14 @@
     }
   }
 },
+
+"selectMealsTotal": "Selected meals: {count}",
 "@selectMealsTotal": {
-    "placeholders": {
-      "count": {}
-    }
-  },
-
-"@noMealsInCategory": {
   "placeholders": {
-    "category": {}
+    "count": {}
   }
 },
 
-"@selectMeal": {
-  "placeholders": {
-    "slot": {},
-    "category": {}
-  }
-},
-
-"@addedMeal": {
-  "placeholders": {
-    "meal": {},
-    "grams": {}
-  }
-},
 "archiveCsvImportFailed": "CSV archive import failed: {error}",
 "@archiveCsvImportFailed": {
   "placeholders": {
@@ -1546,5 +1309,3 @@
   }
 }
 }
-
-

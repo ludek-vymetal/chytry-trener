@@ -251,13 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noPerformanceRecords => 'You don\'t have any performance records yet.\n\nClick + to add your first exercise.';
 
   @override
-  String get records => 'Records';
-
-  @override
   String get equipmentQuestion => 'What equipment do you have?';
-
-  @override
-  String get customTraining => 'Custom Training';
 
   @override
   String get insert90DayCutPlan => 'Insert 90-Day Cutting Plan';
@@ -347,9 +341,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileOrGoalNotFound => 'Profile or goal not found';
 
   @override
-  String get conditioning => 'Conditioning';
-
-  @override
   String get powerlifting => 'Powerlifting';
 
   @override
@@ -366,9 +357,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insert => 'Insert';
-
-  @override
-  String get active => 'Active';
 
   @override
   String templateInserted(Object name) {
@@ -605,11 +593,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachGoal => 'Coach Goal';
 
   @override
-  String exerciseCount(Object count) {
-    return '$count exercises';
-  }
-
-  @override
   String get newMeasurement => 'New Measurement';
 
   @override
@@ -719,6 +702,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginSuccessful => 'Login successful.';
+
+  @override
+  String get records => 'Records';
 
   @override
   String get enterEmail => 'Enter e-mail.';
@@ -895,11 +881,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get save => 'Save';
-
-  @override
-  String confirmDeleteTemplate(Object name) {
-    return 'Opravdu chceš smazat \"$name\"?';
-  }
 
   @override
   String get noSavedMealPlans => 'You do not have any saved meal plans or daily templates yet.';
@@ -1094,15 +1075,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get helpReset3 => 'Before resetting, always export important clients first.';
 
   @override
-  String get snack => 'Snack';
-
-  @override
-  String get lunch => 'Lunch';
-
-  @override
-  String get dinner => 'Dinner';
-
-  @override
   String get firstMeal => 'First meal';
 
   @override
@@ -1232,7 +1204,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get breakfast => 'Breakfast';
 
   @override
+  String get snack => 'Snack';
+
+  @override
   String get snack2 => 'Snack 2';
+
+  @override
+  String get lunch => 'Lunch';
+
+  @override
+  String get dinner => 'Dinner';
 
   @override
   String get selectDate => 'Select date';
@@ -1822,6 +1803,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get edit => 'Edit';
 
   @override
+  String get active => 'Active';
+
+  @override
   String get dayCount => 'Day count';
 
   @override
@@ -2146,40 +2130,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeCoachApp => 'Welcome to the coach application';
 
   @override
-  String get loggedAccount => 'Signed in account';
-
-  @override
-  String get coachSetupIosDescription => 'Now we will set up your name, security PIN and internal Clients folder for client archives.';
-
-  @override
   String get coachSetupDesktopDescription => 'Now we will set up your name, security PIN and most importantly the folder where client archives will be stored.';
-
-  @override
-  String get firstNameExample => 'e.g. John';
 
   @override
   String get securityPin => 'Security PIN';
 
   @override
-  String get enter4DigitPin => 'Enter 4 digits';
-
-  @override
   String get enterPinAgain => 'Enter the PIN again';
-
-  @override
-  String get exportClientFolder => 'Client export folder';
 
   @override
   String get selectClientArchiveFolder => 'Select a folder for client archives';
 
   @override
-  String get useAppFolder => 'Use app folder';
-
-  @override
   String get selectCustomFolder => 'Select custom folder';
-
-  @override
-  String get useClientsFolder => 'Use Clients folder';
 
   @override
   String get useDocumentsClients => 'Use Documents/Clients';
@@ -2200,6 +2163,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachSetup => 'Coach Setup';
 
   @override
+  String get loggedAccount => 'Signed in account';
+
+  @override
+  String get firstNameExample => 'e.g. John';
+
+  @override
+  String get enter4DigitPin => 'Enter 4 digits';
+
+  @override
+  String get exportClientFolder => 'Client export folder';
+
+  @override
+  String get useAppFolder => 'Use app folder';
+
+  @override
+  String get useClientsFolder => 'Use Clients folder';
+
+  @override
   String get enterFirstName => 'Enter your first name.';
 
   @override
@@ -2216,6 +2197,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirmPin => 'Confirm PIN';
+
+  @override
+  String get coachSetupIosDescription => 'Now we will set up your name, security PIN and internal Clients folder for client archives.';
 
   @override
   String nextTimeWeight(Object weight, Object delta) {
@@ -2353,6 +2337,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get core => 'Core';
+
+  @override
+  String get conditioning => 'Conditioning';
 
   @override
   String get squatPattern => 'Squat pattern';
@@ -2517,9 +2504,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainingSetupNeeded => 'Before generating training, I need a short setup.';
 
   @override
-  String get openTrainingSetup => 'Open training setup';
-
-  @override
   String get repetitions => 'Repetitions';
 
   @override
@@ -2538,7 +2522,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get peakModeDescription => 'Peak mode: technique > volume, longer rests, low reps.';
 
   @override
-  String get weeklyPlan => 'Weekly Plan';
+  String get weeklyPlan => 'Weekly plan';
 
   @override
   String get todayTraining => 'Today\'s training';
@@ -2666,13 +2650,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noExercises => 'No exercises';
 
   @override
-  String get returnOriginalDay => 'Return Original Day';
+  String get returnOriginalDay => 'Return original day';
 
   @override
   String get profileGoalRequired => 'Set profile and goal first.';
 
   @override
   String get trainingSetupRequired => 'Before generating today\'s training, complete the short setup.';
+
+  @override
+  String get openTrainingSetup => 'Open training setup';
 
   @override
   String get todayTrainingGenerationFailed => 'Failed to generate today\'s training.';
@@ -2735,9 +2722,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mainLift => 'MAIN LIFT';
 
   @override
-  String get sets => 'Sets';
-
-  @override
   String get reps => 'Reps';
 
   @override
@@ -2760,7 +2744,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String selectMealsTotal(Object count) {
-    return 'Select $count meals';
+    return 'Selected meals: $count';
   }
 
   @override
@@ -2789,6 +2773,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectActiveClientFirst => 'Select an active client first';
+
+  @override
+  String get customTraining => 'Custom Training';
 
   @override
   String get sharedTemplates => 'Shared Templates';
@@ -2911,19 +2898,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectExerciseFromDatabase => 'Select Exercise from Database';
 
   @override
-  String get noExerciseFound => 'No exercise found.';
-
-  @override
-  String get exerciseName => 'Exercise Name';
-
-  @override
-  String get repsOrTime => 'Reps / Time';
+  String get noExerciseFound => 'No exercise found';
 
   @override
   String get enterValidGramRange => 'Enter a valid amount between 10 and 3000 g';
 
   @override
+  String get exerciseName => 'Exercise Name';
+
+  @override
   String get exerciseNameHint => 'Example: Side Plank';
+
+  @override
+  String get sets => 'Sets';
+
+  @override
+  String get repsOrTime => 'Reps / Time';
 
   @override
   String get repsOrTimeHint => 'Example: 3 min or 8–12';
@@ -2960,6 +2950,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addAll => 'Add all';
+
+  @override
+  String exerciseCount(Object count) {
+    return '$count exercises';
+  }
 
   @override
   String waterPercentageInfo(Object value) {

@@ -251,13 +251,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get noPerformanceRecords => 'Zatím nemáš žádné záznamy výkonu.\n\nKlikni na + a přidej první cvik.';
 
   @override
-  String get records => 'Records';
-
-  @override
   String get equipmentQuestion => 'Jaké máš vybavení?';
-
-  @override
-  String get customTraining => 'Vlastní trénink';
 
   @override
   String get insert90DayCutPlan => 'Vložit 90denní vyrýsování';
@@ -347,9 +341,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get profileOrGoalNotFound => 'Profil nebo cíl nenalezen';
 
   @override
-  String get conditioning => 'Kondice';
-
-  @override
   String get powerlifting => 'Trojboj';
 
   @override
@@ -366,9 +357,6 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get insert => 'Vložit';
-
-  @override
-  String get active => 'Aktivní';
 
   @override
   String templateInserted(Object name) {
@@ -605,11 +593,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get coachGoal => 'Coach cíl';
 
   @override
-  String exerciseCount(Object count) {
-    return '$count cviků';
-  }
-
-  @override
   String get newMeasurement => 'Nové měření';
 
   @override
@@ -719,6 +702,9 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get loginSuccessful => 'Přihlášení proběhlo úspěšně.';
+
+  @override
+  String get records => 'Záznamů';
 
   @override
   String get enterEmail => 'Zadej e-mail.';
@@ -895,11 +881,6 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get save => 'Uložit';
-
-  @override
-  String confirmDeleteTemplate(Object name) {
-    return 'Opravdu chceš smazat \"$name\"?';
-  }
 
   @override
   String get noSavedMealPlans => 'Zatím nemáš uložené žádné kompletní jídelníčky ani denní šablony.';
@@ -1094,15 +1075,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get helpReset3 => 'Před resetem vždy nejdřív proveď export důležitých klientů.';
 
   @override
-  String get snack => 'Svačina';
-
-  @override
-  String get lunch => 'Oběd';
-
-  @override
-  String get dinner => 'Večeře';
-
-  @override
   String get firstMeal => 'První jídlo';
 
   @override
@@ -1232,7 +1204,16 @@ class AppLocalizationsCs extends AppLocalizations {
   String get breakfast => 'Snídaně';
 
   @override
+  String get snack => 'Svačina';
+
+  @override
   String get snack2 => 'Svačina 2';
+
+  @override
+  String get lunch => 'Oběd';
+
+  @override
+  String get dinner => 'Večeře';
 
   @override
   String get selectDate => 'Vybrat datum';
@@ -1822,6 +1803,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get edit => 'Upravit';
 
   @override
+  String get active => 'Aktivní';
+
+  @override
   String get dayCount => 'Počet dní';
 
   @override
@@ -2146,40 +2130,19 @@ class AppLocalizationsCs extends AppLocalizations {
   String get welcomeCoachApp => 'Vítej v aplikaci pro trenéry';
 
   @override
-  String get loggedAccount => 'Přihlášený účet';
-
-  @override
-  String get coachSetupIosDescription => 'Teď si nastavíme tvoje jméno, bezpečnostní PIN a interní složku Klienti pro archiv klientů.';
-
-  @override
   String get coachSetupDesktopDescription => 'Teď si nastavíme tvoje jméno, bezpečnostní kód a hlavně složku, kam se budou ukládat archivy klientů.';
-
-  @override
-  String get firstNameExample => 'Např. Luděk';
 
   @override
   String get securityPin => 'Bezpečnostní PIN';
 
   @override
-  String get enter4DigitPin => 'Zadej 4 číslice';
-
-  @override
   String get enterPinAgain => 'Zadej PIN znovu';
-
-  @override
-  String get exportClientFolder => 'Exportní složka klientů';
 
   @override
   String get selectClientArchiveFolder => 'Vyber složku pro archiv klientů';
 
   @override
-  String get useAppFolder => 'Použít složku v aplikaci';
-
-  @override
   String get selectCustomFolder => 'Vybrat vlastní složku';
-
-  @override
-  String get useClientsFolder => 'Použít Klienti';
 
   @override
   String get useDocumentsClients => 'Použít Dokumenty/Klienti';
@@ -2200,6 +2163,24 @@ class AppLocalizationsCs extends AppLocalizations {
   String get coachSetup => 'Nastavení trenéra';
 
   @override
+  String get loggedAccount => 'Přihlášený účet';
+
+  @override
+  String get firstNameExample => 'Např. Luděk';
+
+  @override
+  String get enter4DigitPin => 'Zadej 4 číslice';
+
+  @override
+  String get exportClientFolder => 'Exportní složka klientů';
+
+  @override
+  String get useAppFolder => 'Použít složku aplikace';
+
+  @override
+  String get useClientsFolder => 'Použít složku Klienti';
+
+  @override
   String get enterFirstName => 'Zadej své křestní jméno.';
 
   @override
@@ -2216,6 +2197,9 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get confirmPin => 'Potvrzení kódu';
+
+  @override
+  String get coachSetupIosDescription => 'Teď si nastavíme tvoje jméno, bezpečnostní PIN a interní složku Klienti pro archiv klientů.';
 
   @override
   String nextTimeWeight(Object weight, Object delta) {
@@ -2353,6 +2337,9 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get core => 'Střed těla';
+
+  @override
+  String get conditioning => 'Kondice';
 
   @override
   String get squatPattern => 'Dřepový pohyb';
@@ -2517,9 +2504,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get trainingSetupNeeded => 'Než vygenerujeme trénink, potřebuji krátké nastavení.';
 
   @override
-  String get openTrainingSetup => 'Otevřít nastavení tréninku';
-
-  @override
   String get repetitions => 'Opakování';
 
   @override
@@ -2675,6 +2659,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get trainingSetupRequired => 'Než vygenerujeme dnešní trénink, vyplň prosím krátké nastavení.';
 
   @override
+  String get openTrainingSetup => 'Otevřít nastavení tréninku';
+
+  @override
   String get todayTrainingGenerationFailed => 'Nepodařilo se vygenerovat dnešní trénink.';
 
   @override
@@ -2735,9 +2722,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get mainLift => 'HLAVNÍ LIFT';
 
   @override
-  String get sets => 'Série';
-
-  @override
   String get reps => 'Opakování';
 
   @override
@@ -2789,6 +2773,9 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get selectActiveClientFirst => 'Nejprve vyber aktivního klienta';
+
+  @override
+  String get customTraining => 'Vlastní trénink';
 
   @override
   String get sharedTemplates => 'Sdílené šablony';
@@ -2914,16 +2901,19 @@ class AppLocalizationsCs extends AppLocalizations {
   String get noExerciseFound => 'Nenalezen žádný cvik.';
 
   @override
-  String get exerciseName => 'Název cviku';
-
-  @override
-  String get repsOrTime => 'Opakování / čas';
-
-  @override
   String get enterValidGramRange => 'Zadej platné množství mezi 10 a 3000 g';
 
   @override
+  String get exerciseName => 'Název cviku';
+
+  @override
   String get exerciseNameHint => 'Např. Plank na boku';
+
+  @override
+  String get sets => 'Série';
+
+  @override
+  String get repsOrTime => 'Opakování / čas';
 
   @override
   String get repsOrTimeHint => 'Např. 3 min nebo 8–12';
@@ -2960,6 +2950,11 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get addAll => 'Přidat vše';
+
+  @override
+  String exerciseCount(Object count) {
+    return '$count cviků';
+  }
 
   @override
   String waterPercentageInfo(Object value) {

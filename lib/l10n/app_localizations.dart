@@ -575,23 +575,11 @@ abstract class AppLocalizations {
   /// **'You don\'t have any performance records yet.\n\nClick + to add your first exercise.'**
   String get noPerformanceRecords;
 
-  /// No description provided for @records.
-  ///
-  /// In en, this message translates to:
-  /// **'Records'**
-  String get records;
-
   /// No description provided for @equipmentQuestion.
   ///
   /// In en, this message translates to:
   /// **'What equipment do you have?'**
   String get equipmentQuestion;
-
-  /// No description provided for @customTraining.
-  ///
-  /// In en, this message translates to:
-  /// **'Custom Training'**
-  String get customTraining;
 
   /// No description provided for @insert90DayCutPlan.
   ///
@@ -767,12 +755,6 @@ abstract class AppLocalizations {
   /// **'Profile or goal not found'**
   String get profileOrGoalNotFound;
 
-  /// No description provided for @conditioning.
-  ///
-  /// In en, this message translates to:
-  /// **'Conditioning'**
-  String get conditioning;
-
   /// No description provided for @powerlifting.
   ///
   /// In en, this message translates to:
@@ -808,12 +790,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insert'**
   String get insert;
-
-  /// No description provided for @active.
-  ///
-  /// In en, this message translates to:
-  /// **'Active'**
-  String get active;
 
   /// No description provided for @templateInserted.
   ///
@@ -1259,12 +1235,6 @@ abstract class AppLocalizations {
   /// **'Coach Goal'**
   String get coachGoal;
 
-  /// No description provided for @exerciseCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} exercises'**
-  String exerciseCount(Object count);
-
   /// No description provided for @newMeasurement.
   ///
   /// In en, this message translates to:
@@ -1474,6 +1444,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Login successful.'**
   String get loginSuccessful;
+
+  /// No description provided for @records.
+  ///
+  /// In en, this message translates to:
+  /// **'Records'**
+  String get records;
 
   /// No description provided for @enterEmail.
   ///
@@ -1822,12 +1798,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get save;
-
-  /// No description provided for @confirmDeleteTemplate.
-  ///
-  /// In en, this message translates to:
-  /// **'Opravdu chceš smazat \"{name}\"?'**
-  String confirmDeleteTemplate(Object name);
 
   /// No description provided for @noSavedMealPlans.
   ///
@@ -2213,24 +2183,6 @@ abstract class AppLocalizations {
   /// **'Before resetting, always export important clients first.'**
   String get helpReset3;
 
-  /// No description provided for @snack.
-  ///
-  /// In en, this message translates to:
-  /// **'Snack'**
-  String get snack;
-
-  /// No description provided for @lunch.
-  ///
-  /// In en, this message translates to:
-  /// **'Lunch'**
-  String get lunch;
-
-  /// No description provided for @dinner.
-  ///
-  /// In en, this message translates to:
-  /// **'Dinner'**
-  String get dinner;
-
   /// No description provided for @firstMeal.
   ///
   /// In en, this message translates to:
@@ -2489,11 +2441,29 @@ abstract class AppLocalizations {
   /// **'Breakfast'**
   String get breakfast;
 
+  /// No description provided for @snack.
+  ///
+  /// In en, this message translates to:
+  /// **'Snack'**
+  String get snack;
+
   /// No description provided for @snack2.
   ///
   /// In en, this message translates to:
   /// **'Snack 2'**
   String get snack2;
+
+  /// No description provided for @lunch.
+  ///
+  /// In en, this message translates to:
+  /// **'Lunch'**
+  String get lunch;
+
+  /// No description provided for @dinner.
+  ///
+  /// In en, this message translates to:
+  /// **'Dinner'**
+  String get dinner;
 
   /// No description provided for @selectDate.
   ///
@@ -3665,6 +3635,12 @@ abstract class AppLocalizations {
   /// **'Edit'**
   String get edit;
 
+  /// No description provided for @active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
   /// No description provided for @dayCount.
   ///
   /// In en, this message translates to:
@@ -4289,29 +4265,11 @@ abstract class AppLocalizations {
   /// **'Welcome to the coach application'**
   String get welcomeCoachApp;
 
-  /// No description provided for @loggedAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed in account'**
-  String get loggedAccount;
-
-  /// No description provided for @coachSetupIosDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Now we will set up your name, security PIN and internal Clients folder for client archives.'**
-  String get coachSetupIosDescription;
-
   /// No description provided for @coachSetupDesktopDescription.
   ///
   /// In en, this message translates to:
   /// **'Now we will set up your name, security PIN and most importantly the folder where client archives will be stored.'**
   String get coachSetupDesktopDescription;
-
-  /// No description provided for @firstNameExample.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. John'**
-  String get firstNameExample;
 
   /// No description provided for @securityPin.
   ///
@@ -4319,23 +4277,11 @@ abstract class AppLocalizations {
   /// **'Security PIN'**
   String get securityPin;
 
-  /// No description provided for @enter4DigitPin.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter 4 digits'**
-  String get enter4DigitPin;
-
   /// No description provided for @enterPinAgain.
   ///
   /// In en, this message translates to:
   /// **'Enter the PIN again'**
   String get enterPinAgain;
-
-  /// No description provided for @exportClientFolder.
-  ///
-  /// In en, this message translates to:
-  /// **'Client export folder'**
-  String get exportClientFolder;
 
   /// No description provided for @selectClientArchiveFolder.
   ///
@@ -4343,23 +4289,11 @@ abstract class AppLocalizations {
   /// **'Select a folder for client archives'**
   String get selectClientArchiveFolder;
 
-  /// No description provided for @useAppFolder.
-  ///
-  /// In en, this message translates to:
-  /// **'Use app folder'**
-  String get useAppFolder;
-
   /// No description provided for @selectCustomFolder.
   ///
   /// In en, this message translates to:
   /// **'Select custom folder'**
   String get selectCustomFolder;
-
-  /// No description provided for @useClientsFolder.
-  ///
-  /// In en, this message translates to:
-  /// **'Use Clients folder'**
-  String get useClientsFolder;
 
   /// No description provided for @useDocumentsClients.
   ///
@@ -4397,6 +4331,42 @@ abstract class AppLocalizations {
   /// **'Coach Setup'**
   String get coachSetup;
 
+  /// No description provided for @loggedAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in account'**
+  String get loggedAccount;
+
+  /// No description provided for @firstNameExample.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. John'**
+  String get firstNameExample;
+
+  /// No description provided for @enter4DigitPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 4 digits'**
+  String get enter4DigitPin;
+
+  /// No description provided for @exportClientFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Client export folder'**
+  String get exportClientFolder;
+
+  /// No description provided for @useAppFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Use app folder'**
+  String get useAppFolder;
+
+  /// No description provided for @useClientsFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Clients folder'**
+  String get useClientsFolder;
+
   /// No description provided for @enterFirstName.
   ///
   /// In en, this message translates to:
@@ -4432,6 +4402,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm PIN'**
   String get confirmPin;
+
+  /// No description provided for @coachSetupIosDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Now we will set up your name, security PIN and internal Clients folder for client archives.'**
+  String get coachSetupIosDescription;
 
   /// No description provided for @nextTimeWeight.
   ///
@@ -4702,6 +4678,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Core'**
   String get core;
+
+  /// No description provided for @conditioning.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditioning'**
+  String get conditioning;
 
   /// No description provided for @squatPattern.
   ///
@@ -5027,12 +5009,6 @@ abstract class AppLocalizations {
   /// **'Before generating training, I need a short setup.'**
   String get trainingSetupNeeded;
 
-  /// No description provided for @openTrainingSetup.
-  ///
-  /// In en, this message translates to:
-  /// **'Open training setup'**
-  String get openTrainingSetup;
-
   /// No description provided for @repetitions.
   ///
   /// In en, this message translates to:
@@ -5072,7 +5048,7 @@ abstract class AppLocalizations {
   /// No description provided for @weeklyPlan.
   ///
   /// In en, this message translates to:
-  /// **'Weekly Plan'**
+  /// **'Weekly plan'**
   String get weeklyPlan;
 
   /// No description provided for @todayTraining.
@@ -5288,7 +5264,7 @@ abstract class AppLocalizations {
   /// No description provided for @returnOriginalDay.
   ///
   /// In en, this message translates to:
-  /// **'Return Original Day'**
+  /// **'Return original day'**
   String get returnOriginalDay;
 
   /// No description provided for @profileGoalRequired.
@@ -5302,6 +5278,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Before generating today\'s training, complete the short setup.'**
   String get trainingSetupRequired;
+
+  /// No description provided for @openTrainingSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Open training setup'**
+  String get openTrainingSetup;
 
   /// No description provided for @todayTrainingGenerationFailed.
   ///
@@ -5423,12 +5405,6 @@ abstract class AppLocalizations {
   /// **'MAIN LIFT'**
   String get mainLift;
 
-  /// Sets label
-  ///
-  /// In en, this message translates to:
-  /// **'Sets'**
-  String get sets;
-
   /// No description provided for @reps.
   ///
   /// In en, this message translates to:
@@ -5474,7 +5450,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectMealsTotal.
   ///
   /// In en, this message translates to:
-  /// **'Select {count} meals'**
+  /// **'Selected meals: {count}'**
   String selectMealsTotal(Object count);
 
   /// No description provided for @selectType.
@@ -5530,6 +5506,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select an active client first'**
   String get selectActiveClientFirst;
+
+  /// No description provided for @customTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom Training'**
+  String get customTraining;
 
   /// No description provided for @sharedTemplates.
   ///
@@ -5774,20 +5756,8 @@ abstract class AppLocalizations {
   /// No exercise found message
   ///
   /// In en, this message translates to:
-  /// **'No exercise found.'**
+  /// **'No exercise found'**
   String get noExerciseFound;
-
-  /// Exercise name field
-  ///
-  /// In en, this message translates to:
-  /// **'Exercise Name'**
-  String get exerciseName;
-
-  /// Reps or time label
-  ///
-  /// In en, this message translates to:
-  /// **'Reps / Time'**
-  String get repsOrTime;
 
   /// No description provided for @enterValidGramRange.
   ///
@@ -5795,11 +5765,29 @@ abstract class AppLocalizations {
   /// **'Enter a valid amount between 10 and 3000 g'**
   String get enterValidGramRange;
 
+  /// Exercise name field
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise Name'**
+  String get exerciseName;
+
   /// Hint for exercise name
   ///
   /// In en, this message translates to:
   /// **'Example: Side Plank'**
   String get exerciseNameHint;
+
+  /// Sets label
+  ///
+  /// In en, this message translates to:
+  /// **'Sets'**
+  String get sets;
+
+  /// Reps or time label
+  ///
+  /// In en, this message translates to:
+  /// **'Reps / Time'**
+  String get repsOrTime;
 
   /// Hint for reps or time
   ///
@@ -5860,6 +5848,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add all'**
   String get addAll;
+
+  /// No description provided for @exerciseCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} exercises'**
+  String exerciseCount(Object count);
 
   /// No description provided for @waterPercentageInfo.
   ///
