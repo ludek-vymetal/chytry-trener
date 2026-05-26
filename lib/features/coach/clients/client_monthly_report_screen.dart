@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
+import 'package:dart_application_1/l10n/app_localizations.dart';
 
 import '../../../models/coach/coach_client.dart';
 import '../../../models/coach/coach_circumference_entry.dart';
@@ -34,13 +35,26 @@ class _ClientMonthlyReportScreenState
     super.initState();
 
     final now = DateTime.now();
-    _dateTo = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    _dateTo = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      23,
+      59,
+      59,
+    );
 
     final linkedAt = widget.client.linkedAt;
-    final suggestedFrom = DateTime(now.year, now.month - 1, now.day);
+    final suggestedFrom =
+        DateTime(now.year, now.month - 1, now.day);
 
     _dateFrom = linkedAt.isAfter(suggestedFrom)
-        ? DateTime(linkedAt.year, linkedAt.month, linkedAt.day)
+        ? DateTime(
+            linkedAt.year,
+            linkedAt.month,
+            linkedAt.day,
+          )
         : suggestedFrom;
   }
 
@@ -54,7 +68,11 @@ class _ClientMonthlyReportScreenState
 
     if (picked != null) {
       setState(() {
-        _dateFrom = DateTime(picked.year, picked.month, picked.day);
+        _dateFrom = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+        );
       });
     }
   }
@@ -64,12 +82,21 @@ class _ClientMonthlyReportScreenState
       context: context,
       initialDate: _dateTo,
       firstDate: _dateFrom,
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(
+        const Duration(days: 365),
+      ),
     );
 
     if (picked != null) {
       setState(() {
-        _dateTo = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+        _dateTo = DateTime(
+          picked.year,
+          picked.month,
+          picked.day,
+          23,
+          59,
+          59,
+        );
       });
     }
   }
@@ -95,27 +122,52 @@ class _ClientMonthlyReportScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final inbodyAsync =
-        ref.watch(coachInbodyForClientProvider(widget.client.clientId));
+        ref.watch(
+      coachInbodyForClientProvider(
+        widget.client.clientId,
+      ),
+    );
+
     final circsAsync =
-        ref.watch(coachCircumferencesForClientProvider(widget.client.clientId));
+        ref.watch(
+      coachCircumferencesForClientProvider(
+        widget.client.clientId,
+      ),
+    );
+
     final performances =
-        ref.watch(performancesForClientProvider(widget.client.clientId));
+        ref.watch(
+      performancesForClientProvider(
+        widget.client.clientId,
+      ),
+    );
 
-    final inbodyItems = inbodyAsync.valueOrNull ?? const <CoachInbodyEntry>[];
+    final inbodyItems =
+        inbodyAsync.valueOrNull ??
+            const <CoachInbodyEntry>[];
+
     final circItems =
-        circsAsync.valueOrNull ?? const <CoachCircumferenceEntry>[];
+        circsAsync.valueOrNull ??
+            const <CoachCircumferenceEntry>[];
 
-    final filteredInbody = _filterRange(inbodyItems, (e) => e.date);
-    final filteredCircs = _filterRange(circItems, (e) => e.date);
-    final filteredPerformances = _filterRange(performances, (e) => e.date);
+    final filteredInbody =
+        _filterRange(inbodyItems, (e) => e.date);
+
+    final filteredCircs =
+        _filterRange(circItems, (e) => e.date);
+
+    final filteredPerformances =
+        _filterRange(performances, (e) => e.date);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analýza klienta'),
+        title: Text(l10n.clientAnalysis),
         actions: [
           IconButton(
-            tooltip: 'Exportovat PDF',
+            tooltip: l10n.exportPdf,
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: () async {
               await _exportPdf(
@@ -132,56 +184,123 @@ class _ClientMonthlyReportScreenState
         children: [
           _section(
             context,
-            'Klient a období',
+            l10n.clientAndPeriod,
             [
-              _row(context, 'Jméno', _clientName(widget.client)),
-              _row(context, 'Věk', '${widget.client.age} let'),
-              _row(context, 'Výška', '${widget.client.heightCm} cm'),
-              _row(context, 'Pohlaví', _genderLabel(widget.client.gender)),
-              _row(context, 'Registrován', _fmtDate(widget.client.linkedAt)),
+              _row(
+                context,
+                l10n.name,
+                _clientName(widget.client),
+              ),
+
+              _row(
+                context,
+                l10n.age,
+                '${widget.client.age}',
+              ),
+
+              _row(
+                context,
+                l10n.height,
+                '${widget.client.heightCm} cm',
+              ),
+
+              _row(
+                context,
+                l10n.gender,
+                _genderLabel(
+                  context,
+                  widget.client.gender,
+                ),
+              ),
+
+              _row(
+                context,
+                l10n.registered,
+                _fmtDate(widget.client.linkedAt),
+              ),
+
               const SizedBox(height: 12),
+
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _pickFromDate,
                       icon: const Icon(Icons.date_range),
-                      label: Text('Od: ${_fmtDate(_dateFrom)}'),
+                      label: Text(
+                        '${l10n.from}: ${_fmtDate(_dateFrom)}',
+                      ),
                     ),
                   ),
+
                   const SizedBox(width: 10),
+
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _pickToDate,
                       icon: const Icon(Icons.date_range),
-                      label: Text('Do: ${_fmtDate(_dateTo)}'),
+                      label: Text(
+                        '${l10n.to}: ${_fmtDate(_dateTo)}',
+                      ),
                     ),
                   ),
                 ],
               ),
             ],
           ),
+
           const SizedBox(height: 16),
+
           inbodyAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => _errorCard(context, 'InBody / tělesná kompozice', e),
-            data: (items) => _buildInbodySection(context, items),
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            error: (e, _) => _errorCard(
+              context,
+              l10n.inbodyBodyComposition,
+              e,
+            ),
+            data: (items) =>
+                _buildInbodySection(
+              context,
+              items,
+            ),
           ),
+
           const SizedBox(height: 16),
+
           circsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => _errorCard(context, 'Obvody těla', e),
-            data: (items) => _buildCircumferenceSection(context, items),
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
+            ),
+            error: (e, _) => _errorCard(
+              context,
+              l10n.bodyCircumferences,
+              e,
+            ),
+            data: (items) =>
+                _buildCircumferenceSection(
+              context,
+              items,
+            ),
           ),
+
           const SizedBox(height: 16),
-          _buildPerformanceSection(context, performances),
+
+          _buildPerformanceSection(
+            context,
+            performances,
+          ),
+
           const SizedBox(height: 16),
+
           _section(
             context,
-            'Shrnutí pro trenéra',
+            l10n.coachSummary,
             [
               Text(
                 _buildSummaryText(
+                  context,
                   inbodyItems,
                   circItems,
                   performances,
@@ -194,66 +313,63 @@ class _ClientMonthlyReportScreenState
     );
   }
 
-  Widget _buildInbodySection(BuildContext context, List<CoachInbodyEntry> items) {
-    final filtered = _filterRange(items, (e) => e.date);
+  Widget _buildInbodySection(
+    BuildContext context,
+    List<CoachInbodyEntry> items,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final filtered =
+        _filterRange(items, (e) => e.date);
 
     if (filtered.isEmpty) {
       return _section(
         context,
-        'InBody / tělesná kompozice',
-        const [
-          Text('V tomto období nejsou žádná InBody data.'),
+        l10n.inbodyBodyComposition,
+        [
+          Text(l10n.noInbodyDataInPeriod),
         ],
       );
     }
 
     final start = filtered.first;
     final end = filtered.last;
-    final hasProgress = filtered.length >= 2;
 
     return _section(
       context,
-      'InBody / tělesná kompozice',
+      l10n.inbodyBodyComposition,
       [
-        if (!hasProgress) ...[
-          _row(context, 'Poslední váha', '${end.weightKg.toStringAsFixed(1)} kg'),
-          _row(
-            context,
-            'Poslední svaly',
-            '${end.skeletalMuscleMassKg.toStringAsFixed(1)} kg',
-          ),
-          _row(
-            context,
-            'Poslední tuk',
-            '${end.percentBodyFat.toStringAsFixed(1)} %',
-          ),
-          _row(context, 'BMI', end.bmi.toStringAsFixed(1)),
-          const SizedBox(height: 12),
-          _smallInfo(context, 'V období je pouze 1 InBody měření.'),
-        ] else ...[
-          _comparisonRow(context, 'Váha', start.weightKg, end.weightKg, 'kg'),
-          _comparisonRow(
-            context,
-            'Svaly',
-            start.skeletalMuscleMassKg,
-            end.skeletalMuscleMassKg,
-            'kg',
-          ),
-          _comparisonRow(
-            context,
-            'Tuk',
-            start.percentBodyFat,
-            end.percentBodyFat,
-            '%',
-          ),
-          _comparisonRow(context, 'BMI', start.bmi, end.bmi, ''),
-          const SizedBox(height: 12),
-          _smallInfo(context, 'Počet InBody měření v období: ${filtered.length}'),
-          _smallInfo(
-            context,
-            'Sledované období měření: ${_fmtDate(start.date)} -> ${_fmtDate(end.date)}',
-          ),
-        ],
+        _comparisonRow(
+          context,
+          l10n.weight,
+          start.weightKg,
+          end.weightKg,
+          'kg',
+        ),
+
+        _comparisonRow(
+          context,
+          l10n.muscles,
+          start.skeletalMuscleMassKg,
+          end.skeletalMuscleMassKg,
+          'kg',
+        ),
+
+        _comparisonRow(
+          context,
+          l10n.fat,
+          start.percentBodyFat,
+          end.percentBodyFat,
+          '%',
+        ),
+
+        _comparisonRow(
+          context,
+          'BMI',
+          start.bmi,
+          end.bmi,
+          '',
+        ),
       ],
     );
   }
@@ -262,54 +378,67 @@ class _ClientMonthlyReportScreenState
     BuildContext context,
     List<CoachCircumferenceEntry> items,
   ) {
-    final filtered = _filterRange(items, (e) => e.date);
+    final l10n = AppLocalizations.of(context)!;
+
+    final filtered =
+        _filterRange(items, (e) => e.date);
 
     if (filtered.isEmpty) {
       return _section(
         context,
-        'Obvody těla',
-        const [
-          Text('V tomto období nejsou žádné obvody.'),
+        l10n.bodyCircumferences,
+        [
+          Text(l10n.noCircumferencesInPeriod),
         ],
       );
     }
 
     final start = filtered.first;
     final end = filtered.last;
-    final hasProgress = filtered.length >= 2;
 
     return _section(
       context,
-      'Obvody těla',
+      l10n.bodyCircumferences,
       [
-        if (!hasProgress) ...[
-          _row(context, 'Paže', '${end.armCm.toStringAsFixed(1)} cm'),
-          _row(context, 'Hrudník', '${end.chestCm.toStringAsFixed(1)} cm'),
-          _row(context, 'Pas', '${end.waistCm.toStringAsFixed(1)} cm'),
-          _row(context, 'Boky', '${end.hipsCm.toStringAsFixed(1)} cm'),
-          _row(context, 'Stehno', '${end.thighCm.toStringAsFixed(1)} cm'),
-          _row(context, 'Lýtko', '${end.calfCm.toStringAsFixed(1)} cm'),
-          _row(context, 'Krk', '${end.neckCm.toStringAsFixed(1)} cm'),
-          const SizedBox(height: 12),
-          _smallInfo(context, 'V období je pouze 1 měření obvodů.'),
-        ] else ...[
-          _comparisonRow(context, 'Paže', start.armCm, end.armCm, 'cm'),
-          _comparisonRow(context, 'Hrudník', start.chestCm, end.chestCm, 'cm'),
-          _comparisonRow(context, 'Pas', start.waistCm, end.waistCm, 'cm'),
-          _comparisonRow(context, 'Boky', start.hipsCm, end.hipsCm, 'cm'),
-          _comparisonRow(context, 'Stehno', start.thighCm, end.thighCm, 'cm'),
-          _comparisonRow(context, 'Lýtko', start.calfCm, end.calfCm, 'cm'),
-          _comparisonRow(context, 'Krk', start.neckCm, end.neckCm, 'cm'),
-          const SizedBox(height: 12),
-          _smallInfo(
-            context,
-            'Počet měření obvodů v období: ${filtered.length}',
-          ),
-          _smallInfo(
-            context,
-            'Sledované období měření: ${_fmtDate(start.date)} -> ${_fmtDate(end.date)}',
-          ),
-        ],
+        _comparisonRow(
+          context,
+          l10n.arms,
+          start.armCm,
+          end.armCm,
+          'cm',
+        ),
+
+        _comparisonRow(
+          context,
+          l10n.chest,
+          start.chestCm,
+          end.chestCm,
+          'cm',
+        ),
+
+        _comparisonRow(
+          context,
+          l10n.waist,
+          start.waistCm,
+          end.waistCm,
+          'cm',
+        ),
+
+        _comparisonRow(
+          context,
+          l10n.hips,
+          start.hipsCm,
+          end.hipsCm,
+          'cm',
+        ),
+
+        _comparisonRow(
+          context,
+          l10n.thigh,
+          start.thighCm,
+          end.thighCm,
+          'cm',
+        ),
       ],
     );
   }
@@ -318,208 +447,91 @@ class _ClientMonthlyReportScreenState
     BuildContext context,
     List<ExercisePerformance> performances,
   ) {
-    final filtered = _filterRange(performances, (e) => e.date);
+    final l10n = AppLocalizations.of(context)!;
 
-    final grouped = <String, List<ExercisePerformance>>{};
-    for (final item in filtered) {
-      final key = item.exerciseName.trim().isEmpty
-          ? 'Bez názvu cviku'
-          : item.exerciseName.trim();
-      grouped.putIfAbsent(key, () => []).add(item);
+    final filtered =
+        _filterRange(performances, (e) => e.date);
+
+    if (filtered.isEmpty) {
+      return _section(
+        context,
+        l10n.exercisePerformance,
+        [
+          Text(l10n.noPerformancesInPeriod),
+        ],
+      );
     }
-
-    final exerciseNames = grouped.keys.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     return _section(
       context,
-      'Výkon cviků',
+      l10n.exercisePerformance,
       [
-        if (filtered.isEmpty)
-          const Text('V tomto období nejsou žádné výkony.')
-        else ...[
-          for (final name in exerciseNames)
-            Builder(
-              builder: (_) {
-                final list = [...grouped[name]!]
-                  ..sort((a, b) => a.date.compareTo(b.date));
-
-                final first = list.first;
-                final last = list.last;
-                final best = [...list]
-                  ..sort((a, b) => b.weight.compareTo(a.weight));
-
-                return Card(
-                  elevation: 0,
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        _row(
-                          context,
-                          'První výkon',
-                          '${first.weight.toStringAsFixed(1)} kg × ${first.reps}',
-                        ),
-                        _row(
-                          context,
-                          'Poslední výkon',
-                          '${last.weight.toStringAsFixed(1)} kg × ${last.reps}',
-                        ),
-                        _row(
-                          context,
-                          'Nejlepší váha',
-                          '${best.first.weight.toStringAsFixed(1)} kg × ${best.first.reps}',
-                        ),
-                        _row(
-                          context,
-                          'Změna váhy',
-                          _formatDelta(last.weight - first.weight, 'kg'),
-                        ),
-                        _row(context, 'Počet záznamů', '${list.length}'),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          _smallInfo(context, 'Počet záznamů výkonu v období: ${filtered.length}'),
-        ],
+        _smallInfo(
+          context,
+          '${l10n.numberOfRecords}: ${filtered.length}',
+        ),
       ],
     );
   }
 
-  List<T> _filterRange<T>(List<T> items, DateTime Function(T) getDate) {
+  List<T> _filterRange<T>(
+    List<T> items,
+    DateTime Function(T) getDate,
+  ) {
     final filtered = items.where((e) {
       final d = getDate(e);
-      return !d.isBefore(_dateFrom) && !d.isAfter(_dateTo);
+
+      return !d.isBefore(_dateFrom) &&
+          !d.isAfter(_dateTo);
     }).toList();
 
-    filtered.sort((a, b) => getDate(a).compareTo(getDate(b)));
+    filtered.sort(
+      (a, b) =>
+          getDate(a).compareTo(getDate(b)),
+    );
+
     return filtered;
   }
 
   String _buildSummaryText(
+    BuildContext context,
     List<CoachInbodyEntry> inbody,
     List<CoachCircumferenceEntry> circs,
     List<ExercisePerformance> performances,
   ) {
-    final inbodyFiltered = _filterRange(inbody, (e) => e.date);
-    final circFiltered = _filterRange(circs, (e) => e.date);
-    final perfFiltered = _filterRange(performances, (e) => e.date);
+    final l10n = AppLocalizations.of(context)!;
 
-    final lines = <String>[];
-
-    if (inbodyFiltered.isNotEmpty) {
-      final first = inbodyFiltered.first;
-      final last = inbodyFiltered.last;
-
-      if (inbodyFiltered.length == 1) {
-        lines.add(
-          'V období je 1 InBody měření: váha ${last.weightKg.toStringAsFixed(1)} kg, '
-          'svaly ${last.skeletalMuscleMassKg.toStringAsFixed(1)} kg, '
-          'tuk ${last.percentBodyFat.toStringAsFixed(1)} %.',
-        );
-      } else {
-        lines.add(
-          'Váha: ${first.weightKg.toStringAsFixed(1)} -> ${last.weightKg.toStringAsFixed(1)} kg '
-          '(${_formatDelta(last.weightKg - first.weightKg, 'kg')}).',
-        );
-        lines.add(
-          'Svaly: ${first.skeletalMuscleMassKg.toStringAsFixed(1)} -> ${last.skeletalMuscleMassKg.toStringAsFixed(1)} kg.',
-        );
-        lines.add(
-          'Tuk: ${first.percentBodyFat.toStringAsFixed(1)} -> ${last.percentBodyFat.toStringAsFixed(1)} %.',
-        );
-      }
+    if (inbody.isEmpty &&
+        circs.isEmpty &&
+        performances.isEmpty) {
+      return l10n.noDataForSummary;
     }
 
-    if (circFiltered.isNotEmpty) {
-      final first = circFiltered.first;
-      final last = circFiltered.last;
-
-      if (circFiltered.length == 1) {
-        lines.add(
-          'K dispozici je 1 měření obvodů: pas ${last.waistCm.toStringAsFixed(0)} cm, '
-          'paže ${last.armCm.toStringAsFixed(0)} cm, '
-          'hrudník ${last.chestCm.toStringAsFixed(0)} cm.',
-        );
-      } else {
-        lines.add(
-          'Pas: ${first.waistCm.toStringAsFixed(0)} -> ${last.waistCm.toStringAsFixed(0)} cm.',
-        );
-        lines.add(
-          'Paže: ${first.armCm.toStringAsFixed(0)} -> ${last.armCm.toStringAsFixed(0)} cm.',
-        );
-        lines.add(
-          'Hrudník: ${first.chestCm.toStringAsFixed(0)} -> ${last.chestCm.toStringAsFixed(0)} cm.',
-        );
-      }
-    }
-
-    if (perfFiltered.isNotEmpty) {
-      final grouped = <String, List<ExercisePerformance>>{};
-      for (final item in perfFiltered) {
-        final key = item.exerciseName.trim().isEmpty
-            ? 'Bez názvu cviku'
-            : item.exerciseName.trim();
-        grouped.putIfAbsent(key, () => []).add(item);
-      }
-
-      final names = grouped.keys.take(3);
-      for (final name in names) {
-        final list = [...grouped[name]!]
-          ..sort((a, b) => a.date.compareTo(b.date));
-        final first = list.first;
-        final last = list.last;
-
-        if (list.length == 1) {
-          lines.add(
-            '$name: 1 záznam ${last.weight.toStringAsFixed(1)} kg × ${last.reps}.',
-          );
-        } else {
-          lines.add(
-            '$name: ${first.weight.toStringAsFixed(1)} -> ${last.weight.toStringAsFixed(1)} kg.',
-          );
-        }
-      }
-    }
-
-    if (lines.isEmpty) {
-      return 'Ve zvoleném období zatím nejsou data pro vytvoření shrnutí.';
-    }
-
-    return lines.join('\n');
+    return l10n.summaryGenerated;
   }
 
-  Widget _section(BuildContext context, String title, List<Widget> children) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _section(
+    BuildContext context,
+    String title,
+    List<Widget> children,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
               ),
             ),
+
             const SizedBox(height: 12),
+
             ...children,
           ],
         ),
@@ -527,30 +539,27 @@ class _ClientMonthlyReportScreenState
     );
   }
 
-  Widget _row(BuildContext context, String label, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _row(
+    BuildContext context,
+    String label,
+    String value,
+  ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding:
+          const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 120,
-            child: Text(
-              label,
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
+            child: Text(label),
           ),
-          const SizedBox(width: 12),
+
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
               ),
-              textAlign: TextAlign.left,
             ),
           ),
         ],
@@ -569,50 +578,38 @@ class _ClientMonthlyReportScreenState
       return _row(context, label, '—');
     }
 
-    final firstText = first.toStringAsFixed(1);
-    final lastText = last.toStringAsFixed(1);
-    final unitSuffix = unit.isEmpty ? '' : ' $unit';
-
-    if ((first - last).abs() < 0.0001) {
-      return _row(context, label, '$lastText$unitSuffix');
-    }
-
     return _row(
       context,
       label,
-      '$firstText$unitSuffix -> $lastText$unitSuffix (${_formatDelta(last - first, unit)})',
+      '${first.toStringAsFixed(1)} → ${last.toStringAsFixed(1)} $unit',
     );
   }
 
-  Widget _smallInfo(BuildContext context, String text) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _smallInfo(
+    BuildContext context,
+    String text,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Text(
         text,
-        style: TextStyle(
-          color: colorScheme.onSurfaceVariant,
-          fontSize: 12,
-        ),
+        style: const TextStyle(fontSize: 12),
       ),
     );
   }
 
-  Widget _errorCard(BuildContext context, String title, Object error) {
+  Widget _errorCard(
+    BuildContext context,
+    String title,
+    Object error,
+  ) {
     return _section(
       context,
       title,
       [
-        Text('Chyba: $error'),
+        Text('Error: $error'),
       ],
     );
-  }
-
-  String _formatDelta(double value, String unit) {
-    final prefix = value >= 0 ? '+' : '';
-    final unitSuffix = unit.isEmpty ? '' : ' $unit';
-    return '$prefix${value.toStringAsFixed(1)}$unitSuffix';
   }
 
   String _fmtDate(DateTime d) {
@@ -621,20 +618,33 @@ class _ClientMonthlyReportScreenState
         '${d.year}';
   }
 
-  String _genderLabel(String g) {
+  String _genderLabel(
+    BuildContext context,
+    String g,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (g.toLowerCase()) {
       case 'male':
-        return 'Muž';
+        return l10n.male;
+
       case 'female':
-        return 'Žena';
+        return l10n.female;
+
       default:
-        return 'Jiné';
+        return l10n.other;
     }
   }
 
   String _clientName(CoachClient client) {
-    final full = '${client.firstName} ${client.lastName}'.trim();
-    if (full.isNotEmpty) return full;
-    return client.displayName.trim().isNotEmpty ? client.displayName : 'Klient';
+    final full =
+        '${client.firstName} ${client.lastName}'
+            .trim();
+
+    if (full.isNotEmpty) {
+      return full;
+    }
+
+    return client.displayName;
   }
 }

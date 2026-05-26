@@ -1,15 +1,16 @@
-import '../models/user_profile.dart';
+import '../l10n/app_localizations.dart';
 import '../models/goal.dart';
-
-import '../core/time/time_context.dart';
-import '../core/phase/plan_mode.dart';
+import '../models/user_profile.dart';
 
 import '../core/phase/phase_planner_service.dart';
 import '../core/phase/phase_resolver.dart';
+import '../core/phase/plan_mode.dart';
 
+import '../core/time/time_context.dart';
+
+import '../core/training/training_split.dart';
 import '../core/training/training_strategy.dart';
 import '../core/training/training_strategy_adapter.dart';
-import '../core/training/training_split.dart';
 
 class TrainingPrescription {
   final String title;
@@ -42,9 +43,12 @@ class TrainingPrescription {
 }
 
 class TrainingService {
-  static TrainingPrescription calculate(UserProfile profile) {
+  static TrainingPrescription calculate(
+    UserProfile profile,
+    AppLocalizations l10n,
+  ) {
     if (profile.goal == null) {
-      return _default(profile);
+      return _default(profile, l10n);
     }
 
     final goal = profile.goal!;
@@ -55,17 +59,21 @@ class TrainingService {
       mode: PlanMode.normal,
     );
 
-    final plans = PhasePlannerService.buildPlan(ctx);
+    final plans =
+        PhasePlannerService.buildPlan(ctx);
 
-    final current = PhaseResolver.resolveCurrentPhase(
+    final current =
+        PhaseResolver.resolveCurrentPhase(
       plans: plans,
       date: ctx.now,
     );
 
-    final mode =
-        current.accelerated ? PlanMode.accelerated : PlanMode.normal;
+    final mode = current.accelerated
+        ? PlanMode.accelerated
+        : PlanMode.normal;
 
-    final strategy = TrainingStrategyAdapter.from(
+    final strategy =
+        TrainingStrategyAdapter.from(
       goal: goal,
       activePhase: current.activePlan,
       mode: mode,
@@ -73,10 +81,14 @@ class TrainingService {
 
     return _toPrescription(
       strategy: strategy,
-      split: profile.preferredSplit ?? TrainingSplit.auto,
+      split:
+          profile.preferredSplit ??
+              TrainingSplit.auto,
       goal: goal,
       weeksToTarget: ctx.weeksToTarget,
-      weeksUntilPhaseEnd: current.weeksUntilPhaseEnd,
+      weeksUntilPhaseEnd:
+          current.weeksUntilPhaseEnd,
+      l10n: l10n,
     );
   }
 
@@ -86,71 +98,128 @@ class TrainingService {
     required Goal goal,
     required int weeksToTarget,
     required int weeksUntilPhaseEnd,
+    required AppLocalizations l10n,
   }) {
     return TrainingPrescription(
       title: strategy.label,
-      note: _buildNote(strategy, goal),
-      reps: '${strategy.repsMin}–${strategy.repsMax}',
-      sets: '${strategy.setsMin}–${strategy.setsMax} / partii týdně',
-      rir: '${strategy.rirMin}–${strategy.rirMax}',
-      deloadRecommended: strategy.allowDeload,
+
+      note: _buildNote(
+        strategy,
+        goal,
+        l10n,
+      ),
+
+      reps:
+          '${strategy.repsMin}–${strategy.repsMax}',
+
+      sets:
+          '${strategy.setsMin}–${strategy.setsMax} ${l10n.perMuscleWeekly}',
+
+      rir:
+          '${strategy.rirMin}–${strategy.rirMax}',
+
+      deloadRecommended:
+          strategy.allowDeload,
+
       peakMode: strategy.isPeaking,
-      splitLabel: _splitLabel(split), // ✅ FIX
+
+      splitLabel: _splitLabel(
+        split,
+        l10n,
+      ),
+
       weeksToTarget: weeksToTarget,
-      weeksUntilPhaseEnd: weeksUntilPhaseEnd,
+
+      weeksUntilPhaseEnd:
+          weeksUntilPhaseEnd,
     );
   }
 
-  static String _buildNote(TrainingStrategy s, Goal goal) {
+  static String _buildNote(
+    TrainingStrategy s,
+    Goal goal,
+    AppLocalizations l10n,
+  ) {
     final buffer = StringBuffer();
 
     buffer.write(s.rationale);
 
-    if (goal.reason == GoalReason.competition) {
-      buffer.write('\n• Režim pro závody – priorita výkon/forma.');
+    if (goal.reason ==
+        GoalReason.competition) {
+      buffer.write(
+        '\n• ${l10n.competitionModeNote}',
+      );
     }
 
-    if (goal.type == GoalType.weightLoss) {
-      buffer.write('\n• V deficitu nehoníme PR – držíme sílu.');
+    if (goal.type ==
+        GoalType.weightLoss) {
+      buffer.write(
+        '\n• ${l10n.weightLossStrengthNote}',
+      );
     }
 
     if (s.isPeaking) {
-      buffer.write('\n• Peak: technika > objem, delší pauzy.');
+      buffer.write(
+        '\n• ${l10n.peakModeShortNote}',
+      );
     }
 
     return buffer.toString();
   }
 
-  static TrainingPrescription _default(UserProfile profile) {
+  static TrainingPrescription _default(
+    UserProfile profile,
+    AppLocalizations l10n,
+  ) {
     return TrainingPrescription(
-      title: 'Obecný trénink',
-      note: 'Nastav si nejprve cíl a datum, aby šla periodizace.',
+      title: l10n.generalTraining,
+
+      note:
+          l10n.setupGoalAndDateForPeriodization,
+
       reps: '8–12',
+
       sets: '12–16',
+
       rir: '1–2',
+
       deloadRecommended: false,
+
       peakMode: false,
-      splitLabel: profile.preferredSplit != null
-          ? _splitLabel(profile.preferredSplit!)
-          : 'Automaticky', // ✅ FIX
+
+      splitLabel:
+          profile.preferredSplit != null
+              ? _splitLabel(
+                  profile.preferredSplit!,
+                  l10n,
+                )
+              : l10n.automatic,
+
       weeksToTarget: 0,
+
       weeksUntilPhaseEnd: 0,
     );
   }
 
-  // ✅ FIX: místo .label používáme vlastní mapper
-  static String _splitLabel(TrainingSplit split) {
+  static String _splitLabel(
+    TrainingSplit split,
+    AppLocalizations l10n,
+  ) {
     switch (split) {
       case TrainingSplit.auto:
-        return 'Automaticky';
+        return l10n.automatic;
+
       case TrainingSplit.fullbody:
-        return 'Fullbody 3×';
+        return l10n.fullbody3x;
+
       case TrainingSplit.upperLower:
-        return 'Upper / Lower 4×';
+        return l10n.upperLower4x;
+
       case TrainingSplit.ppl:
-        return 'Push Pull Legs 6×';
+        return l10n.pushPullLegs6x;
+
       case TrainingSplit.strength3day:
-        return 'Síla 3 dny';
+        return l10n.strength3days;
     }
   }
 }

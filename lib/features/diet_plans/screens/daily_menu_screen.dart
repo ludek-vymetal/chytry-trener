@@ -8,12 +8,15 @@ import '../providers/diet_plan_provider.dart';
 import 'carb_cycling_logic.dart';
 import 'shopping_list_screen.dart';
 import 'weekly_meal_plan_screen.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DailyMenuScreen extends ConsumerWidget {
   const DailyMenuScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
     final excluded = ref.watch(excludedIngredientsProvider);
@@ -26,6 +29,7 @@ class DailyMenuScreen extends ConsumerWidget {
 
     final generatedPlan = CarbCyclingCalculator.generateFastingMealPlan(
       profile: profile,
+      l10n: l10n,
       excluded: excluded,
     );
 
@@ -40,16 +44,22 @@ class DailyMenuScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tvůj fasting jídelníček'),
+        title: Text(l10n.yourFastingMealPlan),
         actions: [
           IconButton(
-            tooltip: 'Tisk / PDF',
-            onPressed: () => DietPlanPdfService.printPlan(generatedPlan),
+            tooltip: l10n.printPdf,
+            onPressed: () => DietPlanPdfService.printPlan(
+              generatedPlan,
+              l10n,
+            ),
             icon: const Icon(Icons.print_outlined),
           ),
           IconButton(
-            tooltip: 'Sdílet PDF',
-            onPressed: () => DietPlanPdfService.sharePlan(generatedPlan),
+            tooltip: l10n.sharePdf,
+            onPressed: () => DietPlanPdfService.sharePlan(
+              generatedPlan,
+              l10n,
+            ),
             icon: const Icon(Icons.picture_as_pdf_outlined),
           ),
         ],

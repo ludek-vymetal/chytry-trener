@@ -1,7 +1,6 @@
 import '../../models/coach/coach_body_diagnostic_entry.dart';
 
 class CoachInsightsService {
-
   static List<String> buildInsights({
     required String gender,
     required CoachBodyDiagnosticEntry latest,
@@ -9,77 +8,99 @@ class CoachInsightsService {
   }) {
     final out = <String>[];
 
-    // =========================
-    // 1) HODNOCENÍ TUKU
-    // =========================
+    // ==================================================
+    // 1) BODY FAT
+    // ==================================================
 
     final fat = latest.fatPercent;
 
     if (gender == 'male') {
       if (fat <= 9) {
-        out.add('Velmi nízký tuk – závodní nebo krátkodobá forma.');
+        out.add('coachInsightVeryLowFat');
       } else if (fat <= 14) {
-        out.add('Výborná forma.');
+        out.add('coachInsightExcellentShape');
       } else if (fat <= 18) {
-        out.add('Zdravá sportovní forma.');
+        out.add('coachInsightHealthyAthletic');
       } else if (fat <= 24) {
-        out.add('Je prostor pro redukci tuku.');
+        out.add('coachInsightFatReduction');
       } else {
-        out.add('Vysoký podíl tuku – priorita bude hubnutí.');
+        out.add('coachInsightHighFat');
       }
     } else {
       if (fat <= 16) {
-        out.add('Velmi nízký tuk – závodní nebo krátkodobá forma.');
+        out.add('coachInsightVeryLowFat');
       } else if (fat <= 21) {
-        out.add('Výborná forma.');
+        out.add('coachInsightExcellentShape');
       } else if (fat <= 26) {
-        out.add('Zdravá sportovní forma.');
+        out.add('coachInsightHealthyAthletic');
       } else if (fat <= 33) {
-        out.add('Je prostor pro redukci tuku.');
+        out.add('coachInsightFatReduction');
       } else {
-        out.add('Vysoký podíl tuku – priorita bude hubnutí.');
+        out.add('coachInsightHighFat');
       }
     }
 
-    // =========================
-    // 2) KOLIK TUKU SHODIT
-    // =========================
+    // ==================================================
+    // 2) HOW MUCH FAT TO LOSE
+    // ==================================================
 
-    final targetFat = gender == 'female' ? 24.0 : 15.0;
-    final targetFatKg = latest.weightKg * (targetFat / 100);
-    final fatToLose = latest.fatKg - targetFatKg;
+    final targetFat =
+        gender == 'female' ? 24.0 : 15.0;
+
+    final targetFatKg =
+        latest.weightKg * (targetFat / 100);
+
+    final fatToLose =
+        latest.fatKg - targetFatKg;
 
     if (fatToLose > 0.7) {
-      out.add('Pro ideální formu by bylo vhodné zhubnout asi ${fatToLose.toStringAsFixed(1)} kg tuku.');
+      out.add(
+        'coachInsightLoseFat:${fatToLose.toStringAsFixed(1)}',
+      );
     } else if (fatToLose < -0.7) {
-      out.add('Tuku je velmi málo – zaměříme se spíše na výkon a svaly.');
+      out.add('coachInsightVeryLean');
     }
 
-    // =========================
-    // 3) VODA
-    // =========================
+    // ==================================================
+    // 3) WATER
+    // ==================================================
 
-    final waterRatio = latest.waterKg / latest.weightKg;
+    final waterRatio =
+        latest.waterKg / latest.weightKg;
 
     if (waterRatio > 0.65) {
-      out.add('Tělo může zadržovat více vody (stres, sůl, regenerace).');
+      out.add('coachInsightWaterRetention');
     } else if (waterRatio < 0.45) {
-      out.add('Nízký podíl vody – zaměř se na pitný režim a regeneraci.');
+      out.add('coachInsightLowWater');
     }
 
-    // =========================
-    // 4) VÝVOJ OPROTI MINULE
-    // =========================
+    // ==================================================
+    // 4) PROGRESS
+    // ==================================================
 
     if (previous != null) {
-      final dFat = latest.fatKg - previous.fatKg;
-      final dMuscle = latest.muscleKg - previous.muscleKg;
+      final dFat =
+          latest.fatKg - previous.fatKg;
 
-      if (dFat < -0.3) out.add('Tuk klesá – pokračuj.');
-      if (dFat > 0.3) out.add('Tuk roste – upravíme stravu.');
+      final dMuscle =
+          latest.muscleKg -
+          previous.muscleKg;
 
-      if (dMuscle > 0.2) out.add('Svaly rostou – trénink funguje.');
-      if (dMuscle < -0.2) out.add('Svaly klesají – přidáme bílkoviny nebo snížíme deficit.');
+      if (dFat < -0.3) {
+        out.add('coachInsightFatDown');
+      }
+
+      if (dFat > 0.3) {
+        out.add('coachInsightFatUp');
+      }
+
+      if (dMuscle > 0.2) {
+        out.add('coachInsightMuscleUp');
+      }
+
+      if (dMuscle < -0.2) {
+        out.add('coachInsightMuscleDown');
+      }
     }
 
     return out;

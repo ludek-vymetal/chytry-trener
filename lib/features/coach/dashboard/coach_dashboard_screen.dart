@@ -4,6 +4,8 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 import '../../../providers/coach/coach_circumference_controller.dart';
 import '../../../providers/coach/coach_client_details_controller.dart';
 import '../../../providers/coach/coach_clients_controller.dart';
@@ -12,220 +14,394 @@ import '../../../providers/coach/coach_goal_controller.dart';
 import '../../../providers/coach/coach_inbody_controller.dart';
 import '../../../providers/coach/coach_notes_controller.dart';
 import '../../../providers/coach/coach_setup_provider.dart';
+
+
 import '../../../providers/daily_history_provider.dart';
 import '../../../providers/daily_intake_provider.dart';
+import '../../../providers/locale_provider.dart';
 import '../../../providers/training_session_provider.dart';
-import '../../../providers/user_profile_provider.dart';
+
+
 import '../../../services/coach/coach_cloud_sync_service.dart';
 import '../../../services/local_storage_service.dart';
-import '../../help/widgets/help_and_reset_actions.dart';
-import '../../../providers/locale_provider.dart';
 
-class CoachDashboardScreen extends ConsumerStatefulWidget {
-  const CoachDashboardScreen({super.key});
+import '../../help/widgets/help_and_reset_actions.dart';
+
+class CoachDashboardScreen
+    extends ConsumerStatefulWidget {
+  const CoachDashboardScreen({
+    super.key,
+  });
 
   @override
-  ConsumerState<CoachDashboardScreen> createState() =>
-      _CoachDashboardScreenState();
+  ConsumerState<CoachDashboardScreen>
+      createState() =>
+          _CoachDashboardScreenState();
 }
 
-class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
+class _CoachDashboardScreenState
+    extends ConsumerState<
+        CoachDashboardScreen> {
   bool _syncBusy = false;
   bool _folderBusy = false;
 
   Future<void> _reloadCoachData() async {
-    ref.invalidate(coachClientsControllerProvider);
-    ref.invalidate(coachNotesControllerProvider);
-    ref.invalidate(coachInbodyControllerProvider);
-    ref.invalidate(coachCircumferenceControllerProvider);
-    ref.invalidate(coachDiagnosticControllerProvider);
-    ref.invalidate(coachGoalControllerProvider);
-    ref.invalidate(trainingSessionProvider);
-    ref.invalidate(dailyHistoryProvider);
-    ref.invalidate(dailyIntakeProvider);
-    ref.invalidate(coachSetupProvider);
-    ref.invalidate(coachClientDetailsControllerProvider);
+    ref.invalidate(
+      coachClientsControllerProvider,
+    );
 
-    await ref.read(coachClientsControllerProvider.notifier).reload();
-    await ref.read(coachNotesControllerProvider.notifier).reload();
-    await ref.read(coachInbodyControllerProvider.notifier).reload();
-    await ref.read(coachCircumferenceControllerProvider.notifier).reload();
+    ref.invalidate(
+      coachNotesControllerProvider,
+    );
+
+    ref.invalidate(
+      coachInbodyControllerProvider,
+    );
+
+    ref.invalidate(
+      coachCircumferenceControllerProvider,
+    );
+
+    ref.invalidate(
+      coachDiagnosticControllerProvider,
+    );
+
+    ref.invalidate(
+      coachGoalControllerProvider,
+    );
+
+    ref.invalidate(
+      trainingSessionProvider,
+    );
+
+    ref.invalidate(
+      dailyHistoryProvider,
+    );
+
+    ref.invalidate(
+      dailyIntakeProvider,
+    );
+
+    ref.invalidate(
+      coachSetupProvider,
+    );
+
+    ref.invalidate(
+      coachClientDetailsControllerProvider,
+    );
+
+    await ref
+        .read(
+          coachClientsControllerProvider
+              .notifier,
+        )
+        .reload();
+
+    await ref
+        .read(
+          coachNotesControllerProvider
+              .notifier,
+        )
+        .reload();
+
+    await ref
+        .read(
+          coachInbodyControllerProvider
+              .notifier,
+        )
+        .reload();
+
+    await ref
+        .read(
+          coachCircumferenceControllerProvider
+              .notifier,
+        )
+        .reload();
   }
 
   Future<void> _pushToCloud() async {
+    final l10n =
+        AppLocalizations.of(context)!;
+
     if (_syncBusy) return;
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
-    setState(() => _syncBusy = true);
+    setState(() {
+      _syncBusy = true;
+    });
 
     try {
-      final report = await CoachCloudSyncService.safePushAllFromLocal();
+      final report =
+          await CoachCloudSyncService
+              .safePushAllFromLocal();
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
             report.success
-                ? 'Záloha do cloudu hotová. Nahrané sekce: ${report.processedKeys.length}'
-                : 'Záloha se nepodařila: ${report.warnings.join(' | ')}',
+                ? '${l10n.cloudBackupFinished}. ${report.processedKeys.length}'
+                : '${l10n.cloudBackupFailed}: ${report.warnings.join(' | ')}',
           ),
-          duration: const Duration(seconds: 4),
+          duration:
+              const Duration(seconds: 4),
           backgroundColor:
-              report.success ? colorScheme.primary : colorScheme.error,
+              report.success
+                  ? colorScheme.primary
+                  : colorScheme.error,
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
-          content: Text('Chyba při záloze do cloudu: $e'),
-          backgroundColor: colorScheme.error,
+          content: Text(
+            '${l10n.error}: $e',
+          ),
+          backgroundColor:
+              colorScheme.error,
         ),
       );
     } finally {
       if (mounted) {
-        setState(() => _syncBusy = false);
+        setState(() {
+          _syncBusy = false;
+        });
       }
     }
   }
 
   Future<void> _pullFromCloud() async {
+    final l10n =
+        AppLocalizations.of(context)!;
+
     if (_syncBusy) return;
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
-    setState(() => _syncBusy = true);
+    setState(() {
+      _syncBusy = true;
+    });
 
     try {
-      final report = await CoachCloudSyncService.safePullMergeToLocal();
+      final report =
+          await CoachCloudSyncService
+              .safePullMergeToLocal();
+
       await _reloadCoachData();
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
             report.success
-                ? 'Načtení z cloudu hotové. Načtené sekce: ${report.processedKeys.length}'
-                : 'Načtení z cloudu se nepodařilo: ${report.warnings.join(' | ')}',
+                ? '${l10n.cloudRestoreFinished}. ${report.processedKeys.length}'
+                : '${l10n.cloudRestoreFailed}: ${report.warnings.join(' | ')}',
           ),
-          duration: const Duration(seconds: 4),
+          duration:
+              const Duration(seconds: 4),
           backgroundColor:
-              report.success ? colorScheme.primary : colorScheme.error,
+              report.success
+                  ? colorScheme.primary
+                  : colorScheme.error,
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
-          content: Text('Chyba při načítání z cloudu: $e'),
-          backgroundColor: colorScheme.error,
+          content: Text(
+            '${l10n.error}: $e',
+          ),
+          backgroundColor:
+              colorScheme.error,
         ),
       );
     } finally {
       if (mounted) {
-        setState(() => _syncBusy = false);
+        setState(() {
+          _syncBusy = false;
+        });
       }
     }
   }
 
-  Future<void> _pickAndSaveExportFolder() async {
+  Future<void>
+      _pickAndSaveExportFolder() async {
+    final l10n =
+        AppLocalizations.of(context)!;
+
     if (_folderBusy) return;
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
-    setState(() => _folderBusy = true);
+    setState(() {
+      _folderBusy = true;
+    });
 
     try {
-      final selectedPath = await getDirectoryPath(
-        confirmButtonText: 'Vybrat složku',
+      final selectedPath =
+          await getDirectoryPath(
+        confirmButtonText:
+            l10n.selectFolder,
       );
 
-      if (selectedPath == null || selectedPath.trim().isEmpty) {
+      if (selectedPath == null ||
+          selectedPath.trim().isEmpty) {
         if (mounted) {
-          setState(() => _folderBusy = false);
+          setState(() {
+            _folderBusy = false;
+          });
         }
         return;
       }
 
-      final dir = Directory(selectedPath);
+      final dir = Directory(
+        selectedPath,
+      );
+
       if (!dir.existsSync()) {
-        await dir.create(recursive: true);
+        await dir.create(
+          recursive: true,
+        );
       }
 
-      await LocalStorageService.saveClientExportFolderPath(selectedPath.trim());
+      await LocalStorageService
+          .saveClientExportFolderPath(
+        selectedPath.trim(),
+      );
+
       await ref
-          .read(coachSetupProvider.notifier)
-          .updateExportFolderPath(selectedPath.trim());
+          .read(
+            coachSetupProvider.notifier,
+          )
+          .updateExportFolderPath(
+            selectedPath.trim(),
+          );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
-          content: Text('Exportní složka byla nastavena:\n${dir.path}'),
-          duration: const Duration(seconds: 4),
-          backgroundColor: colorScheme.primary,
+          content: Text(
+            '${l10n.exportFolderSaved}\n${dir.path}',
+          ),
+          duration:
+              const Duration(seconds: 4),
+          backgroundColor:
+              colorScheme.primary,
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
-          content: Text('Nepodařilo se nastavit exportní složku: $e'),
-          backgroundColor: colorScheme.error,
+          content: Text(
+            l10n.folderPickFailed(
+              e.toString(),
+            ),
+          ),
+          backgroundColor:
+              colorScheme.error,
         ),
       );
     } finally {
       if (mounted) {
-        setState(() => _folderBusy = false);
+        setState(() {
+          _folderBusy = false;
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final clientsAsync = ref.watch(coachClientsControllerProvider);
-    final coachSetupAsync = ref.watch(coachSetupProvider);
+    final l10n =
+        AppLocalizations.of(context)!;
 
-    final coachSetup = coachSetupAsync.asData?.value;
-    final coachFirstName = coachSetup?.firstName.trim();
-    final exportFolderPath = coachSetup?.exportFolderPath.trim() ?? '';
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
-    final coachTitle = (coachFirstName != null && coachFirstName.isNotEmpty)
-        ? 'Trenér $coachFirstName'
-        : 'Coach Dashboard';
+    final clientsAsync = ref.watch(
+      coachClientsControllerProvider,
+    );
+
+    final coachSetupAsync = ref.watch(
+      coachSetupProvider,
+    );
+
+    final coachSetup =
+        coachSetupAsync.asData?.value;
+
+    final coachFirstName =
+        coachSetup?.firstName.trim();
+
+    final exportFolderPath =
+        coachSetup?.exportFolderPath
+                .trim() ??
+            '';
+
+    final coachTitle =
+        (coachFirstName != null &&
+                coachFirstName
+                    .isNotEmpty)
+            ? 'Coach $coachFirstName'
+            : l10n.coachMode;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(coachTitle),
+        title: Text(
+          coachTitle,
+        ),
         actions: [
           PopupMenuButton<Locale?>(
-            icon: const Icon(Icons.language),
-
+            icon: const Icon(
+              Icons.language,
+            ),
             onSelected: (locale) {
-              ref.read(localeProvider.notifier).state = locale;
+              ref
+                  .read(
+                    localeProvider.notifier,
+                  )
+                  .state = locale;
             },
-
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: null,
-                child: Text('Automaticky'),
+                child: Text(
+                  l10n.automatic,
+                ),
               ),
-
-              const PopupMenuItem(
-                value: Locale('cs'),
-                child: Text('Čeština'),
+              PopupMenuItem(
+                value: const Locale(
+                  'cs',
+                ),
+                child: Text(
+                  l10n.czech,
+                ),
               ),
-
-              const PopupMenuItem(
-                value: Locale('en'),
-                child: Text('English'),
+              PopupMenuItem(
+                value: const Locale(
+                  'en',
+                ),
+                child: Text(
+                  l10n.english,
+                ),
               ),
             ],
           ),
@@ -235,74 +411,141 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
       ),
       body: clientsAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(),
+          child:
+              CircularProgressIndicator(),
         ),
         error: (e, _) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.all(16),
             child: Text(
-              'Chyba: $e',
-              textAlign: TextAlign.center,
+              '${l10n.error}: $e',
+              textAlign:
+                  TextAlign.center,
             ),
           ),
         ),
         data: (clients) {
-          final warnings = clients.where((c) => c.isInactive7d).length;
+          final warnings = clients
+              .where(
+                (c) => c.isInactive7d,
+              )
+              .length;
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.all(16),
             children: [
               Text(
-                coachFirstName != null && coachFirstName.isNotEmpty
-                    ? 'Přehled trenéra $coachFirstName'
-                    : 'Přehled',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
+                coachFirstName != null &&
+                        coachFirstName
+                            .isNotEmpty
+                    ? 'Coach $coachFirstName'
+                    : l10n.coachMode,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(
+                      color: colorScheme
+                          .onSurface,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(
+                height: 12,
+              ),
+
               _StatCard(
-                title: 'Počet klientů',
-                value: clients.length.toString(),
+                title: l10n.clients,
+                value:
+                    clients.length.toString(),
                 icon: Icons.people,
               ),
-              const SizedBox(height: 12),
-              _StatCard(
-                title: 'Varování (bez tréninku 7+ dní)',
-                value: warnings.toString(),
-                icon: Icons.warning_amber,
-                highlighted: warnings > 0,
+
+              const SizedBox(
+                height: 12,
               ),
-              const SizedBox(height: 16),
+
+              _StatCard(
+                title:
+                    l10n.clientInactive7Days,
+                value:
+                    warnings.toString(),
+                icon:
+                    Icons.warning_amber,
+                highlighted:
+                    warnings > 0,
+              ),
+
+              const SizedBox(
+                height: 16,
+              ),
+
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding:
+                      const EdgeInsets.all(
+                    12,
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .stretch,
                     children: [
                       Text(
-                        'Archivní složka klientů',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                        l10n
+                            .openExportFolder,
+                        style: Theme.of(
+                                context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              fontWeight:
+                                  FontWeight
+                                      .bold,
                             ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        exportFolderPath.isEmpty
-                            ? 'Zatím není nastavená.'
-                            : exportFolderPath,
-                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+
+                      const SizedBox(
+                        height: 6,
                       ),
-                      const SizedBox(height: 12),
+
+                      Text(
+                        exportFolderPath
+                                .isEmpty
+                            ? l10n
+                                .exportFolderNotConfigured
+                            : exportFolderPath,
+                        style: TextStyle(
+                          color:
+                              colorScheme
+                                  .onSurfaceVariant,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 12,
+                      ),
+
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: _folderBusy ? null : _pickAndSaveExportFolder,
-                            icon: const Icon(Icons.folder_open),
-                            label: const Text('Změnit složku'),
+                            onPressed:
+                                _folderBusy
+                                    ? null
+                                    : _pickAndSaveExportFolder,
+                            icon: const Icon(
+                              Icons
+                                  .folder_open,
+                            ),
+                            label: Text(
+                              l10n
+                                  .change,
+                            ),
                           ),
                         ],
                       ),
@@ -310,98 +553,104 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+
+              const SizedBox(
+                height: 16,
+              ),
+
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding:
+                      const EdgeInsets.all(
+                    12,
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment:
+                        CrossAxisAlignment
+                            .stretch,
                     children: [
                       Text(
-                        'Cloud záloha',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                        l10n.cloudBackup,
+                        style: Theme.of(
+                                context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              fontWeight:
+                                  FontWeight
+                                      .bold,
                             ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Ručně nahraje nebo stáhne data mezi zařízeními.',
-                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+
+                      const SizedBox(
+                        height: 6,
                       ),
-                      const SizedBox(height: 12),
+
+                      Text(
+                        l10n
+                            .cloudBackupDescription,
+                        style: TextStyle(
+                          color:
+                              colorScheme
+                                  .onSurfaceVariant,
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 12,
+                      ),
+
                       Wrap(
                         spacing: 12,
                         runSpacing: 12,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: _syncBusy ? null : _pushToCloud,
+                            onPressed:
+                                _syncBusy
+                                    ? null
+                                    : _pushToCloud,
                             icon: _syncBusy
                                 ? SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: colorScheme.onPrimary,
+                                    width:
+                                        16,
+                                    height:
+                                        16,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth:
+                                          2,
+                                      color:
+                                          colorScheme.onPrimary,
                                     ),
                                   )
-                                : const Icon(Icons.cloud_upload),
-                            label: const Text('Zálohovat do cloudu'),
+                                : const Icon(
+                                    Icons
+                                        .cloud_upload,
+                                  ),
+                            label: Text(
+                              l10n
+                                  .backupToCloud,
+                            ),
                           ),
+
                           OutlinedButton.icon(
-                            onPressed: _syncBusy ? null : _pullFromCloud,
-                            icon: const Icon(Icons.cloud_download),
-                            label: const Text('Načíst z cloudu'),
+                            onPressed:
+                                _syncBusy
+                                    ? null
+                                    : _pullFromCloud,
+                            icon: const Icon(
+                              Icons
+                                  .cloud_download,
+                            ),
+                            label: Text(
+                              l10n
+                                  .restoreFromCloud,
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  title: const Text('Přidat sebe jako klienta (MVP)'),
-                  subtitle: Text(
-                    'Lokální demo bez backendu',
-                    style: TextStyle(color: colorScheme.onSurfaceVariant),
-                  ),
-                  trailing: Icon(
-                    Icons.add,
-                    color: colorScheme.primary,
-                  ),
-                  onTap: () async {
-                    final profile = ref.read(userProfileProvider);
-
-                    if (profile == null) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text(
-                            'Nejdřív dokonči Client onboarding (věk/pohlaví/výška/váha), pak půjde přidat sebe jako klienta.',
-                          ),
-                          backgroundColor: colorScheme.tertiary,
-                        ),
-                      );
-                      return;
-                    }
-
-                    await ref
-                        .read(coachClientsControllerProvider.notifier)
-                        .addCurrentUserAsClient();
-
-                    await ref
-                        .read(coachClientsControllerProvider.notifier)
-                        .reload();
-
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Klient přidán/aktualizován.'),
-                        backgroundColor: colorScheme.primary,
-                      ),
-                    );
-                  },
                 ),
               ),
             ],
@@ -412,7 +661,8 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
   }
 }
 
-class _StatCard extends StatelessWidget {
+class _StatCard
+    extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
@@ -427,35 +677,63 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
     final backgroundColor =
-        highlighted ? colorScheme.errorContainer : colorScheme.surface;
+        highlighted
+            ? colorScheme
+                .errorContainer
+            : colorScheme.surface;
+
     final foregroundColor =
-        highlighted ? colorScheme.onErrorContainer : colorScheme.onSurface;
+        highlighted
+            ? colorScheme
+                .onErrorContainer
+            : colorScheme.onSurface;
 
     return Card(
       color: backgroundColor,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding:
+            const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(icon, size: 28, color: foregroundColor),
-            const SizedBox(width: 12),
+            Icon(
+              icon,
+              size: 28,
+              color: foregroundColor,
+            ),
+
+            const SizedBox(
+              width: 12,
+            ),
+
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: foregroundColor,
-                      fontWeight: FontWeight.w600,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(
+                      color:
+                          foregroundColor,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
               ),
             ),
+
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: foregroundColor,
-                    fontWeight: FontWeight.bold,
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(
+                    color:
+                        foregroundColor,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
             ),
           ],

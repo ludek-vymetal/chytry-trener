@@ -127,8 +127,8 @@ class MacroService {
       phaseLabel: _phaseLabel(current.phase),
       planModeLabel: planModeLabel,
       weeksToTarget: weeksToTarget,
-      strategyLabel: strategy.label,
-      rationale: strategy.rationale,
+      strategyLabel: strategy.labelKey,
+      rationale: strategy.labelKey,
       weightForCaloriesKg: kgForCalories,
       weightForProteinKg: kgForProtein,
     );

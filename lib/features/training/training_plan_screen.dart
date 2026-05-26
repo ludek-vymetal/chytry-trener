@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/training/training_plan_models.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/coach/coach_goal.dart';
 import '../../models/custom_training_plan.dart';
-import '../../providers/user_profile_provider.dart';
-import '../../providers/slot_selection_provider.dart';
 import '../../providers/coach/active_client_provider.dart';
 import '../../providers/coach/coach_goal_controller.dart';
 import '../../providers/coach/custom_training_plan_provider.dart';
+import '../../providers/slot_selection_provider.dart';
+import '../../providers/user_profile_provider.dart';
 import '../../services/coach/coach_goal_profile_adapter.dart';
-import '../../services/training_plan_service.dart';
 import '../../services/custom_training_plan_mapper.dart';
-import '../../core/training/training_plan_models.dart';
+import '../../services/training_plan_service.dart';
 import 'training_setup_screen.dart';
 
 class TrainingPlanScreen extends ConsumerWidget {
@@ -19,30 +20,37 @@ class TrainingPlanScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final profile = ref.watch(userProfileProvider);
     final slotSelections = ref.watch(slotSelectionProvider);
     final activeClientAsync = ref.watch(activeClientIdProvider);
     final allCustomPlans = ref.watch(customTrainingPlanProvider);
     final coachGoalsAsync = ref.watch(coachGoalControllerProvider);
+
     final colorScheme = Theme.of(context).colorScheme;
 
     if (profile == null) {
-      return const Scaffold(
-        body: Center(child: Text('Nejprve nastav profil.')),
+      return Scaffold(
+        body: Center(
+          child: Text(l10n.setupProfileFirst),
+        ),
       );
     }
 
     if (profile.trainingIntake == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Týdenní plán')),
+        appBar: AppBar(
+          title: Text(l10n.weeklyPlan),
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Než vygenerujeme plán, vyplň prosím krátké nastavení tréninku.',
+                Text(
+                  l10n.trainingSetupRequiredDescription,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
@@ -55,7 +63,7 @@ class TrainingPlanScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                  child: const Text('Otevřít nastavení'),
+                  child: Text(l10n.openSetup),
                 ),
               ],
             ),
@@ -69,22 +77,23 @@ class TrainingPlanScreen extends ConsumerWidget {
     CustomTrainingPlan? activeCustomPlan;
 
     if (activeClientId != null) {
-      for (final p in allCustomPlans) {
-        if (p.clientId == activeClientId && p.isActive) {
-          activeCustomPlan = p;
+      for (final plan in allCustomPlans) {
+        if (plan.clientId == activeClientId && plan.isActive) {
+          activeCustomPlan = plan;
           break;
         }
       }
     }
 
+    final coachGoals =
+        coachGoalsAsync.asData?.value ?? const <CoachGoal>[];
+
     CoachGoal? activeCoachGoal;
 
-    final coachGoals = coachGoalsAsync.asData?.value ?? const <CoachGoal>[];
-
     if (activeClientId != null) {
-      for (final g in coachGoals) {
-        if (g.clientId == activeClientId && !g.isDeleted) {
-          activeCoachGoal = g;
+      for (final goal in coachGoals) {
+        if (goal.clientId == activeClientId && !goal.isDeleted) {
+          activeCoachGoal = goal;
           break;
         }
       }
@@ -96,30 +105,43 @@ class TrainingPlanScreen extends ConsumerWidget {
     );
 
     if (activeCustomPlan == null && effectiveProfile.goal == null) {
-      return const Scaffold(
-        body: Center(child: Text('Nejprve nastav cíl.')),
+      return Scaffold(
+        body: Center(
+          child: Text(l10n.setupGoalFirst),
+        ),
       );
     }
 
-    final List<TrainingDayPlan> basePlan = activeCustomPlan != null
-        ? CustomTrainingPlanMapper.toWeeklyPlan(activeCustomPlan)
-        : TrainingPlanService.buildWeeklyPlan(
-            effectiveProfile,
-            slotSelections: slotSelections,
-          );
+    final List<TrainingDayPlan> basePlan =
+        activeCustomPlan != null
+            ? CustomTrainingPlanMapper.toWeeklyPlan(
+                activeCustomPlan,
+              )
+            : TrainingPlanService.buildWeeklyPlan(
+                effectiveProfile,
+                slotSelections: slotSelections,
+              );
 
     final bool usingCustomPlan = activeCustomPlan != null;
-    final bool usingCoachGoal = !usingCustomPlan && activeCoachGoal != null;
+    final bool usingCoachGoal =
+        !usingCustomPlan && activeCoachGoal != null;
 
     final int? overrideDayIndex =
-        _resolveValidOverrideDayIndex(activeCustomPlan, basePlan.length);
+        _resolveValidOverrideDayIndex(
+      activeCustomPlan,
+      basePlan.length,
+    );
 
-    final List<_DisplayedTrainingDay> displayedPlan =
-        _buildDisplayedPlan(basePlan, overrideDayIndex);
+    final displayedPlan = _buildDisplayedPlan(
+      basePlan,
+      overrideDayIndex,
+    );
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(title: const Text('Týdenní plán')),
+      appBar: AppBar(
+        title: Text(l10n.weeklyPlan),
+      ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: displayedPlan.isEmpty
@@ -128,8 +150,8 @@ class TrainingPlanScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     usingCustomPlan
-                        ? 'Aktivní vlastní plán zatím neobsahuje žádné dny nebo cviky.'
-                        : 'Nepodařilo se vygenerovat plán.',
+                        ? l10n.customPlanEmpty
+                        : l10n.planGenerationFailed,
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -141,7 +163,9 @@ class TrainingPlanScreen extends ConsumerWidget {
                   left: 12,
                   right: 12,
                   top: 12,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 120,
+                  bottom:
+                      MediaQuery.of(context).viewInsets.bottom +
+                          120,
                 ),
                 itemCount: displayedPlan.length,
                 itemBuilder: (context, index) {
@@ -150,27 +174,35 @@ class TrainingPlanScreen extends ConsumerWidget {
 
                   return Card(
                     elevation: 0,
-                    margin: const EdgeInsets.only(bottom: 14),
+                    margin: const EdgeInsets.only(
+                      bottom: 14,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius:
+                          BorderRadius.circular(18),
                       side: BorderSide(
-                        color: displayedDay.isOverrideSelected
-                            ? colorScheme.primary
-                            : colorScheme.outlineVariant,
+                        color:
+                            displayedDay.isOverrideSelected
+                                ? colorScheme.primary
+                                : colorScheme.outlineVariant,
                         width:
-                            displayedDay.isOverrideSelected ? 1.8 : 1,
+                            displayedDay.isOverrideSelected
+                                ? 1.8
+                                : 1,
                       ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           if (usingCustomPlan &&
                               activeCustomPlan != null)
                             Builder(
                               builder: (context) {
-                                final selectedPlan = activeCustomPlan!;
+                                final selectedPlan =
+                                    activeCustomPlan!;
 
                                 return Row(
                                   crossAxisAlignment:
@@ -179,39 +211,61 @@ class TrainingPlanScreen extends ConsumerWidget {
                                     Expanded(
                                       child: Container(
                                         margin:
-                                            const EdgeInsets.only(bottom: 8),
+                                            const EdgeInsets.only(
+                                          bottom: 8,
+                                        ),
                                         padding:
                                             const EdgeInsets.symmetric(
                                           horizontal: 10,
                                           vertical: 6,
                                         ),
-                                        decoration: BoxDecoration(
+                                        decoration:
+                                            BoxDecoration(
                                           color: Colors.green
-                                              .withValues(alpha: 0.12),
+                                              .withValues(
+                                            alpha: 0.12,
+                                          ),
                                           borderRadius:
-                                              BorderRadius.circular(20),
+                                              BorderRadius
+                                                  .circular(
+                                            20,
+                                          ),
                                         ),
                                         child: Text(
-                                          'Vlastní plán: ${selectedPlan.name}',
-                                          style: const TextStyle(
-                                            color: Colors.green,
-                                            fontWeight: FontWeight.bold,
+                                          '${l10n.customPlan}: ${selectedPlan.name}',
+                                          style:
+                                              const TextStyle(
+                                            color:
+                                                Colors.green,
+                                            fontWeight:
+                                                FontWeight
+                                                    .bold,
                                           ),
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    PopupMenuButton<String>(
-                                      tooltip: 'Možnosti dne',
-                                      onSelected: (value) async {
+                                    const SizedBox(
+                                      width: 8,
+                                    ),
+                                    PopupMenuButton<
+                                        String>(
+                                      tooltip:
+                                          l10n.dayOptions,
+                                      onSelected:
+                                          (value) async {
                                         if (value ==
                                             'select_other_day') {
                                           await _showDayPickerSheet(
-                                            context: context,
+                                            context:
+                                                context,
                                             ref: ref,
-                                            activePlan: selectedPlan,
+                                            activePlan:
+                                                selectedPlan,
+                                            l10n: l10n,
                                           );
-                                        } else if (value ==
+                                        }
+
+                                        if (value ==
                                             'clear_override') {
                                           await ref
                                               .read(
@@ -219,21 +273,30 @@ class TrainingPlanScreen extends ConsumerWidget {
                                                     .notifier,
                                               )
                                               .clearOverrideDayForPlan(
-                                                planId: selectedPlan.id,
+                                                planId:
+                                                    selectedPlan.id,
                                               );
                                         }
                                       },
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem<String>(
-                                          value: 'select_other_day',
-                                          child:
-                                              Text('Vybrat jiný den'),
+                                      itemBuilder:
+                                          (context) => [
+                                        PopupMenuItem<
+                                            String>(
+                                          value:
+                                              'select_other_day',
+                                          child: Text(
+                                            l10n.selectAnotherDay,
+                                          ),
                                         ),
-                                        if (overrideDayIndex != null)
-                                          const PopupMenuItem<String>(
-                                            value: 'clear_override',
+                                        if (overrideDayIndex !=
+                                            null)
+                                          PopupMenuItem<
+                                              String>(
+                                            value:
+                                                'clear_override',
                                             child: Text(
-                                                'Vrátit původní den'),
+                                              l10n.returnOriginalDay,
+                                            ),
                                           ),
                                       ],
                                     ),
@@ -242,10 +305,13 @@ class TrainingPlanScreen extends ConsumerWidget {
                               },
                             ),
 
-                          if (usingCoachGoal)
+                          if (usingCoachGoal &&
+                              activeCoachGoal != null)
                             Container(
                               margin:
-                                  const EdgeInsets.only(bottom: 8),
+                                  const EdgeInsets.only(
+                                bottom: 8,
+                              ),
                               padding:
                                   const EdgeInsets.symmetric(
                                 horizontal: 10,
@@ -253,16 +319,27 @@ class TrainingPlanScreen extends ConsumerWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.deepOrange
-                                    .withValues(alpha: 0.12),
+                                    .withValues(
+                                  alpha: 0.12,
+                                ),
                                 borderRadius:
-                                    BorderRadius.circular(20),
+                                    BorderRadius.circular(
+                                  20,
+                                ),
                               ),
                               child: Text(
-                                'Coach goal: ${activeCoachGoal!.goalType}'
-                                '${activeCoachGoal.goalDetail.trim().isEmpty ? '' : ' • ${activeCoachGoal.goalDetail}'}',
-                                style: const TextStyle(
-                                  color: Colors.deepOrange,
-                                  fontWeight: FontWeight.bold,
+                                activeCoachGoal
+                                            .goalDetail
+                                            .trim()
+                                            .isEmpty
+                                    ? '${l10n.coachGoal}: ${activeCoachGoal.goalType}'
+                                    : '${l10n.coachGoal}: ${activeCoachGoal.goalType} • ${activeCoachGoal.goalDetail}',
+                                style:
+                                    const TextStyle(
+                                  color:
+                                      Colors.deepOrange,
+                                  fontWeight:
+                                      FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -270,9 +347,11 @@ class TrainingPlanScreen extends ConsumerWidget {
                           Text(
                             '${day.dayLabel} – ${day.focus}',
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                              fontWeight:
+                                  FontWeight.bold,
                               fontSize: 17,
-                              color: colorScheme.onSurface,
+                              color:
+                                  colorScheme.onSurface,
                             ),
                           ),
 
@@ -281,10 +360,14 @@ class TrainingPlanScreen extends ConsumerWidget {
                           ...day.exercises.map(
                             (exercise) => Padding(
                               padding:
-                                  const EdgeInsets.only(bottom: 10),
+                                  const EdgeInsets.only(
+                                bottom: 10,
+                              ),
                               child: _ExerciseCard(
                                 exercise: exercise,
-                                colorScheme: colorScheme,
+                                colorScheme:
+                                    colorScheme,
+                                l10n: l10n,
                               ),
                             ),
                           ),
@@ -293,10 +376,11 @@ class TrainingPlanScreen extends ConsumerWidget {
 
                           Text(
                             usingCustomPlan
-                                ? 'Formát: série | opakování / čas | RIR'
-                                : 'Formát: série | opakování | RIR | kg',
+                                ? l10n.trainingFormatCustom
+                                : l10n.trainingFormatDefault,
                             style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
+                              color: colorScheme
+                                  .onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),
@@ -314,9 +398,12 @@ class TrainingPlanScreen extends ConsumerWidget {
     CustomTrainingPlan? activeCustomPlan,
     int planLength,
   ) {
-    final overrideDayIndex = activeCustomPlan?.overrideDayIndex;
+    final overrideDayIndex =
+        activeCustomPlan?.overrideDayIndex;
 
-    if (overrideDayIndex == null) return null;
+    if (overrideDayIndex == null) {
+      return null;
+    }
 
     if (overrideDayIndex < 0 ||
         overrideDayIndex >= planLength) {
@@ -327,7 +414,9 @@ class TrainingPlanScreen extends ConsumerWidget {
   }
 
   int? _defaultTodayDayIndex(int length) {
-    if (length <= 0) return null;
+    if (length <= 0) {
+      return null;
+    }
 
     final weekday = DateTime.now().weekday;
 
@@ -345,7 +434,8 @@ class TrainingPlanScreen extends ConsumerWidget {
         _DisplayedTrainingDay(
           day: plan[i],
           originalIndex: i,
-          isOverrideSelected: overrideDayIndex == i,
+          isOverrideSelected:
+              overrideDayIndex == i,
         ),
       );
     }
@@ -377,11 +467,14 @@ class TrainingPlanScreen extends ConsumerWidget {
     required BuildContext context,
     required WidgetRef ref,
     required CustomTrainingPlan activePlan,
+    required AppLocalizations l10n,
   }) async {
     if (activePlan.days.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Plán zatím nemá žádné dny.'),
+        SnackBar(
+          content: Text(
+            l10n.planHasNoDays,
+          ),
         ),
       );
 
@@ -399,28 +492,38 @@ class TrainingPlanScreen extends ConsumerWidget {
         return SafeArea(
           child: Padding(
             padding:
-                const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                const EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              16,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment:
                   CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Vyber jiný den pro dnešní trénink',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Text(
-                  'Původní dny v plánu se nemažou.',
-                  style: TextStyle(
-                    color:
-                        colorScheme.onSurfaceVariant,
+                  l10n.pickDifferentTrainingDay,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  l10n.originalDaysStaySaved,
+                  style: TextStyle(
+                    color: colorScheme
+                        .onSurfaceVariant,
+                  ),
+                ),
+
                 const SizedBox(height: 16),
+
                 ...List.generate(
                   activePlan.days.length,
                   (index) {
@@ -428,7 +531,8 @@ class TrainingPlanScreen extends ConsumerWidget {
                         activePlan.days[index];
 
                     final isSelected =
-                        activePlan.overrideDayIndex ==
+                        activePlan
+                                .overrideDayIndex ==
                             index;
 
                     return ListTile(
@@ -442,14 +546,20 @@ class TrainingPlanScreen extends ConsumerWidget {
                       title: Text(day.name),
                       subtitle: Text(
                         day.exercises.isEmpty
-                            ? 'Bez cviků'
-                            : '${day.exercises.length} cviků',
+                            ? l10n.noExercises
+                            : l10n.exerciseCount(
+                                day.exercises.length,
+                              ),
                       ),
                       trailing: isSelected
                           ? const Icon(
-                              Icons.check_circle)
+                              Icons
+                                  .check_circle,
+                            )
                           : const Icon(
-                              Icons.chevron_right),
+                              Icons
+                                  .chevron_right,
+                            ),
                       onTap: () {
                         Navigator.of(context)
                             .pop(index);
@@ -464,16 +574,21 @@ class TrainingPlanScreen extends ConsumerWidget {
       },
     );
 
-    if (selectedIndex == null) return;
+    if (selectedIndex == null) {
+      return;
+    }
 
-    final notifier =
-        ref.read(customTrainingPlanProvider.notifier);
+    final notifier = ref.read(
+      customTrainingPlanProvider.notifier,
+    );
 
     await notifier.setOverrideDayForPlan(
       planId: activePlan.id,
       dayIndex: selectedIndex,
       originalDayIndex:
-          _defaultTodayDayIndex(activePlan.days.length),
+          _defaultTodayDayIndex(
+        activePlan.days.length,
+      ),
     );
   }
 }
@@ -493,15 +608,18 @@ class _DisplayedTrainingDay {
 class _ExerciseCard extends StatelessWidget {
   final PlannedExercise exercise;
   final ColorScheme colorScheme;
+  final AppLocalizations l10n;
 
   const _ExerciseCard({
     required this.exercise,
     required this.colorScheme,
+    required this.l10n,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasWeight = exercise.weightKg != null;
+    final hasWeight =
+        exercise.weightKg != null;
 
     final hasNote =
         exercise.note != null &&
@@ -519,7 +637,8 @@ class _ExerciseCard extends StatelessWidget {
         : isSpecial
             ? colorScheme.tertiaryContainer
                 .withValues(alpha: 0.35)
-            : colorScheme.surfaceContainerHighest
+            : colorScheme
+                .surfaceContainerHighest
                 .withValues(alpha: 0.35);
 
     final borderColor = isMainLift
@@ -541,8 +660,9 @@ class _ExerciseCard extends StatelessWidget {
         color: cardBackground,
         borderRadius:
             BorderRadius.circular(14),
-        border:
-            Border.all(color: borderColor),
+        border: Border.all(
+          color: borderColor,
+        ),
       ),
       child: Column(
         crossAxisAlignment:
@@ -562,9 +682,10 @@ class _ExerciseCard extends StatelessWidget {
                       isMainLift ? 15.5 : 14.5,
                 ),
               ),
+
               if (isMainLift)
                 _MiniBadge(
-                  label: 'HLAVNÍ LIFT',
+                  label: l10n.mainLift,
                   background:
                       colorScheme.primary,
                   foreground:
@@ -579,28 +700,31 @@ class _ExerciseCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _MetricBox(
-                  label: 'Série',
+                  label: l10n.sets,
                   value: exercise.sets,
                 ),
               ),
               const SizedBox(width: 8),
+
               Expanded(
                 child: _MetricBox(
-                  label: 'Opakování',
+                  label: l10n.reps,
                   value: exercise.reps,
                 ),
               ),
               const SizedBox(width: 8),
+
               Expanded(
                 child: _MetricBox(
-                  label: 'RIR',
+                  label: l10n.rir,
                   value: exercise.rir,
                 ),
               ),
               const SizedBox(width: 8),
+
               Expanded(
                 child: _MetricBox(
-                  label: 'Váha',
+                  label: l10n.weightLabel,
                   value: weightText,
                   emphasize: hasWeight,
                 ),
@@ -613,8 +737,8 @@ class _ExerciseCard extends StatelessWidget {
             Text(
               exercise.note!,
               style: TextStyle(
-                color:
-                    colorScheme.onSurfaceVariant,
+                color: colorScheme
+                    .onSurfaceVariant,
                 fontSize: 12.5,
               ),
             ),
@@ -681,15 +805,16 @@ class _MetricBox extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              color:
-                  colorScheme.onSurfaceVariant,
+              color: colorScheme
+                  .onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
             style: TextStyle(
-              fontSize: emphasize ? 14 : 13,
+              fontSize:
+                  emphasize ? 14 : 13,
               fontWeight: emphasize
                   ? FontWeight.w800
                   : FontWeight.w600,
@@ -715,7 +840,8 @@ class _MiniBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         horizontal: 8,
         vertical: 4,
       ),

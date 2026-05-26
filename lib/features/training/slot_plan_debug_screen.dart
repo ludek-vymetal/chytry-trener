@@ -1,87 +1,132 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/user_profile_provider.dart';
-import '../../providers/slot_selection_provider.dart';
-import '../../services/training_slot_plan_service.dart';
-import '../../core/training/training_plan_models.dart';
-import '../../core/training/slots/exercise_slot.dart';
 import '../../core/training/exercises/exercise_db.dart';
+import '../../core/training/slots/exercise_slot.dart';
+import '../../core/training/training_plan_models.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/slot_selection_provider.dart';
+import '../../providers/user_profile_provider.dart';
+import '../../services/training_slot_plan_service.dart';
 import 'exercise_picker_screen.dart';
 
 class SlotPlanDebugScreen extends ConsumerWidget {
   const SlotPlanDebugScreen({super.key});
 
-  String _roleLabel(ExerciseRole role) {
+  String _roleLabel(
+    BuildContext context,
+    ExerciseRole role,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (role) {
       case ExerciseRole.mainSquat:
-        return 'Hlavní dřepový cvik';
+        return l10n.mainSquatExercise;
+
       case ExerciseRole.mainPress:
-        return 'Hlavní tlakový cvik';
+        return l10n.mainPressExercise;
+
       case ExerciseRole.mainHinge:
-        return 'Hlavní tahový cvik (hip hinge)';
+        return l10n.mainHingeExercise;
+
       case ExerciseRole.chestPress:
-        return 'Hrudník (tlaky)';
+        return l10n.chestPress;
+
       case ExerciseRole.verticalPull:
-        return 'Záda (vertikální tah)';
+        return l10n.verticalPull;
+
       case ExerciseRole.horizontalPull:
-        return 'Záda (horizontální tah)';
+        return l10n.horizontalPull;
+
       case ExerciseRole.quads:
-        return 'Kvadricepsy';
+        return l10n.quads;
+
       case ExerciseRole.hamstrings:
-        return 'Zadní stehna (hamstringy)';
+        return l10n.hamstrings;
+
       case ExerciseRole.glutes:
-        return 'Hýždě';
+        return l10n.glutes;
+
       case ExerciseRole.shoulders:
-        return 'Ramena';
+        return l10n.shoulders;
+
       case ExerciseRole.triceps:
-        return 'Triceps';
+        return l10n.triceps;
+
       case ExerciseRole.biceps:
-        return 'Biceps';
+        return l10n.biceps;
+
       case ExerciseRole.core:
-        return 'Střed těla';
+        return l10n.core;
+
       case ExerciseRole.conditioning:
-        return 'Kondice';
+        return l10n.conditioning;
     }
   }
 
-  String _patternLabel(String patternName) {
+  String _patternLabel(
+    BuildContext context,
+    String patternName,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (patternName) {
       case 'squat':
-        return 'Dřepový pohyb';
+        return l10n.squatPattern;
+
       case 'hinge':
-        return 'Tahový pohyb (hip hinge)';
+        return l10n.hingePattern;
+
       case 'press':
-        return 'Tlakový pohyb';
+        return l10n.pressPattern;
+
       case 'pull':
-        return 'Tah (vertikální)';
+        return l10n.verticalPullPattern;
+
       case 'row':
-        return 'Přítah (horizontální)';
+        return l10n.horizontalRowPattern;
+
       case 'core':
-        return 'Střed těla';
+        return l10n.corePattern;
+
       case 'locomotion':
-        return 'Pohyb / kondice';
+        return l10n.locomotionPattern;
+
       default:
         return patternName;
     }
   }
 
-  String _modalityLabel(String modalityName) {
+  String _modalityLabel(
+    BuildContext context,
+    String modalityName,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (modalityName) {
       case 'strength':
-        return 'Síla';
+        return l10n.strength;
+
       case 'hypertrophy':
-        return 'Svaly / postava';
+        return l10n.hypertrophy;
+
       case 'endurance':
-        return 'Vytrvalost';
+        return l10n.endurance;
+
       case 'conditioning':
-        return 'Kondice';
+        return l10n.conditioning;
+
       default:
         return modalityName;
     }
   }
 
-  String _slotKey(String dayLabel, int slotIndex) => '$dayLabel|$slotIndex';
+  String _slotKey(
+    String dayLabel,
+    int slotIndex,
+  ) {
+    return '$dayLabel|$slotIndex';
+  }
 
   String? _exerciseNameById(String id) {
     try {
@@ -92,22 +137,36 @@ class SlotPlanDebugScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
-      return const Scaffold(
-        body: Center(child: Text('Nejprve nastav profil a cíl.')),
+      return Scaffold(
+        body: Center(
+          child: Text(
+            l10n.setupProfileAndGoalFirst,
+          ),
+        ),
       );
     }
 
     if (profile.trainingIntake == null) {
-      return const Scaffold(
-        body: Center(child: Text('Chybí nastavení tréninku (dotazník).')),
+      return Scaffold(
+        body: Center(
+          child: Text(
+            l10n.trainingQuestionnaireMissing,
+          ),
+        ),
       );
     }
 
     final selectedMap = ref.watch(slotSelectionProvider);
+
     final equipment = profile.trainingIntake!.equipment;
 
     final List<SlotTrainingDayPlan> plan =
@@ -115,85 +174,144 @@ class SlotPlanDebugScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Výběr cviků (test)'),
+        title: Text(
+          l10n.exerciseSelectionTest,
+        ),
       ),
+
       body: ListView.builder(
         padding: const EdgeInsets.all(12),
         itemCount: plan.length,
+
         itemBuilder: (context, index) {
           final day = plan[index];
 
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(12),
+
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+
                 children: [
                   Text(
                     '${day.dayLabel} – ${day.focus}',
+
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
                   const SizedBox(height: 8),
 
                   ...day.slots.asMap().entries.map((entry) {
                     final slotIndex = entry.key;
+
                     final s = entry.value;
 
-                    final key = _slotKey(day.dayLabel, slotIndex);
-                    final selectedExerciseId = selectedMap[key];
-                    final selectedName = selectedExerciseId == null
-                        ? null
-                        : _exerciseNameById(selectedExerciseId);
+                    final key = _slotKey(
+                      day.dayLabel,
+                      slotIndex,
+                    );
+
+                    final selectedExerciseId =
+                        selectedMap[key];
+
+                    final selectedName =
+                        selectedExerciseId == null
+                            ? null
+                            : _exerciseNameById(
+                                selectedExerciseId,
+                              );
 
                     final modalityText = s.modalities
-                        .map((m) => _modalityLabel(m.name))
+                        .map(
+                          (m) => _modalityLabel(
+                            context,
+                            m.name,
+                          ),
+                        )
                         .join(', ');
 
                     return Card(
                       child: ListTile(
-                        title: Text(_roleLabel(s.role)),
+                        title: Text(
+                          _roleLabel(
+                            context,
+                            s.role,
+                          ),
+                        ),
+
                         subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+
                           children: [
                             const SizedBox(height: 4),
-                            Text('Typ pohybu: ${_patternLabel(s.pattern.name)}'),
-                            Text('Zaměření: $modalityText'),
+
+                            Text(
+                              '${l10n.movementType}: '
+                              '${_patternLabel(context, s.pattern.name)}',
+                            ),
+
+                            Text(
+                              '${l10n.focus}: $modalityText',
+                            ),
+
                             const SizedBox(height: 6),
-                            Text('Předpis: ${s.sets} × ${s.reps} | RIR ${s.rir}'),
+
+                            Text(
+                              '${l10n.prescription}: '
+                              '${s.sets} × ${s.reps} | '
+                              'RIR ${s.rir}',
+                            ),
+
                             const SizedBox(height: 6),
+
                             Text(
                               selectedName == null
-                                  ? 'Vybraný cvik: (zatím nevybráno)'
-                                  : 'Vybraný cvik: $selectedName',
+                                  ? l10n.noExerciseSelected
+                                  : '${l10n.selectedExercise}: $selectedName',
+
                               style: TextStyle(
-                                fontWeight: selectedName == null
-                                    ? FontWeight.normal
-                                    : FontWeight.bold,
+                                fontWeight:
+                                    selectedName == null
+                                        ? FontWeight.normal
+                                        : FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
+
                         trailing: const Icon(Icons.edit),
+
                         onTap: () async {
-                          final chosen = await Navigator.push(
+                          final chosen =
+                              await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ExercisePickerScreen(
+                              builder: (_) =>
+                                  ExercisePickerScreen(
                                 slot: s,
-                                availableEquipment: equipment,
-                                preselectedExerciseId: selectedExerciseId,
+                                availableEquipment:
+                                    equipment,
+                                preselectedExerciseId:
+                                    selectedExerciseId,
                               ),
                             ),
                           );
 
                           if (chosen != null) {
-                            // chosen je Exercise (vracíme ho z pickeru)
                             ref
-                                .read(slotSelectionProvider.notifier)
-                                .setSelection(key, chosen.id);
+                                .read(
+                                  slotSelectionProvider
+                                      .notifier,
+                                )
+                                .setSelection(
+                                  key,
+                                  chosen.id,
+                                );
                           }
                         },
                       ),
@@ -201,9 +319,14 @@ class SlotPlanDebugScreen extends ConsumerWidget {
                   }),
 
                   const SizedBox(height: 8),
+
                   Text(
-                    'Testovací obrazovka: slot = role + typ pohybu + zaměření + série/opakování/RIR.\nKlikni na slot a vyber cvik.',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    l10n.slotDebugDescription,
+
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),

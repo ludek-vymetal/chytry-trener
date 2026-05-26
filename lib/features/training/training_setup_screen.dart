@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/training/exercises/exercise_db.dart';
 import '../../core/training/intake/training_intake.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/goal.dart';
 import '../../providers/user_profile_provider.dart';
 
@@ -14,7 +15,8 @@ class TrainingSetupScreen extends ConsumerStatefulWidget {
       _TrainingSetupScreenState();
 }
 
-class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
+class _TrainingSetupScreenState
+    extends ConsumerState<TrainingSetupScreen> {
   int _frequency = 3;
 
   final Set<String> _equipment = {'bodyweight'};
@@ -43,11 +45,15 @@ class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
-      return const Scaffold(
-        body: Center(child: Text('Nejprve nastav profil a cíl.')),
+      return Scaffold(
+        body: Center(
+          child: Text(l10n.setupProfileAndGoalFirst),
+        ),
       );
     }
 
@@ -56,102 +62,163 @@ class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
         profile.goal!.reason == GoalReason.competition;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nastavení tréninku')),
+      appBar: AppBar(
+        title: Text(l10n.trainingSetupTitle),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Kolikrát týdně chceš trénovat?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              l10n.trainingFrequencyQuestion,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+
             const SizedBox(height: 8),
+
             DropdownButtonFormField<int>(
               initialValue: _frequency,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                helperText: 'Vyber reálné číslo podle času a regenerace.',
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                helperText: l10n.trainingFrequencyHint,
               ),
               items: const [2, 3, 4, 5, 6]
                   .map(
-                    (v) =>
-                        DropdownMenuItem(value: v, child: Text('$v× týdně')),
+                    (v) => DropdownMenuItem(
+                      value: v,
+                      child: Text(
+                        l10n.timesPerWeek(v),
+                      ),
+                    ),
                   )
                   .toList(),
-              onChanged: (v) => setState(() => _frequency = v ?? 3),
+              onChanged: (v) {
+                setState(() => _frequency = v ?? 3);
+              },
             ),
+
             const SizedBox(height: 20),
-            const Text(
-              'Jaké máš vybavení?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+
+            Text(
+              l10n.equipmentQuestion,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+
             const SizedBox(height: 8),
+
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                _chip('bodyweight', 'Váha těla'),
-                _chip('dumbbell', 'Jednoručky'),
-                _chip('barbell', 'Osa'),
-                _chip('rack', 'Stojan'),
-                _chip('bench', 'Lavice'),
-                _chip('machine', 'Stroje'),
-                _chip('cardio', 'Kardio'),
+                _chip('bodyweight', l10n.bodyweightEquipment),
+                _chip('dumbbell', l10n.dumbbellEquipment),
+                _chip('barbell', l10n.barbellEquipment),
+                _chip('rack', l10n.rackEquipment),
+                _chip('bench', l10n.benchEquipment),
+                _chip('machine', l10n.machineEquipment),
+                _chip('cardio', l10n.cardioEquipment),
               ],
             ),
+
             const SizedBox(height: 6),
+
             Text(
-              'Tip: když něco nemáš, aplikace vybere vhodnější cviky.',
-              style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              l10n.equipmentHint,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontSize: 12,
+              ),
             ),
+
             const SizedBox(height: 20),
-            const Text(
-              'Jaká je tvoje zkušenost?',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+
+            Text(
+              l10n.experienceQuestion,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
+
             const SizedBox(height: 8),
+
             DropdownButtonFormField<String>(
               initialValue: _experience,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                helperText: 'Pomůže to nastavit vhodnou náročnost.',
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                helperText: l10n.experienceHint,
               ),
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: 'beginner',
-                  child: Text('Začátečník'),
+                  child: Text(l10n.beginner),
                 ),
                 DropdownMenuItem(
                   value: 'intermediate',
-                  child: Text('Pokročilý'),
+                  child: Text(l10n.intermediate),
                 ),
                 DropdownMenuItem(
                   value: 'advanced',
-                  child: Text('Velmi pokročilý'),
+                  child: Text(l10n.advanced),
                 ),
               ],
-              onChanged: (v) => setState(() => _experience = v ?? 'beginner'),
+              onChanged: (v) {
+                setState(() => _experience = v ?? 'beginner');
+              },
             ),
+
             if (isStrengthCompetition) ...[
               const SizedBox(height: 24),
-              const Text(
-                'Maximálky (1 opakování maximum) – pouze pro závody',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              _numberField(_squatCtrl, 'Dřep 1RM (kg)'),
-              const SizedBox(height: 10),
-              _numberField(_benchCtrl, 'Bench press 1RM (kg)'),
-              const SizedBox(height: 10),
-              _numberField(_deadliftCtrl, 'Mrtvý tah 1RM (kg)'),
-              const SizedBox(height: 6),
+
               Text(
-                'Poznámka: váhy v plánu se počítají z „tréninkového maxima“ (90 % z 1RM).',
-                style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                l10n.oneRepMaxTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              _numberField(
+                _squatCtrl,
+                l10n.squat1rm,
+              ),
+
+              const SizedBox(height: 10),
+
+              _numberField(
+                _benchCtrl,
+                l10n.bench1rm,
+              ),
+
+              const SizedBox(height: 10),
+
+              _numberField(
+                _deadliftCtrl,
+                l10n.deadlift1rm,
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                l10n.trainingMaxHint,
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 12,
+                ),
               ),
             ],
+
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -163,9 +230,9 @@ class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
                         !_isValidNumber(_benchCtrl.text) ||
                         !_isValidNumber(_deadliftCtrl.text)) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
-                            'Vyplň prosím všechny maximálky (kladné číslo).',
+                            l10n.fillAllMaxes,
                           ),
                         ),
                       );
@@ -173,9 +240,12 @@ class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
                     }
 
                     maxes = {
-                      ExerciseIds.squat: _parseDouble(_squatCtrl.text)!,
-                      ExerciseIds.bench: _parseDouble(_benchCtrl.text)!,
-                      ExerciseIds.deadlift: _parseDouble(_deadliftCtrl.text)!,
+                      ExerciseIds.squat:
+                          _parseDouble(_squatCtrl.text)!,
+                      ExerciseIds.bench:
+                          _parseDouble(_benchCtrl.text)!,
+                      ExerciseIds.deadlift:
+                          _parseDouble(_deadliftCtrl.text)!,
                     };
                   }
 
@@ -190,9 +260,12 @@ class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
                   ref
                       .read(userProfileProvider.notifier)
                       .setTrainingIntake(intake);
+
                   Navigator.pop(context);
                 },
-                child: const Text('Uložit nastavení'),
+                child: Text(
+                  l10n.saveTrainingSetup,
+                ),
               ),
             ),
           ],
@@ -201,13 +274,20 @@ class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
     );
   }
 
-  Widget _numberField(TextEditingController c, String label) {
+  Widget _numberField(
+    TextEditingController c,
+    String label,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     return TextField(
       controller: c,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      keyboardType: const TextInputType.numberWithOptions(
+        decimal: true,
+      ),
       decoration: InputDecoration(
         labelText: label,
-        helperText: 'Můžeš psát i s čárkou (např. 120,5).',
+        helperText: l10n.numberInputHint,
         border: const OutlineInputBorder(),
       ),
     );
@@ -225,6 +305,7 @@ class _TrainingSetupScreenState extends ConsumerState<TrainingSetupScreen> {
             _equipment.add(key);
           } else {
             _equipment.remove(key);
+
             if (_equipment.isEmpty) {
               _equipment.add('bodyweight');
             }

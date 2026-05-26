@@ -12,6 +12,7 @@ import '../../../services/coach/clients_export_service.dart';
 
 import 'add_client_screen.dart';
 import 'client_detail_screen.dart';
+import 'package:dart_application_1/l10n/app_localizations.dart';
 
 class ClientListScreen extends ConsumerStatefulWidget {
   const ClientListScreen({super.key});
@@ -34,6 +35,8 @@ class _ClientListScreenState
   Future<void> _copyEmails(
     List<CoachClientWithStats> clients,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final rawClients = clients.map((e) => e.client).toList();
 
     final emailsText =
@@ -43,9 +46,10 @@ class _ClientListScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('Žádný klient zatím nemá vyplněný email.'),
+        SnackBar(
+          content: Text(
+            l10n.noClientsWithEmail,
+          ),
         ),
       );
 
@@ -59,9 +63,10 @@ class _ClientListScreenState
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text('Emaily byly zkopírovány do schránky.'),
+      SnackBar(
+        content: Text(
+          l10n.emailsCopied,
+        ),
       ),
     );
   }
@@ -69,11 +74,9 @@ class _ClientListScreenState
   Future<void> _exportCsv(
     List<CoachClientWithStats> clients,
   ) async {
-    final rawClients = clients.map((e) => e.client).toList();
-
     final path =
         await ClientsExportService.exportClientsCsv(
-      rawClients,
+      clients.map((e) => e.client).toList(),
     );
 
     if (!mounted) return;
@@ -92,23 +95,26 @@ class _ClientListScreenState
   Future<void> _exportPdf(
     List<CoachClientWithStats> clients,
   ) async {
-    final rawClients = clients.map((e) => e.client).toList();
+    final l10n = AppLocalizations.of(context)!;
 
     await ClientsExportService.exportClientsPdf(
-      rawClients,
+      clients.map((e) => e.client).toList(),
     );
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text('PDF export byl otevřen pro tisk / uložení.'),
+      SnackBar(
+        content: Text(
+          l10n.pdfExportOpened,
+        ),
       ),
     );
   }
 
   Future<void> _importArchivedClientsFromCsvFile() async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       const typeGroup = XTypeGroup(
         label: 'CSV',
@@ -117,7 +123,7 @@ class _ClientListScreenState
 
       final file = await openFile(
         acceptedTypeGroups: const [typeGroup],
-        confirmButtonText: 'Vybrat CSV',
+        confirmButtonText: l10n.selectCsv,
       );
 
       if (file == null) return;
@@ -144,8 +150,10 @@ class _ClientListScreenState
         SnackBar(
           content: Text(
             count == 0
-                ? 'Z CSV nebyl importován žádný nový archivní klient.'
-                : 'Import hotový. Přidáno archivních klientů: $count',
+                ? l10n.noArchivedClientsImported
+                : l10n.archivedClientsImported(
+                    count,
+                  ),
           ),
         ),
       );
@@ -161,7 +169,9 @@ class _ClientListScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Import CSV do archivu selhal: $e',
+            l10n.archiveCsvImportFailed(
+              e.toString(),
+            ),
           ),
         ),
       );
@@ -171,6 +181,8 @@ class _ClientListScreenState
   Future<void> _archiveClient(
     CoachClientWithStats clientWithStats,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final client = clientWithStats.client;
 
     await ref
@@ -184,7 +196,9 @@ class _ClientListScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Klient "${client.displayName}" byl přesunut do archivu.',
+          l10n.clientMovedToArchive(
+            client.displayName,
+          ),
         ),
       ),
     );
@@ -193,6 +207,8 @@ class _ClientListScreenState
   Future<void> _restoreArchivedClient(
     CoachClientWithStats clientWithStats,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final client = clientWithStats.client;
 
     await ref
@@ -206,13 +222,17 @@ class _ClientListScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Klient "${client.displayName}" byl obnoven.',
+          l10n.clientRestored(
+            client.displayName,
+          ),
         ),
       ),
     );
   }
 
   Future<void> _importClientFromJsonFile() async {
+    final l10n = AppLocalizations.of(context)!;
+
     try {
       const typeGroup = XTypeGroup(
         label: 'JSON',
@@ -221,7 +241,7 @@ class _ClientListScreenState
 
       final file = await openFile(
         acceptedTypeGroups: const [typeGroup],
-        confirmButtonText: 'Vybrat JSON',
+        confirmButtonText: l10n.selectJson,
       );
 
       if (file == null) return;
@@ -252,7 +272,9 @@ class _ClientListScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Klient "${preview.clientDisplayName}" byl importován.',
+            l10n.clientImported(
+              preview.clientDisplayName,
+            ),
           ),
         ),
       );
@@ -262,7 +284,9 @@ class _ClientListScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Import ze souboru selhal: $e',
+            l10n.fileImportFailedWithError(
+              e.toString(),
+            ),
           ),
         ),
       );
@@ -272,11 +296,13 @@ class _ClientListScreenState
   Future<ClientImportMode?> _showImportPreviewDialog(
     ClientImportPreview preview,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     return showDialog<ClientImportMode?>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Náhled před importem'),
+          title: Text(l10n.importPreview),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment:
@@ -310,7 +336,7 @@ class _ClientListScreenState
               onPressed: () {
                 Navigator.of(dialogContext).pop(null);
               },
-              child: const Text('Zrušit'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () {
@@ -319,7 +345,9 @@ class _ClientListScreenState
                       .importAsNewIfConflict,
                 );
               },
-              child: const Text('Importovat'),
+              child: const Text(
+                'Importovat',
+              ),
             ),
           ],
         );
@@ -329,6 +357,8 @@ class _ClientListScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme =
         Theme.of(context).colorScheme;
 
@@ -344,7 +374,9 @@ class _ClientListScreenState
       ),
       error: (e, _) => Scaffold(
         body: Center(
-          child: Text('Chyba: $e'),
+          child: Text(
+            '${l10n.error}: $e',
+          ),
         ),
       ),
       data: (clients) {
@@ -362,18 +394,13 @@ class _ClientListScreenState
 
         return Scaffold(
           resizeToAvoidBottomInset: true,
-
           floatingActionButtonLocation:
               FloatingActionButtonLocation
                   .centerFloat,
-
           floatingActionButton: !_showArchived
               ? FloatingActionButton.extended(
-                  icon:
-                      const Icon(Icons.person_add),
-                  label: const Text(
-                    'Přidat klienta',
-                  ),
+                  icon: const Icon(Icons.person_add),
+                  label: Text(l10n.addClient),
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -384,13 +411,11 @@ class _ClientListScreenState
                   },
                 )
               : null,
-
           body: SafeArea(
             child: ListView(
               keyboardDismissBehavior:
                   ScrollViewKeyboardDismissBehavior
                       .onDrag,
-
               padding:
                   const EdgeInsets.fromLTRB(
                 16,
@@ -398,7 +423,6 @@ class _ClientListScreenState
                 16,
                 140,
               ),
-
               children: [
                 Autocomplete<CoachClientWithStats>(
                   optionsBuilder: (text) {
@@ -437,19 +461,17 @@ class _ClientListScreenState
                       MaterialPageRoute(
                         builder: (_) =>
                             ClientDetailScreen(
-                          client:
-                              selected.client,
+                          client: selected.client,
                         ),
                       ),
                     );
                   },
-                  fieldViewBuilder:
-                      (
-                        context,
-                        ctrl,
-                        focusNode,
-                        onFieldSubmitted,
-                      ) {
+                  fieldViewBuilder: (
+                    context,
+                    ctrl,
+                    focusNode,
+                    onFieldSubmitted,
+                  ) {
                     return TextField(
                       controller: ctrl,
                       focusNode: focusNode,
@@ -457,7 +479,7 @@ class _ClientListScreenState
                         prefixIcon:
                             const Icon(Icons.search),
                         hintText:
-                            'Hledej jméno, email nebo ID',
+                            l10n.searchByNameEmailOrId,
                         border:
                             OutlineInputBorder(
                           borderRadius:
@@ -542,8 +564,8 @@ class _ClientListScreenState
                                     displayedClients,
                                   ),
                       icon: const Icon(Icons.copy),
-                      label: const Text(
-                        'Kopírovat emaily',
+                      label: Text(
+                        l10n.copyEmails,
                       ),
                     ),
 
@@ -581,8 +603,8 @@ class _ClientListScreenState
                       icon: const Icon(
                         Icons.archive_outlined,
                       ),
-                      label: const Text(
-                        'Import CSV do archivu',
+                      label: Text(
+                        l10n.archiveCsvImport,
                       ),
                     ),
 
@@ -609,8 +631,8 @@ class _ClientListScreenState
                     child: Center(
                       child: Text(
                         _showArchived
-                            ? 'Archiv zatím neobsahuje žádné klienty.'
-                            : 'Zatím nemáš žádné aktivní klienty.',
+                            ? l10n.archiveHasNoClients
+                            : l10n.noActiveClientsYet,
                         textAlign:
                             TextAlign.center,
                       ),
@@ -657,7 +679,6 @@ class _ClientListScreenState
                             const EdgeInsets.all(
                           16,
                         ),
-
                         title: Text(
                           '$name (${c.client.clientId})',
                           style:
@@ -667,7 +688,6 @@ class _ClientListScreenState
                             fontSize: 20,
                           ),
                         ),
-
                         subtitle: Padding(
                           padding:
                               const EdgeInsets.only(
@@ -681,30 +701,24 @@ class _ClientListScreenState
                               Text(
                                 'Odcvičeno za 7 dní: ${c.completedDaysInLast7}/7',
                               ),
-
                               const SizedBox(
                                 height: 4,
                               ),
-
                               Text(
                                 'Věk: ${c.client.age}, ${c.client.heightCm} cm'
                                 '${c.client.isEatingDisorderSupport ? '' : ', ${c.client.weightKg.toStringAsFixed(1)} kg'}',
                               ),
-
                               const SizedBox(
                                 height: 4,
                               ),
-
                               Text(
                                 email.isEmpty
                                     ? 'Email: —'
                                     : 'Email: $email',
                               ),
-
                               const SizedBox(
                                 height: 10,
                               ),
-
                               Row(
                                 children: [
                                   if (c.client
@@ -739,7 +753,6 @@ class _ClientListScreenState
                                         ),
                                       ),
                                     ),
-
                                   if (!c.client
                                           .isArchived &&
                                       c.isInactive7d)
@@ -782,7 +795,6 @@ class _ClientListScreenState
                             ],
                           ),
                         ),
-
                         trailing: c.client
                                 .isArchived
                             ? FilledButton(
@@ -819,7 +831,6 @@ class _ClientListScreenState
                                   ),
                                 ],
                               ),
-
                         onTap: () async {
                           await _setActiveClient(
                             c.client.clientId,

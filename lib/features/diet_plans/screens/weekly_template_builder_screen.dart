@@ -10,6 +10,7 @@ import '../models/carb_cycling_plan.dart';
 import '../models/custom_meal_plan_models.dart';
 import '../providers/custom_meal_plan_templates_provider.dart';
 import '../providers/saved_meal_plans_provider.dart';
+import '../../../l10n/app_localizations.dart';
 
 class WeeklyTemplateBuilderScreen extends ConsumerStatefulWidget {
   const WeeklyTemplateBuilderScreen({super.key});
@@ -21,22 +22,25 @@ class WeeklyTemplateBuilderScreen extends ConsumerStatefulWidget {
 
 class _WeeklyTemplateBuilderScreenState
     extends ConsumerState<WeeklyTemplateBuilderScreen> {
-  static const List<String> _days = [
-    'Pondělí',
-    'Úterý',
-    'Středa',
-    'Čtvrtek',
-    'Pátek',
-    'Sobota',
-    'Neděle',
-  ];
+
+  List<String> _days(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return [
+      l10n.monday,
+      l10n.tuesday,
+      l10n.wednesday,
+      l10n.thursday,
+      l10n.friday,
+      l10n.saturday,
+      l10n.sunday,
+    ];
+  }
 
   late final TextEditingController _titleCtrl;
   late final TextEditingController _noteCtrl;
 
-  final Map<String, String?> _selectedTemplateIds = {
-    for (final day in _days) day: null,
-  };
+  final Map<String, String?> _selectedTemplateIds = {};
 
   @override
   void initState() {
@@ -53,6 +57,7 @@ class _WeeklyTemplateBuilderScreenState
   }
 
   Future<void> _saveWeeklyPlan() async {
+    final l10n = AppLocalizations.of(context)!;
     final dailyTemplates = ref.read(customMealPlanTemplatesProvider);
     final combos = ref.read(foodComboProvider);
     final bank = ref.read(foodBankProvider);
@@ -60,35 +65,36 @@ class _WeeklyTemplateBuilderScreenState
 
     final title = _titleCtrl.text.trim();
     if (title.isEmpty) {
-      _toast('Vyplň název týdenního jídelníčku.');
+      _toast(l10n.fillWeeklyMealPlanName);
       return;
     }
 
-    final missingDays = _days.where((day) => _selectedTemplateIds[day] == null);
+    final missingDays = _days(context)
+        .where((day) => _selectedTemplateIds[day] == null);
     if (missingDays.isNotEmpty) {
-      _toast('Vyber šablonu pro každý den v týdnu.');
+      _toast(l10n.selectTemplateForEachDay);
       return;
     }
 
     final selectedTemplates = <DailyMealTemplate>[];
-    for (final day in _days) {
+    for (final day in _days(context)) {
       final id = _selectedTemplateIds[day];
       final template = dailyTemplates.cast<DailyMealTemplate?>().firstWhere(
             (e) => e?.id == id,
             orElse: () => null,
           );
       if (template == null) {
-        _toast('Nepodařilo se načíst některou denní šablonu.');
+        _toast(l10n.failedToLoadDailyTemplate);
         return;
       }
       selectedTemplates.add(template);
     }
 
     final plannedDays = <PlannedDay>[];
-    for (var i = 0; i < _days.length; i++) {
+    for (var i = 0; i < _days(context).length; i++) {
       plannedDays.add(
         _mapTemplateToPlannedDay(
-          dayName: _days[i],
+          dayName: _days(context)[i],
           template: selectedTemplates[i],
           combos: combos,
           bank: bank,
@@ -142,11 +148,13 @@ class _WeeklyTemplateBuilderScreenState
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Týdenní jídelníček byl uložen.')),
+      SnackBar(
+        content: Text(l10n.weeklyMealPlanSaved),
+      ),
     );
 
     Navigator.pop(context);
-  }
+    }
 
   PlannedDay _mapTemplateToPlannedDay({
     required String dayName,
@@ -283,17 +291,23 @@ class _WeeklyTemplateBuilderScreenState
   }
 
   String _slotLabel(CustomMealSlot slot) {
+    final l10n = AppLocalizations.of(context)!;
+
     switch (slot) {
       case CustomMealSlot.breakfast:
-        return 'Snídaně';
+        return l10n.breakfast;
+
       case CustomMealSlot.snack1:
-        return 'Svačina';
+        return l10n.snack;
+
       case CustomMealSlot.lunch:
-        return 'Oběd';
+        return l10n.lunch;
+
       case CustomMealSlot.snack2:
-        return 'Svačina 2';
+        return l10n.snack2;
+
       case CustomMealSlot.dinner:
-        return 'Večeře';
+        return l10n.dinner;
     }
   }
 
@@ -305,26 +319,28 @@ class _WeeklyTemplateBuilderScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final templates = ref.watch(customMealPlanTemplatesProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sestavit týdenní jídelníček'),
+        title: Text(l10n.buildWeeklyMealPlan),
         actions: [
           IconButton(
             onPressed: templates.isEmpty ? null : _saveWeeklyPlan,
             icon: const Icon(Icons.save),
-            tooltip: 'Uložit týden',
+            tooltip: l10n.saveWeek,
           ),
         ],
       ),
       body: templates.isEmpty
-          ? const Center(
+          ? Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
-                  'Nejdřív si vytvoř alespoň jednu denní šablonu jídelníčku.',
+                  l10n.createDailyTemplateFirst,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -341,17 +357,17 @@ class _WeeklyTemplateBuilderScreenState
                       children: [
                         TextField(
                           controller: _titleCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Název týdenního jídelníčku',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: l10n.weeklyMealPlanName,
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _noteCtrl,
                           maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Poznámka trenéra',
+                          decoration: InputDecoration(
+                            labelText: l10n.coachNote,
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -360,7 +376,7 @@ class _WeeklyTemplateBuilderScreenState
                   ),
                 ),
                 const SizedBox(height: 16),
-                for (final day in _days) ...[
+                for (final day in _days(context)) ...[
                   Card(
                     elevation: 0,
                     child: Padding(
@@ -378,8 +394,8 @@ class _WeeklyTemplateBuilderScreenState
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
                             initialValue: _selectedTemplateIds[day],
-                            decoration: const InputDecoration(
-                              labelText: 'Vyber denní šablonu',
+                            decoration: InputDecoration(
+                              labelText: l10n.selectDailyTemplate,
                               border: OutlineInputBorder(),
                             ),
                             items: templates
@@ -388,7 +404,7 @@ class _WeeklyTemplateBuilderScreenState
                                     value: template.id,
                                     child: Text(
                                       template.title.isEmpty
-                                          ? 'Bez názvu'
+                                          ? l10n.untitled
                                           : template.title,
                                     ),
                                   ),
@@ -416,7 +432,7 @@ class _WeeklyTemplateBuilderScreenState
                 FilledButton.icon(
                   onPressed: _saveWeeklyPlan,
                   icon: const Icon(Icons.save),
-                  label: const Text('ULOŽIT TÝDENNÍ JÍDELNÍČEK'),
+                  label: Text(l10n.saveWeeklyMealPlan),
                 ),
               ],
             ),
@@ -433,6 +449,8 @@ class _SelectedTemplatePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -454,7 +472,7 @@ class _SelectedTemplatePreview extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Počet jídel: ${template.entries.where((e) => e.comboTitle != null && e.comboTitle!.trim().isNotEmpty).length}',
+            '${l10n.mealCount}: ${template.entries.where((e) => e.comboTitle != null && e.comboTitle!.trim().isNotEmpty).length}',
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
           if (template.note.trim().isNotEmpty) ...[

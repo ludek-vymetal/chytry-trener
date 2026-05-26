@@ -4,16 +4,17 @@ class FoodStrategy {
   final double fatGPerKg;
   final bool preferHighCarbs;
 
-  final String label;
-  final String rationale;
+  /// l10n keys
+  final String labelKey;
+  final String rationaleKey;
 
   const FoodStrategy({
     required this.calorieMultiplier,
     required this.proteinGPerKg,
     required this.fatGPerKg,
     required this.preferHighCarbs,
-    required this.label,
-    required this.rationale,
+    required this.labelKey,
+    required this.rationaleKey,
   });
 }
 

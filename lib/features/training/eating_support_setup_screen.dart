@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../models/goal.dart';
 import '../../providers/user_profile_provider.dart';
@@ -21,37 +22,42 @@ class _EatingSupportSetupScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
-      return const Scaffold(
-        body: Center(child: Text('Nejprve nastav profil a cíl.')),
+      return Scaffold(
+        body: Center(
+          child: Text(l10n.setupProfileAndGoalFirst),
+        ),
       );
     }
 
     final goal = profile.goal!;
+
     final isThisMode = goal.type == GoalType.weightGainSupport &&
         goal.reason == GoalReason.eatingDisorderSupport;
 
     if (!isThisMode) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: Text('Tento dotazník je jen pro režim Nabírání/PPP podpora.'),
+          child: Text(l10n.eatingSupportOnlyMode),
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Podpora nabírání / bezpečný režim')),
+      appBar: AppBar(
+        title: Text(l10n.safeModeTitle),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Tenhle režim je navržený tak, aby nepodporoval restrikci ani kalorické počítání.\n'
-              'Cílem je bezpečný návrat energie, rutiny a síly.',
-              style: TextStyle(fontSize: 14),
+            Text(
+              l10n.safeModeDescription,
+              style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 12),
             Card(
@@ -60,62 +66,71 @@ class _EatingSupportSetupScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Bezpečnost a preference',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      l10n.safetyAndPreferences,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     SwitchListTile(
                       value: avoidNumbers,
-                      title: const Text(
-                        'Nezobrazovat čísla o výživě (kalorie/makra)',
+                      title: Text(
+                        l10n.hideNutritionNumbers,
                       ),
-                      subtitle: const Text(
-                        'Doporučeno – aplikace nebude tlačit na čísla.',
+                      subtitle: Text(
+                        l10n.hideNutritionNumbersDescription,
                       ),
                       onChanged: (v) => setState(() => avoidNumbers = v),
                     ),
                     SwitchListTile(
                       value: hasMedicalSupport,
-                      title: const Text(
-                        'Mám odbornou podporu (terapeut / lékař / nutriční)',
+                      title: Text(
+                        l10n.medicalSupport,
                       ),
-                      subtitle: const Text(
-                        'Pomůže to nastavit citlivější doporučení.',
+                      subtitle: Text(
+                        l10n.medicalSupportDescription,
                       ),
-                      onChanged: (v) => setState(() => hasMedicalSupport = v),
+                      onChanged: (v) =>
+                          setState(() => hasMedicalSupport = v),
                     ),
                     const SizedBox(height: 10),
-                    const Text('Na co se chceš zaměřit teď nejvíc?'),
+                    Text(l10n.focusQuestion),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: focus,
-                      items: const [
+                      items: [
                         DropdownMenuItem(
                           value: 'energy',
-                          child: Text('Energie & rutina'),
+                          child: Text(
+                            l10n.focusEnergyRoutine,
+                          ),
                         ),
                         DropdownMenuItem(
                           value: 'strength',
-                          child: Text('Síla & výkon'),
+                          child: Text(
+                            l10n.focusStrengthPerformance,
+                          ),
                         ),
                         DropdownMenuItem(
                           value: 'routine',
-                          child: Text('Jemný režim bez tlaku'),
+                          child: Text(
+                            l10n.focusGentleMode,
+                          ),
                         ),
                       ],
-                      onChanged: (v) => setState(() => focus = v ?? 'energy'),
+                      onChanged: (v) =>
+                          setState(() => focus = v ?? 'energy'),
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Poznámka (volitelné)',
-                        helperText:
-                            'Např. “chci 3× týdně lehce”, “nechci vážení”, “preferuji stroje”.',
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        labelText: l10n.optionalNote,
+                        helperText: l10n.optionalNoteDescription,
                       ),
                       minLines: 2,
                       maxLines: 5,
@@ -128,12 +143,10 @@ class _EatingSupportSetupScreenState
             const SizedBox(height: 12),
             Card(
               color: Colors.amber.withValues(alpha: 0.15),
-              child: const Padding(
-                padding: EdgeInsets.all(12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
                 child: Text(
-                  'Pokud máš pocit, že je ti psychicky opravdu zle, nebo máš nutkání si ublížit, '
-                  'vyhledej okamžitou pomoc. V ČR funguje Linka první psychické pomoci 116 123 (nonstop) '
-                  'a Linka bezpečí 116 111 (nonstop pro děti a mladé).',
+                  l10n.mentalHealthWarning,
                 ),
               ),
             ),
@@ -147,16 +160,25 @@ class _EatingSupportSetupScreenState
                     'safeMode:avoidNumbers=$avoidNumbers',
                     'safeMode:hasSupport=$hasMedicalSupport',
                     'safeMode:focus=$focus',
-                    if (note.trim().isNotEmpty) 'safeMode:userNote=${note.trim()}',
-                  ].where((x) => x != null && x.toString().trim().isNotEmpty).join(' | ');
+                    if (note.trim().isNotEmpty)
+                      'safeMode:userNote=${note.trim()}',
+                  ]
+                      .where(
+                        (x) =>
+                            x != null &&
+                            x.toString().trim().isNotEmpty,
+                      )
+                      .join(' | ');
 
                   ref.read(userProfileProvider.notifier).setGoal(
-                        goal.copyWith(note: mergedNote),
+                        goal.copyWith(
+                          note: mergedNote,
+                        ),
                       );
 
                   Navigator.pop(context);
                 },
-                child: const Text('Uložit'),
+                child: Text(l10n.save),
               ),
             ),
           ],

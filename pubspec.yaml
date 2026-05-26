@@ -54,3 +54,22 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/app_icon.png"
+
+flutter_intl:
+  enabled: true
+
+l10n:
+  arb-dir: lib/l10n
+  template-arb-file: app_en.arb
+  output-localization-file: app_localizations.dart
+  untranslated-messages-file: untranslated.json
+
+analyzer:
+  errors:
+    unused_element: ignore
+    unused_local_variable: ignore
+    use_build_context_synchronously: ignore
+
+linter:
+  rules:
+    prefer_const_constructors: false

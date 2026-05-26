@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../l10n/app_localizations.dart';
 import '../../../providers/user_profile_provider.dart';
 import '../logic/meal_plan_scaling_service.dart';
 import '../models/custom_meal_plan_models.dart';
@@ -16,6 +16,8 @@ class SavedMealPlansScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final savedPlans = ref.watch(savedMealPlansProvider);
     final dailyTemplates = ref.watch(customMealPlanTemplatesProvider);
     final profile = ref.watch(userProfileProvider);
@@ -26,19 +28,19 @@ class SavedMealPlansScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Uložené jídelníčky'),
+        title: Text(l10n.savedMealPlans),
       ),
       body: (!hasWeeklyPlans && !hasDailyTemplates)
-          ? const Center(
+          ? Center(
               child: Text(
-                'Zatím nemáš uložené žádné kompletní jídelníčky ani denní šablony.',
+                l10n.noSavedMealPlans,
               ),
             )
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'Denní šablony',
+                  l10n.dailyTemplates ,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -52,7 +54,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        'Zatím nemáš uložené žádné denní šablony.',
+                        l10n.noDailyTemplates,
                         style: TextStyle(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -71,7 +73,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 item.title.isEmpty
-                                    ? 'Bez názvu'
+                                    ? l10n.untitled
                                     : item.title,
                                 style: const TextStyle(
                                   fontSize: 17,
@@ -85,23 +87,23 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                 children: [
                                   _chip(
                                     context,
-                                    'Fáze: ${item.phaseLabel}',
+                                    '${l10n.phase}: ${item.phaseLabel}',
                                   ),
                                   _chip(
                                     context,
-                                    'Jídla: ${item.entries.length}',
+                                    '${l10n.meals}: ${item.entries.length}',
                                   ),
                                   if ((item.clientName ?? '').trim().isNotEmpty)
                                     _chip(
                                       context,
-                                      'Klient: ${item.clientName}',
+                                      '${l10n.client}: ${item.clientName}',
                                     ),
                                 ],
                               ),
                               if (item.note.trim().isNotEmpty) ...[
                                 const SizedBox(height: 10),
                                 Text(
-                                  'Poznámka trenéra: ${item.note}',
+                                  '${l10n.coachNote}: ${item.note}',
                                   style: TextStyle(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
@@ -125,7 +127,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                       );
                                     },
                                     icon: const Icon(Icons.edit_outlined),
-                                    label: const Text('Otevřít / upravit'),
+                                    label: Text(l10n.openEdit),
                                   ),
                                   OutlinedButton.icon(
                                     onPressed: () => _confirmDeleteDailyTemplate(
@@ -134,7 +136,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                       item,
                                     ),
                                     icon: const Icon(Icons.delete_outline),
-                                    label: const Text('Smazat'),
+                                    label: Text(l10n.delete),
                                   ),
                                 ],
                               ),
@@ -148,7 +150,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                 Divider(color: colorScheme.outlineVariant),
                 const SizedBox(height: 16),
                 Text(
-                  'Kompletní jídelníčky',
+                  l10n.completeMealPlans,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -162,7 +164,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        'Zatím nemáš uložené žádné kompletní jídelníčky.',
+                        l10n.noCompleteMealPlans,
                         style: TextStyle(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -191,18 +193,18 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
-                                  _chip(context, 'Typ: ${item.planType}'),
+                                  _chip(context, '${l10n.type}: ${item.planType}'),
                                   _chip(
                                     context,
-                                    'Délka: ${item.durationDays} dní',
+                                    '${l10n.duration}: ${item.durationDays} ${l10n.days}',
                                   ),
                                   _chip(
                                     context,
-                                    'Základ: ${item.baseWeight.toStringAsFixed(1)} kg',
+                                    '${l10n.baseWeight}: ${item.baseWeight.toStringAsFixed(1)} kg',
                                   ),
                                   _chip(
                                     context,
-                                    'Kcal: ${item.baseCalories.toStringAsFixed(0)}',
+                                    '${l10n.calories}: ${item.baseCalories.toStringAsFixed(0)}',
                                   ),
                                 ],
                               ),
@@ -236,7 +238,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                       );
                                     },
                                     icon: const Icon(Icons.content_copy),
-                                    label: const Text('Použít 1:1'),
+                                    label: Text(l10n.useOneToOne),
                                   ),
                                   FilledButton.tonalIcon(
                                     onPressed: profile == null
@@ -247,6 +249,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                                     .scaleTemplateToProfile(
                                               template: item,
                                               profile: profile,
+                                              l10n: AppLocalizations.of(context)!,
                                             );
 
                                             ref
@@ -267,7 +270,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                             );
                                           },
                                     icon: const Icon(Icons.scale),
-                                    label: const Text('Přepočítat na profil'),
+                                    label: Text(l10n.scaleToProfile),
                                   ),
                                   OutlinedButton.icon(
                                     onPressed: () => _confirmDeleteWeeklyPlan(
@@ -276,7 +279,7 @@ class SavedMealPlansScreen extends ConsumerWidget {
                                       item,
                                     ),
                                     icon: const Icon(Icons.delete_outline),
-                                    label: const Text('Smazat'),
+                                    label: Text(l10n.delete),
                                   ),
                                 ],
                               ),
@@ -308,26 +311,42 @@ class SavedMealPlansScreen extends ConsumerWidget {
     WidgetRef ref,
     SavedMealPlan item,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final approved = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Smazat jídelníček?'),
-        content: Text('Opravdu chceš smazat "${item.name}"?'),
+        title: Text(
+          l10n.deleteMealPlanQuestion,
+        ),
+        content: Text(
+          l10n.confirmDeleteTemplate(
+            item.name,
+          ),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Ne'),
+            onPressed: () =>
+                Navigator.pop(context, false),
+            child: Text(
+              l10n.no,
+            ),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Ano'),
+            onPressed: () =>
+                Navigator.pop(context, true),
+            child: Text(
+              l10n.yes,
+            ),
           ),
         ],
       ),
     );
 
     if (approved == true) {
-      await ref.read(savedMealPlansProvider.notifier).deleteTemplate(item.id);
+      await ref
+          .read(savedMealPlansProvider.notifier)
+          .deleteTemplate(item.id);
     }
   }
 
@@ -336,21 +355,35 @@ class SavedMealPlansScreen extends ConsumerWidget {
     WidgetRef ref,
     DailyMealTemplate item,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final approved = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Smazat denní šablonu?'),
+        title: Text(
+          l10n.deleteDailyTemplateQuestion,
+        ),
         content: Text(
-          'Opravdu chceš smazat "${item.title.isEmpty ? 'Bez názvu' : item.title}"?',
+          l10n.confirmDeleteTemplate(
+            item.title.isEmpty
+                ? l10n.untitled
+                : item.title,
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Ne'),
+            onPressed: () =>
+                Navigator.pop(context, false),
+            child: Text(
+              l10n.no,
+            ),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Ano'),
+            onPressed: () =>
+                Navigator.pop(context, true),
+            child: Text(
+              l10n.yes,
+            ),
           ),
         ],
       ),
@@ -362,4 +395,4 @@ class SavedMealPlansScreen extends ConsumerWidget {
           .remove(item.id);
     }
   }
-}
+}  

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../providers/user_profile_provider.dart';
 import '../../../services/pdf/diet_plan_pdf_service.dart';
 import '../models/carb_cycling_food_logic.dart';
@@ -24,11 +25,12 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     this.savedTemplate,
   });
 
-  DietMealPlan _resolvePlan() {
+  DietMealPlan _resolvePlan(AppLocalizations l10n) {
     if (mealPlan != null) return mealPlan!;
     if (plan?.mealPlan != null) return plan!.mealPlan!;
 
     final fallback = plan;
+
     if (fallback == null) {
       return const DietMealPlan(
         planType: 'Unknown',
@@ -40,26 +42,30 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     }
 
     final days = [
-      "Pondělí",
-      "Úterý",
-      "Středa",
-      "Čtvrtek",
-      "Pátek",
-      "Sobota",
-      "Neděle",
+      l10n.monday,
+      l10n.tuesday,
+      l10n.wednesday,
+      l10n.thursday,
+      l10n.friday,
+      l10n.saturday,
+      l10n.sunday,
     ];
 
     return DietMealPlan(
       planType: 'Vlny',
       protein: fallback.protein,
-      carbs: fallback.dailyCarbs.isEmpty ? 0 : fallback.dailyCarbs.first,
+      carbs: fallback.dailyCarbs.isEmpty
+          ? 0
+          : fallback.dailyCarbs.first,
       fats: fallback.fats,
       days: List.generate(7, (index) {
         final carbs = fallback.dailyCarbs[index];
+
         final meals = MealGenerator.generateMenu(
           carbs,
           fallback.protein,
           fallback.fats,
+          l10n: l10n,
         );
 
         return PlannedDay(
@@ -72,7 +78,7 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                 (raw) => PlannedMeal(
                   label: (raw['name'] ?? 'Jídlo').toString(),
                   name: (raw['name'] ?? 'Jídlo').toString(),
-                  description: (raw['content'] ?? '').toString(),
+                  description: (raw['description'] ?? '').toString(),
                   ingredients: const [],
                 ),
               )
@@ -84,16 +90,21 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
-    final resolvedPlan = _resolvePlan();
+    final resolvedPlan = _resolvePlan(l10n);
+    
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(titleOverride ?? "Týdenní jídelníček"),
+        title: Text(
+          titleOverride ?? l10n.weeklyMealPlan,
+        ),
         actions: [
           IconButton(
-            tooltip: 'Uložené jídelníčky',
+            tooltip: l10n.savedMealPlans,
             onPressed: () {
               Navigator.push(
                 context,
@@ -105,7 +116,7 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
             icon: const Icon(Icons.bookmarks_outlined),
           ),
           IconButton(
-            tooltip: 'Uložit šablonu',
+            tooltip: l10n.saveTemplate,
             onPressed: () => _showSaveDialog(
               context,
               ref,
@@ -115,17 +126,19 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
             icon: const Icon(Icons.save_outlined),
           ),
           IconButton(
-            tooltip: 'Tisk / PDF',
+            tooltip: l10n.printPdf,
             onPressed: () => DietPlanPdfService.printPlan(
               resolvedPlan,
+              l10n,
               trainerNote: savedTemplate?.trainerNote,
             ),
             icon: const Icon(Icons.print_outlined),
           ),
           IconButton(
-            tooltip: 'Sdílet PDF',
+            tooltip: l10n.sharePdf,
             onPressed: () => DietPlanPdfService.sharePlan(
               resolvedPlan,
+              l10n,
               trainerNote: savedTemplate?.trainerNote,
             ),
             icon: const Icon(Icons.picture_as_pdf_outlined),
@@ -167,7 +180,9 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ShoppingListScreen(mealPlan: resolvedPlan),
+                    builder: (_) => ShoppingListScreen(
+                      mealPlan: resolvedPlan,
+                    ),
                   ),
                 );
               },
@@ -188,7 +203,9 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                   color: colorScheme.surface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: colorScheme.outlineVariant),
+                    side: BorderSide(
+                      color: colorScheme.outlineVariant,
+                    ),
                   ),
                   child: Theme(
                     data: Theme.of(context).copyWith(
@@ -197,7 +214,8 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                     child: ExpansionTile(
                       initiallyExpanded: index == 0,
                       iconColor: colorScheme.primary,
-                      collapsedIconColor: colorScheme.onSurfaceVariant,
+                      collapsedIconColor:
+                          colorScheme.onSurfaceVariant,
                       title: Text(
                         '${day.dayName} - ${day.carbs.toStringAsFixed(0)} g S',
                         style: TextStyle(
@@ -219,10 +237,13 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                             meal.time != null
                                 ? '${meal.time} • ${meal.label}: ${meal.name}'
                                 : '${meal.label}: ${meal.name}',
-                            style: TextStyle(color: colorScheme.onSurface),
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                            ),
                           ),
                           subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
                             children: [
                               Text(
                                 meal.description,
@@ -235,7 +256,8 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                                 Text(
                                   'Ingredience: ${meal.ingredients.map((e) => '${e.name} (${e.formattedAmount})').join(', ')}',
                                   style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
+                                    color:
+                                        colorScheme.onSurfaceVariant,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -255,15 +277,24 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     );
   }
 
-  Widget _macroChip(BuildContext context, String label, String value) {
+  Widget _macroChip(
+    BuildContext context,
+    String label,
+    String value,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+        ),
       ),
       child: Text(
         '$label: $value',
@@ -282,11 +313,14 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     dynamic profile,
   ) async {
     final nameController = TextEditingController(
-      text: '${plan.planType} • ${DateTime.now().day}.${DateTime.now().month}.',
+      text:
+          '${plan.planType} • ${DateTime.now().day}.${DateTime.now().month}.',
     );
+
     final trainerNoteController = TextEditingController(
       text: 'Další kontrola a vážení za 30 dní.',
     );
+
     final durationController = TextEditingController(
       text: plan.days.length.toString(),
     );
@@ -294,7 +328,9 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     final approved = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Uložit kompletní jídelníček'),
+        title: const Text(
+          'Uložit kompletní jídelníček',
+        ),
         content: SingleChildScrollView(
           child: Column(
             children: [
@@ -337,22 +373,32 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     );
 
     if (approved == true) {
-      await ref.read(savedMealPlansProvider.notifier).saveTemplate(
+      await ref
+          .read(savedMealPlansProvider.notifier)
+          .saveTemplate(
             name: nameController.text.trim().isEmpty
                 ? 'Jídelníček'
                 : nameController.text.trim(),
-            plan: plan.copyWith(note: trainerNoteController.text.trim()),
-            baseWeight: (profile?.weight as double?) ?? 0,
-            baseCalories: (profile?.tdee as double?) ?? 0,
-            durationDays: int.tryParse(durationController.text.trim()) ??
-                plan.days.length,
-            trainerNote: trainerNoteController.text.trim(),
+            plan: plan.copyWith(
+              note: trainerNoteController.text.trim(),
+            ),
+            baseWeight:
+                (profile?.weight as double?) ?? 0,
+            baseCalories:
+                (profile?.tdee as double?) ?? 0,
+            durationDays:
+                int.tryParse(durationController.text.trim()) ??
+                    plan.days.length,
+            trainerNote:
+                trainerNoteController.text.trim(),
           );
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Jídelníček byl uložen do databanky plánů.'),
+            content: Text(
+              'Jídelníček byl uložen do databanky plánů.',
+            ),
           ),
         );
       }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 import '../../../providers/coach/coach_auth_provider.dart';
 import '../../../providers/coach/coach_circumference_controller.dart';
 import '../../../providers/coach/coach_clients_controller.dart';
@@ -9,27 +11,46 @@ import '../../../providers/coach/coach_goal_controller.dart';
 import '../../../providers/coach/coach_inbody_controller.dart';
 import '../../../providers/coach/coach_notes_controller.dart';
 import '../../../providers/coach/coach_setup_provider.dart';
+
 import '../../../providers/daily_history_provider.dart';
 import '../../../providers/daily_intake_provider.dart';
 import '../../../providers/training_session_provider.dart';
+
 import '../../../services/coach/coach_cloud_sync_service.dart';
 
-class CoachAuthScreen extends ConsumerStatefulWidget {
-  const CoachAuthScreen({super.key});
+class CoachAuthScreen
+    extends ConsumerStatefulWidget {
+  const CoachAuthScreen({
+    super.key,
+  });
 
   @override
-  ConsumerState<CoachAuthScreen> createState() => _CoachAuthScreenState();
+  ConsumerState<CoachAuthScreen>
+      createState() =>
+          _CoachAuthScreenState();
 }
 
-class _CoachAuthScreenState extends ConsumerState<CoachAuthScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+class _CoachAuthScreenState
+    extends ConsumerState<CoachAuthScreen> {
+  final _formKey =
+      GlobalKey<FormState>();
+
+  final _emailController =
+      TextEditingController();
+
+  final _passwordController =
+      TextEditingController();
+
+  final _confirmPasswordController =
+      TextEditingController();
 
   bool _isRegisterMode = false;
+
   bool _passwordObscured = true;
-  bool _confirmPasswordObscured = true;
+
+  bool _confirmPasswordObscured =
+      true;
+
   bool _isSubmitting = false;
 
   @override
@@ -37,11 +58,19 @@ class _CoachAuthScreenState extends ConsumerState<CoachAuthScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+
     super.dispose();
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final l10n =
+        AppLocalizations.of(context)!;
+
+    if (!(_formKey.currentState
+            ?.validate() ??
+        false)) {
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -49,14 +78,30 @@ class _CoachAuthScreenState extends ConsumerState<CoachAuthScreen> {
 
     try {
       if (_isRegisterMode) {
-        await ref.read(coachAuthControllerProvider.notifier).register(
-              email: _emailController.text,
-              password: _passwordController.text,
+        await ref
+            .read(
+              coachAuthControllerProvider
+                  .notifier,
+            )
+            .register(
+              email:
+                  _emailController.text,
+              password:
+                  _passwordController
+                      .text,
             );
       } else {
-        await ref.read(coachAuthControllerProvider.notifier).signIn(
-              email: _emailController.text,
-              password: _passwordController.text,
+        await ref
+            .read(
+              coachAuthControllerProvider
+                  .notifier,
+            )
+            .signIn(
+              email:
+                  _emailController.text,
+              password:
+                  _passwordController
+                      .text,
             );
       }
 
@@ -64,19 +109,23 @@ class _CoachAuthScreenState extends ConsumerState<CoachAuthScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
             _isRegisterMode
-                ? 'Účet trenéra byl vytvořen.'
-                : 'Přihlášení proběhlo úspěšně.',
+                ? l10n
+                    .coachAccountCreated
+                : l10n
+                    .loginSuccessful,
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text('$e'),
         ),
@@ -90,199 +139,403 @@ class _CoachAuthScreenState extends ConsumerState<CoachAuthScreen> {
     }
   }
 
-  Future<void> _postAuthBootstrap() async {
-    await CoachCloudSyncService.safePullMergeToLocal();
+  Future<void>
+      _postAuthBootstrap() async {
+    await CoachCloudSyncService
+        .safePullMergeToLocal();
 
-    ref.invalidate(coachClientsControllerProvider);
-    ref.invalidate(coachNotesControllerProvider);
-    ref.invalidate(coachInbodyControllerProvider);
-    ref.invalidate(coachCircumferenceControllerProvider);
-    ref.invalidate(coachDiagnosticControllerProvider);
-    ref.invalidate(coachGoalControllerProvider);
-    ref.invalidate(trainingSessionProvider);
-    ref.invalidate(dailyHistoryProvider);
-    ref.invalidate(dailyIntakeProvider);
-    ref.invalidate(coachSetupProvider);
+    ref.invalidate(
+      coachClientsControllerProvider,
+    );
+
+    ref.invalidate(
+      coachNotesControllerProvider,
+    );
+
+    ref.invalidate(
+      coachInbodyControllerProvider,
+    );
+
+    ref.invalidate(
+      coachCircumferenceControllerProvider,
+    );
+
+    ref.invalidate(
+      coachDiagnosticControllerProvider,
+    );
+
+    ref.invalidate(
+      coachGoalControllerProvider,
+    );
+
+    ref.invalidate(
+      trainingSessionProvider,
+    );
+
+    ref.invalidate(
+      dailyHistoryProvider,
+    );
+
+    ref.invalidate(
+      dailyIntakeProvider,
+    );
+
+    ref.invalidate(
+      coachSetupProvider,
+    );
   }
 
-  String? _validateEmail(String? value) {
-    final text = value?.trim() ?? '';
+  String? _validateEmail(
+    String? value,
+  ) {
+    final l10n =
+        AppLocalizations.of(context)!;
+
+    final text =
+        value?.trim() ?? '';
+
     if (text.isEmpty) {
-      return 'Zadej e-mail.';
+      return l10n.enterEmail;
     }
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text)) {
-      return 'Zadej platný e-mail.';
+
+    if (!RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    ).hasMatch(text)) {
+      return l10n.enterValidEmail;
     }
+
     return null;
   }
 
-  String? _validatePassword(String? value) {
+  String? _validatePassword(
+    String? value,
+  ) {
+    final l10n =
+        AppLocalizations.of(context)!;
+
     final text = value ?? '';
+
     if (text.isEmpty) {
-      return 'Zadej heslo.';
+      return l10n.enterPassword;
     }
+
     if (text.length < 6) {
-      return 'Heslo musí mít alespoň 6 znaků.';
+      return l10n.passwordTooShort;
     }
+
     return null;
   }
 
-  String? _validateConfirmPassword(String? value) {
-    if (!_isRegisterMode) return null;
+  String? _validateConfirmPassword(
+    String? value,
+  ) {
+    final l10n =
+        AppLocalizations.of(context)!;
+
+    if (!_isRegisterMode) {
+      return null;
+    }
 
     final text = value ?? '';
+
     if (text.isEmpty) {
-      return 'Potvrď heslo.';
+      return l10n.confirmPassword;
     }
-    if (text != _passwordController.text) {
-      return 'Hesla se neshodují.';
+
+    if (text !=
+        _passwordController.text) {
+      return l10n.passwordsDoNotMatch;
     }
+
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final l10n =
+        AppLocalizations.of(context)!;
+
+    final theme =
+        Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isRegisterMode ? 'Registrace trenéra' : 'Přihlášení trenéra'),
+        title: Text(
+          _isRegisterMode
+              ? l10n.coachRegistration
+              : l10n.coachLogin,
+        ),
       ),
+
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+            constraints:
+                const BoxConstraints(
+              maxWidth: 560,
+            ),
+
+            child:
+                SingleChildScrollView(
+              padding:
+                  const EdgeInsets.all(
+                16,
+              ),
+
               child: Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding:
+                      const EdgeInsets.all(
+                    20,
+                  ),
+
                   child: Form(
                     key: _formKey,
+
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
+
                       children: [
                         Text(
                           _isRegisterMode
-                              ? 'Vytvoř účet trenéra'
-                              : 'Přihlas se do coach cloudu',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
+                              ? l10n
+                                  .createCoachAccount
+                              : l10n
+                                  .loginToCoachCloud,
+
+                          style: theme
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                            fontWeight:
+                                FontWeight
+                                    .bold,
                           ),
                         ),
-                        const SizedBox(height: 12),
+
+                        const SizedBox(
+                          height: 12,
+                        ),
+
                         Text(
                           _isRegisterMode
-                              ? 'Každý trenér má vlastní účet a vlastní cloud prostor pro klienty, poznámky a měření.'
-                              : 'Přihlas se svým e-mailem a heslem. Po přihlášení uvidíš jen svá vlastní coach data.',
-                          style: theme.textTheme.bodyLarge,
+                              ? l10n
+                                  .coachAccountDescription
+                              : l10n
+                                  .coachLoginDescription,
+
+                          style: theme
+                              .textTheme
+                              .bodyLarge,
                         ),
-                        const SizedBox(height: 24),
+
+                        const SizedBox(
+                          height: 24,
+                        ),
+
                         TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail',
-                            border: OutlineInputBorder(),
+                          controller:
+                              _emailController,
+
+                          keyboardType:
+                              TextInputType
+                                  .emailAddress,
+
+                          textInputAction:
+                              TextInputAction
+                                  .next,
+
+                          decoration:
+                              InputDecoration(
+                            labelText:
+                                l10n.email,
+
+                            border:
+                                const OutlineInputBorder(),
                           ),
-                          validator: _validateEmail,
+
+                          validator:
+                              _validateEmail,
                         ),
-                        const SizedBox(height: 16),
+
+                        const SizedBox(
+                          height: 16,
+                        ),
+
                         TextFormField(
-                          controller: _passwordController,
-                          obscureText: _passwordObscured,
-                          textInputAction: _isRegisterMode
-                              ? TextInputAction.next
-                              : TextInputAction.done,
-                          decoration: InputDecoration(
-                            labelText: 'Heslo',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
+                          controller:
+                              _passwordController,
+
+                          obscureText:
+                              _passwordObscured,
+
+                          textInputAction:
+                              _isRegisterMode
+                                  ? TextInputAction
+                                      .next
+                                  : TextInputAction
+                                      .done,
+
+                          decoration:
+                              InputDecoration(
+                            labelText:
+                                l10n.password,
+
+                            border:
+                                const OutlineInputBorder(),
+
+                            suffixIcon:
+                                IconButton(
                               onPressed: () {
                                 setState(() {
-                                  _passwordObscured = !_passwordObscured;
+                                  _passwordObscured =
+                                      !_passwordObscured;
                                 });
                               },
+
                               icon: Icon(
                                 _passwordObscured
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+                                    ? Icons
+                                        .visibility_off
+                                    : Icons
+                                        .visibility,
                               ),
                             ),
                           ),
-                          validator: _validatePassword,
-                          onFieldSubmitted: (_) {
-                            if (!_isRegisterMode && !_isSubmitting) {
+
+                          validator:
+                              _validatePassword,
+
+                          onFieldSubmitted:
+                              (_) {
+                            if (!_isRegisterMode &&
+                                !_isSubmitting) {
                               _submit();
                             }
                           },
                         ),
-                        if (_isRegisterMode) ...[
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _confirmPasswordObscured,
-                            textInputAction: TextInputAction.done,
-                            decoration: InputDecoration(
-                              labelText: 'Potvrzení hesla',
-                              border: const OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _confirmPasswordObscured =
-                                        !_confirmPasswordObscured;
-                                  });
-                                },
-                                icon: Icon(
-                                  _confirmPasswordObscured
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
+
+                        if (_isRegisterMode)
+                          ...[
+                            const SizedBox(
+                              height: 16,
+                            ),
+
+                            TextFormField(
+                              controller:
+                                  _confirmPasswordController,
+
+                              obscureText:
+                                  _confirmPasswordObscured,
+
+                              textInputAction:
+                                  TextInputAction
+                                      .done,
+
+                              decoration:
+                                  InputDecoration(
+                                labelText:
+                                    l10n
+                                        .confirmPasswordLabel,
+
+                                border:
+                                    const OutlineInputBorder(),
+
+                                suffixIcon:
+                                    IconButton(
+                                  onPressed:
+                                      () {
+                                    setState(
+                                      () {
+                                        _confirmPasswordObscured =
+                                            !_confirmPasswordObscured;
+                                      },
+                                    );
+                                  },
+
+                                  icon:
+                                      Icon(
+                                    _confirmPasswordObscured
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                  ),
                                 ),
                               ),
+
+                              validator:
+                                  _validateConfirmPassword,
+
+                              onFieldSubmitted:
+                                  (_) {
+                                if (!_isSubmitting) {
+                                  _submit();
+                                }
+                              },
                             ),
-                            validator: _validateConfirmPassword,
-                            onFieldSubmitted: (_) {
-                              if (!_isSubmitting) {
-                                _submit();
-                              }
-                            },
-                          ),
-                        ],
-                        const SizedBox(height: 20),
+                          ],
+
+                        const SizedBox(
+                          height: 20,
+                        ),
+
                         SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: _isSubmitting ? null : _submit,
+                          width:
+                              double.infinity,
+
+                          child:
+                              FilledButton(
+                            onPressed:
+                                _isSubmitting
+                                    ? null
+                                    : _submit,
+
                             child: _isSubmitting
                                 ? const SizedBox(
                                     width: 22,
                                     height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.4,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth:
+                                          2.4,
                                     ),
                                   )
                                 : Text(
                                     _isRegisterMode
-                                        ? 'Vytvořit účet'
-                                        : 'Přihlásit se',
+                                        ? l10n
+                                            .createAccount
+                                        : l10n
+                                            .signIn,
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 12),
+
+                        const SizedBox(
+                          height: 12,
+                        ),
+
                         Center(
-                          child: TextButton(
-                            onPressed: _isSubmitting
-                                ? null
-                                : () {
-                                    setState(() {
-                                      _isRegisterMode = !_isRegisterMode;
-                                    });
-                                  },
+                          child:
+                              TextButton(
+                            onPressed:
+                                _isSubmitting
+                                    ? null
+                                    : () {
+                                        setState(
+                                          () {
+                                            _isRegisterMode =
+                                                !_isRegisterMode;
+                                          },
+                                        );
+                                      },
+
                             child: Text(
                               _isRegisterMode
-                                  ? 'Už máš účet? Přihlásit se'
-                                  : 'Nemáš účet? Vytvořit registraci',
+                                  ? l10n
+                                      .alreadyHaveAccount
+                                  : l10n
+                                      .dontHaveAccount,
                             ),
                           ),
                         ),

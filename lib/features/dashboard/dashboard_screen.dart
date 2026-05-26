@@ -76,10 +76,12 @@ class _DashboardScreenState
     if (_changingExportFolder) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     final colorScheme = Theme.of(context).colorScheme;
 
-    final l10n = AppLocalizations.of(context)!;
+    
+    
 
     setState(() {
       _changingExportFolder = true;
@@ -142,7 +144,7 @@ class _DashboardScreenState
     final colorScheme = Theme.of(context).colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
-
+    
     await LocalStorageService.clearClientExportFolderPath();
 
     if (!mounted) return;
@@ -166,15 +168,14 @@ class _DashboardScreenState
     final l10n = AppLocalizations.of(context)!;
 
     final colorScheme = Theme.of(context).colorScheme;
-
-    final profile = ref.watch(userProfileProvider);
-
+    
     final activeCoachClientAsync =
         ref.watch(activeCoachClientProvider);
 
     final activeCoachClient =
         activeCoachClientAsync.asData?.value;
-
+    final profile = ref.watch(userProfileProvider);
+    
     final themeMode = ref.watch(themeProvider);
 
     if (profile == null || profile.goal == null) {
@@ -296,17 +297,17 @@ class _DashboardScreenState
       if (!mounted) return;
 
       if (confirmed == true) {
-      if (!context.mounted) return;
+        if (!context.mounted) return;
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              const OnboardingGoalScreen(),
-          ),
-        );
-      }
-    }  
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                const OnboardingGoalScreen(),
+            ),
+          );
+        }
+      }  
 
     return Scaffold(
       appBar: AppBar(
@@ -389,13 +390,14 @@ class _DashboardScreenState
               value:
                   '${tdee.toStringAsFixed(0)} kcal',
               subtitle:
-                  'Denní energetický výdej',
+                  l10n.dailyEnergyExpenditure,
             ),
 
             const SizedBox(height: 12),
 
             _MetricCard(
-              title: 'CÍLOVÉ KALORIE',
+              title:
+                  l10n.targetCalories.toUpperCase(),
               value:
                   '${macro.targetCalories} kcal',
               subtitle:
@@ -405,11 +407,11 @@ class _DashboardScreenState
             const SizedBox(height: 12),
 
             _MetricCard(
-              title: 'Makra',
+              title: l10n.macros,
               value:
                   'B ${macro.protein} g | S ${macro.carbs} g | T ${macro.fat} g',
               subtitle:
-                  'Týdnů do cíle: ${macro.weeksToTarget}',
+                  '${l10n.weeksToTarget}: ${macro.weeksToTarget}',
             ),
 
             const SizedBox(height: 12),
@@ -443,6 +445,7 @@ class _DashboardScreenState
             const SizedBox(height: 12),
 
             _ExportFolderCard(
+              
               currentPath: _exportFolderPath,
               isLoading:
                   _loadingExportFolder,
@@ -640,6 +643,7 @@ class _DashboardScreenState
 }
 
 class _ExportFolderCard extends StatelessWidget {
+  
   final String? currentPath;
 
   final bool isLoading;
@@ -662,6 +666,8 @@ class _ExportFolderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme =
         Theme.of(context).colorScheme;
+    final l10n =
+        AppLocalizations.of(context)!;    
 
     final hasCustomPath =
         currentPath != null &&
@@ -700,7 +706,7 @@ class _ExportFolderCard extends StatelessWidget {
 
                 Expanded(
                   child: Text(
-                    'Archivace klientů',
+                    l10n.clientArchiving,
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight:
@@ -738,10 +744,12 @@ class _ExportFolderCard extends StatelessWidget {
 
               child: SelectableText(
                 isLoading
-                    ? 'Načítám nastavení exportní složky...'
+                    ? l10n.loadingExportFolder
                     : hasCustomPath
-                        ? 'Aktuální exportní složka:\n\n$currentPath'
-                        : 'Není vybraná vlastní exportní složka.\n\nPoužije se výchozí Documents/Klienti.',
+                        ? l10n.currentExportFolder(
+                            currentPath!,
+                          )
+                        : l10n.noCustomExportFolder,
 
                 style: TextStyle(
                   color: colorScheme
@@ -778,13 +786,13 @@ class _ExportFolderCard extends StatelessWidget {
                         Icons.folder_open,
                       ),
 
-                label: const Padding(
+                label: Padding(
                   padding:
                       EdgeInsets.symmetric(
                     vertical: 14,
                   ),
                   child: Text(
-                    'Vybrat exportní složku',
+                    l10n.selectExportFolder,
                     textAlign:
                         TextAlign.center,
                   ),
@@ -809,13 +817,13 @@ class _ExportFolderCard extends StatelessWidget {
                     Icons.close,
                   ),
 
-                  label: const Padding(
+                  label: Padding(
                     padding:
                         EdgeInsets.symmetric(
                       vertical: 14,
                     ),
                     child: Text(
-                      'Zrušit vlastní cestu',
+                      l10n.clearCustomPath,
                       textAlign:
                           TextAlign.center,
                     ),
@@ -847,6 +855,7 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme =
         Theme.of(context).colorScheme;
+       
 
     return Card(
       elevation: 0,
@@ -997,6 +1006,8 @@ class _MacroDebugCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme =
         Theme.of(context).colorScheme;
+    final l10n =
+        AppLocalizations.of(context)!;    
 
     return Card(
       elevation: 0,
@@ -1032,7 +1043,7 @@ class _MacroDebugCard extends StatelessWidget {
 
                 Expanded(
                   child: Text(
-                    'Debug – z jaké váhy se počítá',
+                    l10n.debugWeightSource,
 
                     style: TextStyle(
                       fontWeight:
@@ -1050,15 +1061,15 @@ class _MacroDebugCard extends StatelessWidget {
 
             rowItem(
               context,
-              'Aktuální váha',
+              l10n.currentWeight,
               kg(currentKg),
             ),
 
             rowItem(
               context,
-              'Cílová váha',
+              l10n.targetWeight,
               targetKg == null
-                  ? 'nenastaveno'
+                  ? l10n.notSet
                   : kg(targetKg!),
             ),
 
@@ -1070,13 +1081,13 @@ class _MacroDebugCard extends StatelessWidget {
 
             rowItem(
               context,
-              'Váha pro kalorie',
+              l10n.weightForCalories,
               kg(weightForCaloriesKg),
             ),
 
             rowItem(
               context,
-              'Váha pro protein',
+              l10n.weightForProtein,
               kg(weightForProteinKg),
             ),
 
@@ -1088,25 +1099,25 @@ class _MacroDebugCard extends StatelessWidget {
 
             rowItem(
               context,
-              'Fáze',
+              l10n.phase,
               macro.phaseLabel,
             ),
 
             rowItem(
               context,
-              'Režim',
+              l10n.mode,
               macro.planModeLabel,
             ),
 
             rowItem(
               context,
-              'Týdny do cíle',
+              l10n.weeksToTarget,
               '${macro.weeksToTarget}',
             ),
 
             rowItem(
               context,
-              'Strategie',
+              l10n.strategy,
               macro.strategyLabel,
             ),
           ],

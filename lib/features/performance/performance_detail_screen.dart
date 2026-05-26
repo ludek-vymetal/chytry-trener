@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../providers/performance_provider.dart';
 import 'performance_chart_screen.dart';
 
@@ -16,14 +17,18 @@ class PerformanceDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final notifier = ref.read(performanceProvider.notifier);
-    final data = notifier.byExercise(exerciseName); // seřazeno podle data
+    final data = notifier.byExercise(exerciseName);
 
     if (data.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(exerciseName)),
-        body: const Center(
-          child: Text('Zatím nemáš žádné záznamy pro tento cvik.'),
+        body: Center(
+          child: Text(
+            l10n.noPerformanceRecordsForExercise,
+          ),
         ),
       );
     }
@@ -36,17 +41,22 @@ class PerformanceDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // List záznamů
             Expanded(
               child: Card(
                 child: ListView.separated(
                   itemCount: data.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1),
                   itemBuilder: (context, i) {
                     final p = data[i];
+
                     return ListTile(
-                      title: Text('${p.weight} kg × ${p.reps}'),
-                      subtitle: Text(_dateLabel(p.date)),
+                      title: Text(
+                        '${p.weight} kg × ${p.reps}',
+                      ),
+                      subtitle: Text(
+                        _dateLabel(p.date),
+                      ),
                     );
                   },
                 ),
@@ -55,18 +65,21 @@ class PerformanceDetailScreen extends ConsumerWidget {
 
             const SizedBox(height: 12),
 
-            // Tlačítko na graf
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.show_chart),
-                label: const Text('Zobrazit graf'),
+                label: Text(
+                  l10n.showChart,
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          PerformanceChartScreen(exerciseName: exerciseName),
+                          PerformanceChartScreen(
+                        exerciseName: exerciseName,
+                      ),
                     ),
                   );
                 },

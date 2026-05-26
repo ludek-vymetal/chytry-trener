@@ -42,14 +42,21 @@ class TrainingPrescription {
 }
 
 class TrainingService {
-  static TrainingPrescription calculate(UserProfile profile) {
+  static TrainingPrescription calculate(
+    UserProfile profile,
+  ) {
     final Goal? goal = profile.goal;
-    if (goal == null) return _default(profile);
 
-    final DateTime now = DateTime.now();
+    if (goal == null) {
+      return _default(profile);
+    }
 
-    // ✅ GoalPlanMode -> PlanMode
-    final PlanMode baseMode = _mapGoalPlanModeToPlanMode(goal.planMode);
+    final now = DateTime.now();
+
+    final PlanMode baseMode =
+        _mapGoalPlanModeToPlanMode(
+      goal.planMode,
+    );
 
     final ctx = TimeContext(
       now: now,
@@ -57,22 +64,30 @@ class TrainingService {
       mode: baseMode,
     );
 
-    final plans = PhasePlannerService.buildPlan(ctx);
-    if (plans.isEmpty) return _default(profile);
+    final plans =
+        PhasePlannerService.buildPlan(ctx);
 
-    final current = PhaseResolver.resolveCurrentPhase(
+    if (plans.isEmpty) {
+      return _default(profile);
+    }
+
+    final current =
+        PhaseResolver.resolveCurrentPhase(
       plans: plans,
       date: now,
     );
 
-    // ✅ Planner může vynutit accelerated
     final PlanMode effectiveMode =
-        current.accelerated ? PlanMode.accelerated : PlanMode.normal;
+        current.accelerated
+            ? PlanMode.accelerated
+            : PlanMode.normal;
 
-    // ✅ split fallback: bezpečný (pokud enum nemá "fullBody", použijeme první hodnotu)
-    final TrainingSplit split = profile.preferredSplit ?? TrainingSplit.values.first;
+    final TrainingSplit split =
+        profile.preferredSplit ??
+            TrainingSplit.values.first;
 
-    final TrainingStrategy strategy = TrainingStrategyAdapter.from(
+    final TrainingStrategy strategy =
+        TrainingStrategyAdapter.from(
       goal: goal,
       activePhase: current.activePlan,
       mode: effectiveMode,
@@ -83,7 +98,8 @@ class TrainingService {
       split: split,
       goal: goal,
       weeksToTarget: ctx.weeksToTarget,
-      weeksUntilPhaseEnd: current.weeksUntilPhaseEnd,
+      weeksUntilPhaseEnd:
+          current.weeksUntilPhaseEnd,
     );
   }
 
@@ -96,62 +112,128 @@ class TrainingService {
   }) {
     return TrainingPrescription(
       title: strategy.label,
-      note: _buildNote(strategy, goal),
-      reps: '${strategy.repsMin}–${strategy.repsMax}',
-      sets: '${strategy.setsMin}–${strategy.setsMax} / partii týdně',
-      rir: '${strategy.rirMin}–${strategy.rirMax}',
-      deloadRecommended: strategy.allowDeload,
+
+      note: _buildNote(
+        strategy,
+        goal,
+      ),
+
+      reps:
+          '${strategy.repsMin}–${strategy.repsMax}',
+
+      sets:
+          '${strategy.setsMin}–${strategy.setsMax}',
+
+      rir:
+          '${strategy.rirMin}–${strategy.rirMax}',
+
+      deloadRecommended:
+          strategy.allowDeload,
+
       peakMode: strategy.isPeaking,
-      splitLabel: split.label,
+
+      splitLabel: _splitLabel(split),
+
       weeksToTarget: weeksToTarget,
-      weeksUntilPhaseEnd: weeksUntilPhaseEnd,
+
+      weeksUntilPhaseEnd:
+          weeksUntilPhaseEnd,
     );
   }
 
-  static String _buildNote(TrainingStrategy s, Goal goal) {
-    final buffer = StringBuffer()..write(s.rationale);
+  static String _buildNote(
+    TrainingStrategy s,
+    Goal goal,
+  ) {
+    final buffer = StringBuffer()
+      ..write(s.rationale);
 
-    if (goal.reason == GoalReason.competition) {
-      buffer.write('\n• Režim pro závody – priorita výkon/forma.');
+    if (goal.reason ==
+        GoalReason.competition) {
+      buffer.write(
+        '\n• trainingCompetitionMode',
+      );
     }
 
-    if (goal.type == GoalType.weightLoss) {
-      buffer.write('\n• V deficitu nehoníme PR – držíme sílu.');
+    if (goal.type ==
+        GoalType.weightLoss) {
+      buffer.write(
+        '\n• trainingDeficitStrength',
+      );
     }
 
     if (s.isPeaking) {
-      buffer.write('\n• Peak: technika > objem, delší pauzy.');
+      buffer.write(
+        '\n• trainingPeakMode',
+      );
     }
 
     return buffer.toString();
   }
 
-  static TrainingPrescription _default(UserProfile profile) {
-    final TrainingSplit split = profile.preferredSplit ?? TrainingSplit.values.first;
+  static TrainingPrescription _default(
+    UserProfile profile,
+  ) {
+    final TrainingSplit split =
+        profile.preferredSplit ??
+            TrainingSplit.values.first;
 
     return TrainingPrescription(
-      title: 'Obecný trénink',
-      note: 'Nastav si nejprve cíl a datum, aby šla periodizace.',
+      title: 'trainingGeneralTitle',
+
+      note: 'trainingGeneralNote',
+
       reps: '8–12',
+
       sets: '12–16',
+
       rir: '1–2',
+
       deloadRecommended: false,
+
       peakMode: false,
-      splitLabel: split.label,
+
+      splitLabel: _splitLabel(split),
+
       weeksToTarget: 0,
+
       weeksUntilPhaseEnd: 0,
     );
   }
 
-  static PlanMode _mapGoalPlanModeToPlanMode(GoalPlanMode mode) {
+  static PlanMode _mapGoalPlanModeToPlanMode(
+    GoalPlanMode mode,
+  ) {
     switch (mode) {
       case GoalPlanMode.accelerated:
         return PlanMode.accelerated;
+
       case GoalPlanMode.normal:
         return PlanMode.normal;
+
       case GoalPlanMode.auto:
-        // auto = planner případně sám přepne do accelerated
         return PlanMode.normal;
+    }
+  }
+
+  static String _splitLabel(
+    TrainingSplit split,
+  ) {
+    switch (split) {
+      case TrainingSplit.auto:
+        return 'trainingSplitAuto';
+
+      case TrainingSplit.fullbody:
+        return 'trainingSplitFullbody';
+
+      case TrainingSplit.upperLower:
+        return 'trainingSplitUpperLower';
+
+      case TrainingSplit.ppl:
+        return 'trainingSplitPPL';
+
+      case TrainingSplit.strength3day:
+        return 'trainingSplitStrength3day';
     }
   }
 }

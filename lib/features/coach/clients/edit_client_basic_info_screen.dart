@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/coach/coach_client.dart';
 import '../../../providers/coach/coach_clients_controller.dart';
+import 'package:dart_application_1/l10n/app_localizations.dart';
 
 class EditClientBasicInfoScreen extends ConsumerStatefulWidget {
   final CoachClient client;
@@ -76,6 +77,7 @@ class _EditClientBasicInfoScreenState
   }
 
   Future<void> save() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!valid || saving) return;
 
     setState(() => saving = true);
@@ -100,7 +102,9 @@ class _EditClientBasicInfoScreenState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nepodařilo se uložit změny: $e')),
+        SnackBar(
+          content: Text('${l10n.failedToSaveChanges}: $e'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -111,8 +115,9 @@ class _EditClientBasicInfoScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Upravit základní údaje')),
+      appBar: AppBar(title: Text(l10n.editBasicInformation)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -236,7 +241,7 @@ class _EditClientBasicInfoScreenState
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Uložit změny'),
+                  : Text(l10n.saveChanges),
               onPressed: valid && !saving ? save : null,
             ),
           ),

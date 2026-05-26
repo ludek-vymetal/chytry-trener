@@ -1,34 +1,77 @@
 {
-"dashboard": "Dashboard",
-"addClient": "Přidat klienta",
-"todayFood": "Dnešní jídlo",
-"trainingMode": "Tréninkový režim",
-"changeGoal": "Změnit cíl",
-"retry": "Zkusit znovu",
-"enterAllNumbers": "Zadej prosím všechna čísla (používej tečku místo čárky)",
-"addNewCircumferences": "Zadat nové obvody",
-"fitnessApp": "Fitness Aplikace",
-"userMode": "Uživatelský mód",
-"coachMode": "Trenérský mód",
-"switchToThisProfile": "PŘEPNOUT NA TENTO PROFIL",
-"profileActivatedUserMode": "Profil aktivován. Režim: Uživatel.",
-"appName": "Chytrý trenér",
-"exitApp": "Ukončit aplikaci",
-"subscriptionError": "Chyba předplatného",
-"subscriptionInactive": "Předplatné není aktivní.",
-"activeCoachClient": "Aktivní: Coach + Client ✅",
-"activeClientCoachLocked": "Aktivní: Client ✅ (Coach zamčený)",
-"noAccess": "Bez přístupu",
-"selectMode": "Vyber režim",
-"modeDescription": "Běžný uživatel = onboarding + AI plán.\nTrenérský mód = správa klientů.",
-"userModeLocked": "Běžný uživatel (zamčeno)",
-"coachModeLocked": "Trenérský mód (zamčeno)",
-"unlockClient": "Odemknout Client (Paywall)",
-"unlockCoach": "Odemknout Coach (upgrade)",
+  "dashboard": "Dashboard",
+  "addClient": "Přidat klienta",
+  "todayFood": "Dnešní jídlo",
+  "trainingMode": "Tréninkový režim",
+  "changeGoal": "Změnit cíl",
+  "retry": "Zkusit znovu",
 
-"exportFolderSaved": "Exportní složka byla uložena.",
-"customExportFolderRemoved": "Vlastní exportní složka byla smazána. Použije se výchozí Documents/Klienti.",
-"profileNotFound": "Profil nenalezen",
+  "enterAllNumbers": "Zadej prosím všechna čísla (používej tečku místo čárky)",
+  "addNewCircumferences": "Zadat nové obvody",
+
+  "fitnessApp": "Fitness Aplikace",
+  "userMode": "Uživatelský mód",
+  "coachMode": "Trenérský mód",
+  "performancePr": "Výkonnost / PR",
+  "addPerformance": "Přidat výkon",
+  "noPerformanceRecords": "Zatím nemáš žádné záznamy výkonu.\n\nKlikni na + a přidej první cvik.",
+  "records": "Záznamů",
+  "switchToThisProfile": "PŘEPNOUT NA TENTO PROFIL",
+  "profileActivatedUserMode": "Profil aktivován. Režim: Uživatel.",
+
+  "appName": "Chytrý trenér",
+  "exitApp": "Ukončit aplikaci",
+
+  "subscriptionError": "Chyba předplatného",
+  "subscriptionInactive": "Předplatné není aktivní.",
+
+  "activeCoachClient": "Aktivní: Coach + Client ✅",
+  "activeClientCoachLocked": "Aktivní: Client ✅ (Coach zamčený)",
+
+  "noAccess": "Bez přístupu",
+  "selectMode": "Vyber režim",
+
+  "modeDescription": "Běžný uživatel = onboarding + AI plán.\nTrenérský mód = správa klientů.",
+
+  "userModeLocked": "Běžný uživatel (zamčeno)",
+  "coachModeLocked": "Trenérský mód (zamčeno)",
+
+  "unlockClient": "Odemknout Client (Paywall)",
+  "unlockCoach": "Odemknout Coach (upgrade)",
+
+  "exportFolderSaved": "Exportní složka byla uložena.",
+
+  "customExportFolderRemoved": "Vlastní exportní složka byla smazána. Použije se výchozí Documents/Klienti.",
+
+  "profileNotFound": "Profil nenalezen",
+  "setupProfileAndGoalFirst": "Nejprve nastav profil a cíl.",
+"eatingSupportOnlyMode": "Tento dotazník je jen pro režim Nabírání/PPP podpora.",
+
+"safeModeTitle": "Podpora nabírání / bezpečný režim",
+
+"safeModeDescription": "Tenhle režim je navržený tak, aby nepodporoval restrikci ani kalorické počítání.\nCílem je bezpečný návrat energie, rutiny a síly.",
+
+"safetyAndPreferences": "Bezpečnost a preference",
+
+"hideNutritionNumbers": "Nezobrazovat čísla o výživě (kalorie/makra)",
+
+"hideNutritionNumbersDescription": "Doporučeno – aplikace nebude tlačit na čísla.",
+
+"medicalSupport": "Mám odbornou podporu (terapeut / lékař / nutriční)",
+
+"medicalSupportDescription": "Pomůže to nastavit citlivější doporučení.",
+
+"focusQuestion": "Na co se chceš zaměřit teď nejvíc?",
+
+"focusEnergyRoutine": "Energie & rutina",
+"focusStrengthPerformance": "Síla & výkon",
+"focusGentleMode": "Jemný režim bez tlaku",
+
+"optionalNote": "Poznámka (volitelné)",
+
+"optionalNoteDescription": "Např. „chci 3× týdně lehce“, „nechci vážení“, „preferuji stroje“.",
+
+"mentalHealthWarning": "Pokud máš pocit, že je ti psychicky opravdu zle, nebo máš nutkání si ublížit, vyhledej okamžitou pomoc. V ČR funguje Linka první psychické pomoci 116 123 (nonstop) a Linka bezpečí 116 111 (nonstop pro děti a mladé).",
 
 "changeGoalDescription": "Opravdu chceš změnit cíl? Při změně cíle se může upravit strategie, fáze a doporučení.",
 
@@ -37,13 +80,13 @@
 
 "automatic": "Automaticky",
 "czech": "Čeština",
-"english": "English",
+"english": "Anglicky",
 
 "switchToLightMode": "Přepnout na světlý režim",
 "switchToDarkMode": "Přepnout na tmavý režim",
-
+"profileOrGoalNotFound": "Profil nebo cíl nenalezen",
 "changeMode": "Změnit režim",
-
+"weeksToGoal": "Týdnů do cíle",
 "addMeasurement": "Přidat měření",
 "bodyCircumference": "Obvody těla",
 "addCircumference": "Přidat obvody",
@@ -51,31 +94,1387 @@
 "dailyMacros": "Denní makra",
 "dietPlanStyle": "Styl jídelního plánu",
 "phaseLogicTest": "Test logiky fází",
+"trainingSetupTitle": "Nastavení tréninku",
+
+"trainingFrequencyQuestion": "Kolikrát týdně chceš trénovat?",
+
+"trainingFrequencyHint": "Vyber reálné číslo podle času a regenerace.",
+"customTraining": "Vlastní trénink",
+"insert90DayCutPlan": "Vložit 90denní vyrýsování",
+"insertPowerliftingPrep": "Vložit přípravu na závody – trojboj",
+"planCreationFailed": "Plán se nepodařilo vytvořit.",
+"planInserted": "Plán byl vložen mezi vlastní tréninky.",
+"enterMaxes": "Zadat maximálky",
+
+"meetDate": "Datum závodu",
+"createPlan": "Vytvořit plán",
+"strengthTrainings": "Silové tréninky",
+"bulk": "Nabírací",
+"cut": "Shazovací",
+"recomp": "Rekompozice",
+"conditioning": "Kondice",
+"powerlifting": "Trojboj",
+"bodybuilding": "Bodybuilding",
+"other": "Ostatní",
+"daysCount": "Počet dnů",
+"deleteTemplate": "Smazat šablonu",
+"insert": "Vložit",
+"active": "Aktivní",
+"templateInserted": "Šablona \"{name}\" byla vložena ke klientovi.",
+"planSavedAsTemplate": "Plán \"{name}\" byl uložen jako sdílená šablona.",
+"confirmDeletePlan": "Chceš opravdu smazat plán \"{name}\"?",
+"confirmDeleteDay": "Chceš opravdu smazat den \"{name}\"?",
+"confirmDeleteExercise": "Chceš odstranit cvik „{name}“?",
+"@templateInserted": {
+  "placeholders": {
+    "name": {}
+  }
+},
+"@planSavedAsTemplate": {
+  "placeholders": {
+    "name": {}
+  }
+},
+"@confirmDeletePlan": {
+  "placeholders": {
+    "name": {}
+  }
+},
+"@confirmDeleteDay": {
+  "placeholders": {
+    "name": {}
+  }
+},
+"@confirmDeleteExercise": {
+  "placeholders": {
+    "name": {}
+  }
+},
+"timesPerWeek": "{count}× týdně",
+"@timesPerWeek": {
+  "placeholders": {
+    "count": {}
+  }
+},
+"exerciseCount": "{count} cviků",
+"@exerciseCount": {
+  "placeholders": {
+                                     
+  }
+},
+"performancePr": "Výkonnost / PR",
+"addPerformance": "Přidat výkon",
+"noPerformanceRecords": "Zatím nemáš žádné záznamy výkonu.\n\nKlikni na + a přidej první cvik.",
+"fillWeeklyMealPlanName": "Vyplň název týdenního plánu",
+"selectTemplateForEachDay": "Vyber template pro každý den",
+"failedToLoadDailyTemplate": "Nepodařilo se načíst denní template",
+"weeklyMealPlanSaved": "Týdenní plán byl uložen",
+"buildWeeklyMealPlan": "Sestavit týdenní plán",
+"saveWeek": "Uložit týden",
+"createDailyTemplateFirst": "Nejdřív vytvoř denní template",
+"weeklyMealPlanName": "Název týdenního plánu",
+"selectDailyTemplate": "Vyber denní template",
+"saveWeeklyMealPlan": "Uložit týdenní plán",
+"mealCount": "Počet jídel",
+"error": "Chyba",
+"equipmentQuestion": "Jaké máš vybavení?",
+"open": "Otevřít",
+"activate": "Aktivovat",
+"bodyweightEquipment": "Váha těla",
+"dumbbellEquipment": "Jednoručky",
+"barbellEquipment": "Osa",
+"rackEquipment": "Stojan",
+"benchEquipment": "Lavice",
+"machineEquipment": "Stroje",
+"cardioEquipment": "Kardio",
+
+"equipmentHint": "Tip: když něco nemáš, aplikace vybere vhodnější cviky.",
+
+"experienceQuestion": "Jaká je tvoje zkušenost?",
+
+"experienceHint": "Pomůže to nastavit vhodnou náročnost.",
+
+"beginner": "Začátečník",
+"intermediate": "Pokročilý",
+"advanced": "Velmi pokročilý",
+
+"oneRepMaxTitle": "Maximálky (1 opakování maximum) – pouze pro závody",
+"performancePr": "Výkonnost / PR",
+"addPerformance": "Přidat výkon",
+"noPerformanceRecords": "Zatím nemáš žádné záznamy výkonu.\n\nKlikni na + a přidej první cvik.",
+"records": "Záznamů",
+"squat1rm": "Dřep 1RM (kg)",
+"bench1rm": "Bench press 1RM (kg)",
+"deadlift1rm": "Mrtvý tah 1RM (kg)",
+
+"records": "Records",
+"trainingMaxHint": "Poznámka: váhy v plánu se počítají z „tréninkového maxima“ (90 % z 1RM).",
+
+"fillAllMaxes": "Vyplň prosím všechny maximálky (kladné číslo).",
+
+"saveTrainingSetup": "Uložit nastavení",
+
+"numberInputHint": "Můžeš psát i s čárkou (např. 120,5).",
 
 "folderPickFailed": "Nepodařilo se vybrat složku: {error}",
-"addNewCircumferences": "Zadat nové obvody",
-"enterAllNumbers": "Zadej prosím všechna čísla (používej tečku místo čárky)",
+
 "newMeasurement": "Nové měření",
 "date": "Datum",
 "weightKg": "Váha (kg)",
+
 "muscleMassOptional": "Svalová hmota (kg) – volitelné",
 "fatMassOptional": "Tuková hmota (kg) – volitelné",
+
 "saveMeasurement": "Uložit měření",
 "enterValidWeight": "Zadej platnou váhu",
+
 "noMeasurementsYet": "Zatím nejsou žádná měření",
 "history": "Historie",
+
 "waistChart": "Graf (Pas)",
 "waistTrend": "Trend obvodu pasu",
+
 "waistChartDescription": "Graf zobrazuje vývoj pasu v čase (zleva doprava)",
+
 "waist": "Pas",
 "chest": "Hrudník",
 "biceps": "Biceps",
 "thigh": "Stehno",
 "neck": "Krk",
 
+"coachSignedOut": "Trenér byl odhlášen.",
+"logoutCoach": "Odhlásit trenéra",
+"clients": "Klienti",
+"carbCyclingReadinessTitle": "Analýza připravenosti",
+"carbCyclingIntro": "Tento dotazník vyhodnotí, zda je pro tvé tělo bezpečné přejít na systém sacharidových vln.",
+"healthState": "Zdravotní stav",
+"healthIssuesQuestion": "Cukrovka nebo historie PPP (poruchy příjmu potravy)?",
+"healthIssuesDescription": "Z důvodu bezpečnosti je toto přísné kritérium.",
+"stressLevelQuestion": "Aktuální úroveň stresu (1 = klid, 10 = vyhoření)",
+"stressLabel": "Stres",
+"stressLevelValue": "Úroveň stresu",
+"averageSleepLength": "Průměrná délka spánku",
+"sleepLabel": "Spánek",
+"hoursLabel": "hodin",
+"trainingUnits": "tréninky",
+"trainingLabel": "Tréninky",
+"hydrationTitle": "Pitný režim",
+"hydrationQuestion": "Vypiji denně alespoň 2-3 litry vody?",
+"evaluateReadiness": "VYHODNOTIT PŘIPRAVENOST",
+"approved": "SCHVÁLENO",
+"notRecommended": "NEDOPORUČENO",
+"iUnderstand": "Rozumím",
+"carbCyclingHealthWarning": "Vzhledem ke zdravotním rizikům (cukrovka/historie PPP) pro tebe nejsou vlny vhodné. Bezpečnost klienta je pro nás prioritou.",
+"carbCyclingStressWarning": "Máš teď příliš vysokou úroveň stresu. Sacharidové vlny jsou pro tělo další zátěží. Doporučujeme nejdříve stabilizovat režim na standardní stravě.",
+"carbCyclingSleepWarning": "Spánek pod 6 hodin denně znemožňuje správnou regeneraci, kterou vlny vyžadují. Zaměř se nejdříve na odpočinek.",
+"carbCyclingTrainingWarning": "Sacharidové vlny vyžadují alespoň 3 silové tréninky týdně, aby tělo dokázalo efektivně využít vysoké dny sacharidů.",
+"carbCyclingWaterWarning": "Pozor: Vlny výrazně hýbou s vodou v těle. Musíš začít víc pít!",
+"carbCyclingApprovedMessage": "Gratulujeme! Jsi připraven na sacharidové vlny. Tvé tělo má dobré předpoklady pro cyklování živin.",
+"signOutFailed": "Odhlášení se nepodařilo: {error}",
+"coachRegistration": "Registrace trenéra",
+"coachLogin": "Přihlášení trenéra",
+"coachAccountCreated": "Účet trenéra byl vytvořen.",
+"loginSuccessful": "Přihlášení proběhlo úspěšně.",
+"enterEmail": "Zadej e-mail.",
+"enterValidEmail": "Zadej platný e-mail.",
+"enterPassword": "Zadej heslo.",
+"passwordTooShort": "Heslo musí mít alespoň 6 znaků.",
+"confirmPassword": "Potvrď heslo.",
+"passwordsDoNotMatch": "Hesla se neshodují.",
+"createCoachAccount": "Vytvoř účet trenéra",
+"loginToCoachCloud": "Přihlas se do coach cloudu",
+"coachAccountDescription": "Každý trenér má vlastní účet a vlastní cloud prostor pro klienty, poznámky a měření.",
+"coachLoginDescription": "Přihlas se svým e-mailem a heslem. Po přihlášení uvidíš jen svá vlastní coach data.",
+"email": "E-mail",
+"password": "Heslo",
+"confirmPasswordLabel": "Potvrzení hesla",
+"createAccount": "Vytvořit účet",
+"signIn": "Přihlásit se",
+"alreadyHaveAccount": "Už máš účet? Přihlásit se",
+"dontHaveAccount": "Nemáš účet? Vytvořit registraci",
+"addMeasurements": "Přidat míry",
+"measurementDate": "Datum měření",
+"importRestoreClient": "Import / Obnova klienta",
+"chooseHowToRestoreOrImportClient": "Vyber způsob importu nebo obnovy klienta.",
+"close": "Zavřít",
+"insertJsonManually": "Vložit JSON ručně",
+"selectJsonFile": "Vybrat JSON soubor",
+"restoreFromArchiveFolder": "Obnovit ze složky archivu",
+"selectJson": "Vybrat JSON",
+"clientImportedFromFile": "Klient byl importován ze souboru",
+"fileImportFailed": "Import souboru selhal",
+"selectArchiveFolder": "Vyber složku archivu",
+"clientRestoredFromArchive": "Klient byl obnoven z archivu",
+"archiveRestoreFailed": "Obnova archivu selhala",
+"exportFolderNotConfigured": "Exportní složka není nastavena",
+"folderOpenFailed": "Nepodařilo se otevřít složku",
+"archiveAndDeleteClient": "Archivovat a smazat klienta",
+"deleteClient": "Smazat klienta",
+"archiveAndDeleteClientConfirm": "Opravdu chceš klienta archivovat a následně smazat?",
+"deleteClientConfirm": "Opravdu chceš klienta smazat?",
+"trainingFrequencyTitle": "Počet silových tréninků týdně",
+"yourWeeklyKetoPlan": "Tvůj týdenní keto plán",
+"openFullWeek": "OTEVŘÍT CELÝ TÝDEN",
+"weeklyKetoMealPlan": "Týdenní keto jídelníček",
+"fullWeekMealPlan": "Jídelníček na celý týden:",
+"ingredientsLabel": "Ingredience",
+"carbsLabel": "Sacharidy",
+"archiveAndDelete": "Archivovat a smazat",
+"delete": "Smazat",
+"clientArchivedAndDeleted": "Klient byl archivován a smazán",
+"clientDeleted": "Klient byl smazán",
+"clientDeleteError": "Nepodařilo se smazat klienta",
+"dayOptions": "Možnosti dne",
+"customPlanEmpty": "Aktivní vlastní plán zatím neobsahuje žádné dny nebo cviky.",
+"planGenerationFailed": "Nepodařilo se vygenerovat plán.",
+"coachGoal": "Coach cíl",
+
+"openExportFolder": "Otevřít exportní složku",
+"exportClient": "Exportovat klienta",
+"exportError": "Export selhal",
+"editClient": "Upravit klienta",
+"editClientCard": "Upravit kartu klienta",
+"addNote": "Přidat poznámku",
+"copyEmail": "Kopírovat e-mail",
+"emailCopied": "E-mail byl zkopírován",
+"registered": "Registrován",
+"years": "let",
+"weight": "Váha",
+"lastWorkout": "Poslední trénink",
+"completedLast7Days": "Splněno za posledních 7 dní",
+"days": "dní",
+"compliance7Days": "Dodržování za 7 dní",
+"recoveryMode": "Recovery režim aktivní",
+"clientInactive7Days": "Klient je neaktivní déle než 7 dní",
+"today": "Dnes",
+"completedToday": "Dnešní trénink splněn",
+"todayWorkoutSaved": "Dnešní trénink uložen",
+"tapToSaveTodayWorkout": "Klikni pro uložení dnešního tréninku",
+"statusCheck": "Kontrola stavu",
+"sentComparisonPhotos": "Poslal porovnávací fotky",
+"followsDiet": "Dodržuje jídelníček",
+"respondedToMessage": "Odpověděl na zprávu",
+"photoRequestPlaceholder": "Připomínka fotek bude doplněna",
+"dietCheckPlaceholder": "Kontrola jídelníčku bude doplněna",
+"responseRequestPlaceholder": "Připomínka odpovědi bude doplněna",
+"clientTrainingPlans": "Tréninkové plány klienta",
+"clientHasNoPlans": "Klient nemá žádné plány",
+"planCount": "Počet plánů",
+"newPlan": "Nový plán",
+"createFirstPlanHint": "Vytvoř první tréninkový plán",
+"coachData": "Coach data",
+"activity": "Aktivita",
+"injuries": "Zranění",
+"allergiesIntolerances": "Alergie / intolerance",
+"inbody": "InBody",
+"dataHiddenRecoveryMode": "Data jsou skrytá v recovery režimu",
+"noMeasurements": "Žádná měření",
+"fat": "Tuk",
+"muscles": "Svaly",
+"automaticInterpretation": "Automatická interpretace",
+"changeFromLastTime": "Změna od posledního měření",
+"hiddenRecoveryMode": "Skryto v recovery režimu",
+"noRecords": "Žádné záznamy",
+"addCircumferences": "Přidat obvody",
+"coachNotes": "Poznámky trenéra",
+"updated": "Upraveno",
+"edit": "Upravit",
+
+"dayCount": "Počet dní",
+"created": "Vytvořeno",
+"setAsActive": "Nastavit jako aktivní",
+"duplicate": "Duplikovat",
+"rename": "Přejmenovat",
+"copy": "Kopie",
+"newTrainingPlan": "Nový tréninkový plán",
+"planName": "Název plánu",
+"planNameHint": "Např. Push Pull Legs",
+"create": "Vytvořit",
+"renamePlan": "Přejmenovat plán",
+"newNote": "Nová poznámka",
+"editNote": "Upravit poznámku",
+"importClientFromJson": "Import klienta z JSON",
+"pasteExportedJson": "Vlož exportovaný JSON",
+"importLabel": "Importovat",
+"clientImportedSuccessfully": "Klient byl úspěšně importován",
+"importFailed": "Import selhal",
+"checkRequiredFields": "Zkontroluj povinná pole",
+"recoverySupport": "Recovery podpora",
+"emailHint": "např. klient@email.cz",
+"clientBasicInfoUpdated": "Základní údaje klienta byly aktualizovány",
+"noPerformanceRecordsForExercise": "Zatím nemáš žádné záznamy pro tento cvik.",
+"showChart": "Zobrazit graf",
+"hips": "Boky",
+"arm": "Paže",
+"calf": "Lýtko",
+"selectExercise": "Vyber cvik",
+"searchExercise": "Hledat cvik",
+"showAllExercises": "Zobrazit všechny cviky",
+"showAllExercisesDescription": "Když je vypnuto, zobrazí se jen doporučené cviky pro tento slot.",
+"noRecommendedExerciseFound": "Pro tento slot nebyl nalezen vhodný cvik podle tvého vybavení a filtrů. Zapni „Zobrazit všechny cviky“ nebo uprav vybavení v nastavení tréninku.",
+"noExerciseFoundBySearch": "Nenalezen žádný cvik podle hledání.",
+"noExerciseFoundForSlot": "Nenalezen žádný vhodný cvik pro tento slot.",
+"englishLabel": "Anglicky",
+"equipmentLabel": "Vybavení",
+"saving": "Ukládám...",
+"save": "Uložit",
+"scaledByCalories": "Přepočteno podle kalorií pro {name} ({weight} kg).",
+"@scaledByCalories": {
+  "placeholders": {
+    "name": {},
+    "weight": {}
+  }
+},
+
+"scaledByWeight": "Přepočteno podle váhy pro {name} ({weight} kg).",
+"@scaledByWeight": {
+  "placeholders": {
+    "name": {},
+    "weight": {}
+  }
+},
+"enterNumber": "Zadej číslo",
+"valueCannotBeNegative": "Hodnota nemůže být záporná",
+"failedToSaveMeasurements": "Nepodařilo se uložit míry: {error}",
+
+
+"clientId": "ID klienta",
+"basicInformation": "Základní informace",
+"firstName": "Jméno",
+"lastName": "Příjmení",
+"gender": "Pohlaví",
+"male": "Muž",
+"female": "Žena",
+
+"age": "Věk",
+"heightCm": "Výška (cm)",
+"recoveryModeSupport": "Režim recovery / PPP podpora",
+"recoveryModeDescription": "Zapne bezpečnostní limity (žádné agresivní hubnutí)",
+"saveClient": "Uložit klienta",
+"failedToSaveClient": "Nepodařilo se uložit klienta: {error}",
+"addInbodyMeasurement": "Přidat InBody měření",
+"basicData": "Základ",
+"change": "Změnit",
+"waterPreviewHint": "Tip: po zadání hmotnosti a vody uvidíš i procento vody z váhy.",
+"waterPercentageInfo": "Voda tvoří cca {value} % z tělesné váhy (orientačně).",
+"skeletalMuscleMass": "SMM – kosterní svalovina (kg)",
+"bodyFat": "Tuk",
+"bodyFatDescription": "Stačí vyplnit jednu hodnotu (kg nebo %). Druhá se dopočítá.",
+"fatKg": "Tuk (kg)",
+"fatPercent": "Tuk (%)",
+"totalBodyWater": "Celková voda v těle (kg)",
+"optionalValues": "Volitelné (pokud máš na výtisku)",
+"fatFreeMass": "Čistá hmotnost těla (kg)",
+"waistHipRatio": "Poměr pas/boky (WHR)",
+"basalMetabolism": "Bazální metabolismus (kcal)",
+"checkDiagnosticValues": "Zkontroluj hodnoty. Hmotnost, SMM a voda musí být vyplněné. Tuk stačí zadat buď v kg, nebo v %.",
+"addInbody": "Přidat InBody",
+"fillAllInbodyValues": "Vyplň prosím všechny hodnoty podle InBody reportu.",
+"clientHeight": "Výška klienta",
+"bodyComposition": "Tělesná kompozice",
+"muscleMass": "SMM – svalová hmota (kg)",
+"bodyFatMass": "Množství tuku v těle (kg)",
+"bodyWater": "Celková voda v těle (kg/l)",
+"leanBodyMass": "Čistá hmota těla (kg)",
+"obesityDiagnosis": "Diagnóza obezity",
+"bodyFatPercentage": "% tuku v těle",
+"segmentalMuscles": "Segmentální svaly (kg)",
+"leftArmMuscle": "Levá ruka – svaly (kg)",
+"rightArmMuscle": "Pravá ruka – svaly (kg)",
+"trunkMuscle": "Trup – svaly (kg)",
+"leftLegMuscle": "Levá noha – svaly (kg)",
+"rightLegMuscle": "Pravá noha – svaly (kg)",
+"clientArchiving": "Archivace klientů",
+
+"loadingExportFolder": "Načítám nastavení exportní složky...",
+
+"currentExportFolder": "Aktuální exportní složka:\n\n{path}",
+"@currentExportFolder": {
+  "placeholders": {
+    "path": {}
+  }
+},
+
+"noCustomExportFolder": "Není vybraná vlastní exportní složka.\n\nPoužije se výchozí Documents/Klienti.",
+"selectExportFolder": "Vybrat exportní složku",
+"clearCustomPath": "Zrušit vlastní cestu",
+"debugWeightSource": "Debug – z jaké váhy se počítá",
+"currentWeight": "Aktuální váha",
+"targetWeight": "Cílová váha",
+"notSet": "nenastaveno",
+"weightForCalories": "Váha pro kalorie",
+"weightForProtein": "Váha pro protein",
+"phase": "Fáze",
+"mode": "Režim",
+"weeksToTarget": "Týdny do cíle",
+"strategy": "Strategie",
+"segmentalFat": "Segmentální tuk (kg)",
+"leftArmFat": "Levá ruka – tuk (kg)",
+"rightArmFat": "Pravá ruka – tuk (kg)",
+"trunkFat": "Trup – tuk (kg)",
+"leftLegFat": "Levá noha – tuk (kg)",
+"rightLegFat": "Pravá noha – tuk (kg)",
+"visceralFat": "Viscerální tuk (úroveň)",
+"inbodyScore": "InBody skóre",
+"saveInbody": "Uložit InBody",
+"noClientsWithEmail": "Žádný klient zatím nemá vyplněný email.",
+"emailsCopied": "Emaily byly zkopírovány do schránky.",
+"pdfExportOpened": "PDF export byl otevřen pro tisk / uložení.",
+"importPreview": "Náhled před importem",
+"cancel": "Zrušit",
+"clientAnalysis": "Analýza klienta",
+"noInbodyDataInPeriod": "V tomto období nejsou žádná InBody data.",
+"inbodyBodyComposition": "InBody / tělesná kompozice",
+"noCircumferencesInPeriod": "V tomto období nejsou žádné obvody.",
+"noPerformancesInPeriod": "V tomto období nejsou žádné výkony.",
+"noCircumferenceMeasurementsYet": "Zatím nejsou žádná měření obvodů.",
+"failedToSaveChanges": "Nepodařilo se uložit změny",
+"editBasicInformation": "Upravit základní údaje",
+"saveChanges": "Uložit změny",
+"archiveCompleted": "Archivace dokončena",
+"clientArchiveSuccessfullyCreated": "Archiv klienta byl úspěšně vytvořen.",
+"destinationFolder": "Cílová složka",
+"createdFiles": "Vytvořené soubory",
+"currentJson": "Aktuální JSON",
+"snapshot": "Snapshot",
+"pdfReport": "PDF report",
+"manifest": "Manifest",
+"inbodyCsv": "InBody CSV",
+"circumferenceCsv": "Obvody CSV",
+"performancesCsv": "Výkony CSV",
+"reportPeriod": "Období reportu",
+"openPdf": "Otevřít PDF",
+"failedToOpenFolder": "Nepodařilo se otevřít složku",
+"openFolder": "Otevřít složku",
+"name": "Jméno",
+"height": "Výška",
+"circumferences": "Obvody",
+"request": "Vyžádat",
+"dailyEnergyExpenditure": "Denní energetický výdej",
+"targetCalories": "Cílové kalorie",
+"macros": "Makra",
+
+"confirmDeleteTemplate": "Opravdu chceš smazat \"{name}\"?",
+"@confirmDeleteTemplate": {
+  "placeholders": {
+    "name": {}
+  }
+},
+"noSavedMealPlans": "Zatím nemáš uložené žádné kompletní jídelníčky ani denní šablony.",
+"dailyTemplates": "Denní šablony",
+"noDailyTemplates": "Zatím nemáš uložené žádné denní šablony.",
+"untitled": "Bez názvu",
+"meals": "Jídla",
+"client": "Klient",
+"coachNote": "Poznámka trenéra",
+"openEdit": "Otevřít / upravit",
+"completeMealPlans": "Kompletní jídelníčky",
+"noCompleteMealPlans": "Zatím nemáš uložené žádné kompletní jídelníčky.",
+"type": "Typ",
+"duration": "Délka",
+"baseWeight": "Základ",
+"calories": "Kcal",
+"useOneToOne": "Použít 1:1",
+"scaleToProfile": "Přepočítat na profil",
+"deleteMealPlanQuestion": "Smazat jídelníček?",
+"deleteDailyTemplateQuestion": "Smazat denní šablonu?",
+"exportCsvCancelled": "Export CSV byl zrušen",
+"clientAndPeriod": "Klient a období",
+"exportPdf": "Exportovat PDF",
+"bodyCircumferences": "Obvody těla",
+"exercisePerformance": "Výkon cviků",
+"coachSummary": "Shrnutí pro trenéra",
+"from": "Od",
+"to": "Do",
+"noDataForSummary": "Ve zvoleném období nejsou žádná data.",
+"summaryGenerated": "Shrnutí bylo vygenerováno.",
+"numberOfRecords": "Počet záznamů",
+"arms": "Paže",
+"phaseLogicCoreTest": "TEST LOGIKY FÁZÍ (CORE)",
+"profileOrGoalNotSet": "Není nastaven profil nebo cíl",
+"dataSource": "ZDROJ DAT",
+"goal": "CÍL",
+"reason": "Důvod",
+"goalDate": "Datum cíle",
+"weeksToGoal": "Týdnů do cíle",
+"currentEvaluation": "AKTUÁLNÍ VYHODNOCENÍ",
+"currentPhase": "Aktuální fáze",
+"phaseLabel": "Fáze label",
+"activeSegment": "Aktivní segment",
+"foodStrategy": "FOOD STRATEGY",
+"calorieMultiplier": "Kcal multiplier",
+"highCarbs": "Vysoké sacharidy",
+"phasePlan": "PHASE PLAN (celý plán)",
+"finalMacros": "VÝSLEDNÁ MAKRA",
+"coreEngineInfo": "Vše je řízené datem přes Core engine.",
+"archiveHasNoClients": "Archiv zatím neobsahuje žádné klienty.",
+"noActiveClientsYet": "Zatím nemáš žádné aktivní klienty.",
+"tdee": "TDEE",
+"fat": "Tuky",
+"protein": "Protein",
+"carbs": "Sacharidy",
+"fats": "Tuky",
+"archiveCsvImport": "Import CSV do archivu",
+"help": "Nápověda",
+"howAppWorks": "Jak aplikace funguje",
+"dataStorage": "Ukládání dat",
+"clientExport": "Export klienta",
+"clientImport": "Import klienta",
+"factoryReset": "Tovární nastavení",
+"importantWarning": "Důležité upozornění",
+
+"helpStorage1": "Aplikace funguje offline-first. To znamená, že data se ukládají lokálně přímo do zařízení.",
+"helpStorage2": "Změny klientů, měření, poznámek, výkonů a plánů se neodesílají automaticky na externí server.",
+"helpStorage3": "Pokud zařízení odinstalujete, resetujete nebo ztratíte bez exportu dat, můžete o uložené informace přijít.",
+
+"helpExport1": "Každého klienta lze exportovat pro zálohu nebo přenos.",
+"helpExport2": "Export obsahuje JSON, PDF report, CSV soubory a manifest.",
+"helpExport3": "Doporučený postup je dělat export pravidelně, hlavně před většími změnami nebo před resetem aplikace.",
+
+"helpImport1": "Klienta lze importovat z JSON nebo z archivní složky.",
+"helpImport2": "Pokud už v aplikaci existuje klient se stejným ID, aplikace vytvoří nové bezpečné ID, aby nedošlo ke kolizi.",
+"helpImport3": "Po importu doporučujeme zkontrolovat detail klienta a ověřit, že jsou všechna data v pořádku.",
+"noGoalMaintenanceMode": "Bez cíle – udržovací režim",
+"cutPhase": "Shazovací fáze",
+"cutPhaseAccelerated": "Shazovací fáze (zrychlená)",
+"buildPhase": "Nabírací fáze",
+"buildPhaseAccelerated": "Nabírací fáze (zrychlená)",
+"maintenancePhase": "Udržovací fáze",
+"strengthPhase": "Silová fáze",
+"weightLossGoal": "Cíl hubnutí",
+"weightLossGoalAccelerated": "Cíl hubnutí (zrychlený)",
+"weightGainGoal": "Cíl nabírání",
+"weightGainGoalAccelerated": "Cíl nabírání (zrychlený)",
+"strengthGoal": "Cíl síla",
+"enduranceGoal": "Cíl vytrvalost",
+"physiqueGoal": "Cíl postava",
+"helpReset1": "Tovární nastavení nevratně smaže všechna lokálně uložená data aplikace.",
+"helpReset2": "Mažou se klienti, poznámky, inbody, obvody, detaily klientů a interní čítače ID.",
+"helpReset3": "Před resetem vždy nejdřív proveď export důležitých klientů.",
+"monday": "Pondělí",
+"tuesday": "Úterý",
+"wednesday": "Středa",
+"thursday": "Čtvrtek",
+"friday": "Pátek",
+"saturday": "Sobota",
+"sunday": "Neděle",
+
+
+
+"lunch": "Oběd",
+"dinner": "Večeře",
+
+"firstMeal": "První jídlo",
+"lastMeal": "Poslední jídlo",
+
+"sameMacrosDaily": "Stejná struktura makroživin každý den.",
+"carbCyclingDescriptionShort": "Sacharidy se cyklují podle jednotlivých dnů.",
+
+"calculation": "Výpočet",
+
+"goal_strength": "Síla",
+"goal_strength_rationale": "Surplus + sacharidy pro CNS, protein 2.0 g/kg.",
+
+"goal_physique": "Postava",
+"goal_physique_rationale": "Fázová periodizace, protein 2.2 g/kg.",
+
+"goal_weight_gain_support": "Nabírání (podpora)",
+"goal_weight_gain_support_rationale": "Mírný surplus, bez extrémních doporučení.",
+
+"goal_weight_loss": "Hubnutí",
+"goal_weight_loss_rationale": "Deficit + vysoký protein, ochrana svalů.",
+
+"goal_endurance": "Vytrvalost",
+"goal_endurance_rationale": "Důraz na sacharidy, protein 1.6–1.8 g/kg.",
+
+"phase_gaining_physique": "Nabírací fáze: mírný surplus, držíme tuky.",
+"phase_gaining_strength": "Síla v nabírání: surplus + sacharidy.",
+"phase_gaining_default": "Mírný surplus / nad údržbou.",
+
+"phase_cutting_endurance": "Vytrvalost: mírná redukce, držíme sacharidy.",
+"phase_cutting_default": "Deficit 15–20 %, protein nahoru, tuky hlídat.",
+
+"phase_peaking": "Finální forma: vyšší protein, řízené sacharidy.",
+
+"phase_maintenance": "Údržba: stabilizace výkonu a regenerace.",
+
+"reason_summer_shape": "Léto: priorita forma.",
+
+"reason_competition": "Závody: precizní příprava.",
+
+"reason_support": "Podpora: bez deficitu a bez extrémů.",
+
+"accelerated_mode": "Zrychlený režim: vyšší deficit + vyšší protein.",
+"breakfast": "Snídaně",
+
+
+"snack2": "Svačina 2",
+
+
+"ketoShoppingListTitle": "🛒 MŮJ KETO NÁKUPNÍ SEZNAM",
+"fastingShoppingListTitle": "🛒 MŮJ FASTING NÁKUPNÍ SEZNAM",
+"shoppingListTitle": "🛒 MŮJ NÁKUPNÍ SEZNAM",
+"generatedBySmartCoach": "Generováno tvým chytrým trenérem 🍏",
+"ketoShopping": "Keto nákup",
+"fastingShopping": "Fasting nákup",
+"weeklyShopping": "Týdenní nákup",
+"emptyShoppingList": "Nákupní seznam je prázdný.",
+"shoppingListDescription": "Seznam obsahuje všechny ingredience ze všech dní a automaticky slučuje duplicity.",
+"eggs": "Vejce",
+"eggsPieces": "ks vajec",
+"piecesUnit": "ks",
+"vegetables": "Zelenina",
+"oliveOil": "Olivový olej",
+"scrambledEggsWithVegetables": "Míchaná vejce se zeleninou",
+"andLightFatSource": "a lehký zdroj tuků",
+"oatmealWithProtein": "Ovesná kaše s proteinem",
+"complexCarbsForDayStart": "Komplexní sacharidy na start dne.",
+"oats": "Ovesné vločky",
+"wheyProtein": "Syrovátkový protein",
+"blueberries": "Borůvky",
+"skyrWithFruit": "Skyr s ovocem",
+"highProteinSnack": "Lehká svačina s vysokým obsahem bílkovin.",
+"hamAndCheese": "Šunka a sýr",
+"lowCarbSnack": "Nízkosacharidová svačina.",
+"skyr": "Skyr",
+"banana": "Banán",
+"ham": "Šunka",
+"gouda": "Gouda",
+"beef": "Hovězí maso",
+"turkeyBreast": "Krůtí prsa",
+"chickenBreast": "Kuřecí prsa",
+"whiteRiceDry": "Bílá rýže (suchá)",
+"rice": "Rýže",
+"competition_peaking": "Závody: peaking fáze – protein na maximum.",
+"oatmealProtein": "Ovesná kaše s proteinem",
+"breakfastDescription": "Ovesné vločky, protein a ovoce.",
+"noGoalMaintenanceMode": "Bez cíle – udržovací režim",
+"cutPhaseAccelerated": "Shazovací fáze (zrychlená)",
+"cutPhase": "Shazovací fáze",
+"buildPhaseAccelerated": "Nabírací fáze (zrychlená)",
+"buildPhase": "Nabírací fáze",
+"maintenancePhase": "Udržovací fáze",
+"strengthPhase": "Silová fáze",
+"weightLossGoalAccelerated": "Cíl hubnutí (zrychlený)",
+"weightGainGoalAccelerated": "Cíl nabírání (zrychlený)",
+"weightGainGoal": "Cíl nabírání",
+"skyrBanana": "Skyr s banánem",
+"quickSnackDescription": "Rychlá svačina pro doplnění bílkovin a sacharidů.",
+"ketoLowCarbNote": "Keto režim s nízkým příjmem sacharidů a plným nákupním seznamem.",
+"piecesEggs": "ks vajec",
+"pieces": "ks",
+"lightSnack": "Lehká svačina",
+"chickenRice": "Kuřecí prsa s rýží",
+"mainMealDescription": "Komplexní hlavní jídlo s přílohou a zeleninou.",
+"helpWarning1": "Tato aplikace aktuálně spoléhá na lokální úložiště zařízení.",
+"helpWarning2": "Bez pravidelné zálohy může při ztrátě zařízení, odinstalaci aplikace nebo továrním resetu dojít ke ztrátě dat.",
+"helpWarning3": "Nejdůležitější klienty doporučujeme průběžně exportovat.",
+"copyEmails": "Kopírovat emaily",
+"searchByNameEmailOrId": "Hledej jméno, email nebo ID",
+"fileImportFailedWithError": "Import ze souboru selhal: {error}",
+"clientImported": "Klient „{name}“ byl importován.",
+"selectJson": "Vybrat JSON",
+"clientRestored": "Klient „{name}“ byl obnoven.",
+"clientMovedToArchive": "Klient „{name}“ byl přesunut do archivu.",
+"archiveCsvImportFailed": "Import CSV do archivu selhal: {error}",
+"selectCsv": "Vybrat CSV",
+"noArchivedClientsImported": "Z CSV nebyl importován žádný nový archivní klient.",
+"selected": "Vybráno",
+"linkWithCoach": "Propojit s trenérem",
+"searchClientByName": "Vyhledej svého klienta podle jména",
+"startTypingName": "Začni psát jméno…",
+"linkAndContinue": "Propojit a pokračovat",
+"loadingClientsError": "Chyba při načítání klientů",
+"archivedClientsImported": "Import hotový. Přidáno archivních klientů: {count}",
+"physiqueGoal": "Postava",
+"enduranceGoal": "Vytrvalost",
+"weightGainSupportGoal": "Nabírání / podpora příjmu",
+"selectFolder": "Vybrat složku",
+"cloudBackup": "Cloud záloha",
+"cloudBackupDescription": "Ručně nahraje nebo stáhne data mezi zařízeními.",
+"backupToCloud": "Zálohovat do cloudu",
+"restoreFromCloud": "Načíst z cloudu",
+"cloudBackupFinished": "Záloha do cloudu hotová. Nahrané sekce",
+"cloudBackupFailed": "Záloha se nepodařila",
+"cloudRestoreFinished": "Načtení z cloudu hotové. Načtené sekce",
+"cloudRestoreFailed": "Načtení z cloudu se nepodařilo",
+"profile": "Profil",
+"loadingProfileFromCoach": "Profil se přebírá z trenéra…",
+"continueWithoutCoach": "Pokračovat bez trenéra",
+"doYouHaveCoach": "Máš trenéra?",
+"searchInCoachClients": "Vyhledej se v seznamu klientů a načteme ti profil automaticky.",
+"searchClientPlaceholder": "Napiš jméno nebo ID klienta…",
+"showMyDietPlan": "Zobrazit můj jídelníček",
+"enterValidAge": "Zadej platný věk (10–100 let)",
+"startWithBasics": "Začneme základy",
+"howOldAreYou": "Kolik ti je let?",
+"enterAge": "Zadej věk",
+"continueText": "Pokračovat",
+"bodyMetrics": "Tělesné údaje",
+"enterValidHeight": "Zadej platnou výšku (120–230 cm)",
+"enterValidWeightRange": "Zadej platnou váhu (30–300 kg)",
+"heightExample": "Např. 180",
+"weightExample": "Např. 85",
+"strengthGoal": "Síla",
+"weightLossGoal": "Hubnutí",
+"welcomeCoachApp": "Vítej v aplikaci pro trenéry",
+"coachSetupIosDescription": "Teď si nastavíme tvoje jméno, bezpečnostní PIN a interní složku Klienti pro archiv klientů.",
+"firstNameExample": "Např. Luděk",
+"securityPin": "Bezpečnostní PIN",
+"enter4DigitPin": "Zadej 4 číslice",
+"enterPinAgain": "Zadej PIN znovu",
+"exportClientFolder": "Exportní složka klientů",
+"selectClientArchiveFolder": "Vyber složku pro archiv klientů",
+"useAppFolder": "Použít složku aplikace",
+"selectCustomFolder": "Vybrat vlastní složku",
+"useClientsFolder": "Použít složku Klienti",
+"useDocumentsClients": "Použít Dokumenty/Klienti",
+"iosFolderInfo": "Na iPhonu Apple nedovoluje vybírat libovolné složky jako na počítači. Archivy se proto uloží do interní složky aplikace Klienti.",
+"desktopFolderRecommendation": "Doporučení: vyber si vlastní archivní složku, ideálně v Google Drive nebo OneDrive synchronizované složce. Pak budeš mít klientské archivy dostupné i mimo tento počítač.",
+"finishSetup": "Dokončit nastavení",
+"coachSetupSaved": "Nastavení trenéra bylo uloženo.",
+"enterFirstName": "Zadej své křestní jméno.",
+"firstNameTooShort": "Jméno je příliš krátké.",
+"enterSecurityPin": "Zadej 4místný bezpečnostní PIN.",
+"pinMustHave4Digits": "PIN musí mít přesně 4 číslice.",
+"confirmSecurityPin": "Potvrď bezpečnostní PIN.",
+"coachSetup": "Nastavení trenéra",
+"weightGainSupportGoal": "Nabírání / podpora příjmu",
+"nextTimeWeight": "➡️ Příště: {weight} kg ({delta} kg)",
+
+"dietPlanSelection": "Výběr dietního plánu",
+"savedMealPlans": "Uložené jídelníčky",
+"savedMealPlansDescription": "Načti si vlastní kompletní týdenní nebo měsíční šablony a použij je znovu.",
+"openMealDatabase": "OTEVŘÍT DATABANKU JÍDELNÍČKŮ",
+
+"createCustomMealPlan": "Vytvořit vlastní jídelníček",
+"createCustomMealPlanDescription": "Ručně poskládej denní jídelníček z hotových jídel a ulož si ho jako vlastní šablonu.",
+"openDailyEditor": "OTEVŘÍT DENNÍ EDITOR",
+"selectDate": "Vybrat datum",
+"copyYesterday": "Kopírovat včerejšek",
+"resetDay": "Vynulovat den",
+"yesterdayCopied": "Včerejší jídlo zkopírováno",
+"addFood": "Přidat jídlo",
+"remainingForToday": "Zbývá do dne",
+"helpWithRemainingFood": "Pomoz mi se zbytkem jídla",
+"recalculateRemainingDay": "Přepočítat zbytek dne",
+"foods": "Jídla",
+"tdeeDescription": "Pozn.: TDEE je výdej. Cílové kalorie a makra se řídí cílem + fází + datem.",
+"day": "den",
+
+"proteinShort": "B",
+"carbsShort": "S",
+"fatShort": "T",
+"yourFastingMealPlan": "Tvůj fasting jídelníček",
+"ingredients": "Ingredience",
+"weeklyMealPlan": "Týdenní jídelní plán",
+"saveTemplate": "Uložit template",
+"shoppingList": "Nákupní seznam",
+"shoppingListEmpty": "Nákupní seznam je prázdný.",
+
+"trainerRecommendation": "Doporučení trenéra",
+
+"followPlanFor4Weeks": "Dodržuj plán po dobu 4 týdnů.",
+"nextCheckAndWeight": "Další kontrola a vážení za 1 měsíc",
+
+"ketoMealPlan": "Keto jídelníček",
+"fastingMealPlan": "Fasting jídelníček",
+"linearMealPlan": "Linear jídelníček",
+"mealPlan": "Jídelníček",
+
+"protein": "Bílkoviny",
+"noFoodYet": "Zatím tu nic není. Přidej první jídlo.",
+"allSlotsAdded": "Přidáno ✅ (všechny sloty)",
+"manualOverrideHint": "Tip: když něco upravíš, solver už to nepřepočítává – je to ruční override.",
+"noMealsAvailable": "Nemám z čeho vybírat. Doplň banku jídel.",
+"calories": "Kalorie",
+"remaining": "Zbývá",
+"exceeded": "Přesah",
+"foodComboLibrary": "Databanka hotovek",
+"foodComboLibraryDescription": "Procházej, duplikuj, upravuj a maž vlastní hotovky z databanky.",
+"openFoodComboLibrary": "OTEVŘÍT DATABANKU HOTOVEK",
+"createFoodCombo": "Vytvořit hotovku z potravin",
+"createFoodComboDescription": "Poskládej vlastní jídlo z jednotlivých potravin a ulož ho do databanky hotovek.",
+"openFoodComboEditor": "OTEVŘÍT EDITOR HOTOVKY",
+"weekBuilder": "Sestavit týden z denních šablon",
+"weekBuilderDescription": "Vyber denní šablonu pro každý den a ulož si kompletní týdenní jídelníček.",
+"openWeeklyBuilder": "OTEVŘÍT TÝDENNÍ BUILDER",
+"monthBuilder": "Sestavit měsíc z týdnů",
+"monthBuilderDescription": "Vyber 4 uložené týdenní jídelníčky a slož z nich kompletní měsíční plán.",
+"openMonthlyBuilder": "OTEVŘÍT MĚSÍČNÍ BUILDER",
+"linearPlanTitle": "Konstantní příjem (Linear)",
+"linearPlanDescription": "Každý den stejná makra. Nejjednodušší cesta pro stabilní růst svalů.",
+"activateAndOpenPlan": "AKTIVOVAT A OTEVŘÍT PLÁN",
+"monday": "Pondělí",
+"tuesday": "Úterý",
+"wednesday": "Středa",
+"thursday": "Čtvrtek",
+"friday": "Pátek",
+"saturday": "Sobota",
+"sunday": "Neděle",
+"ketoMealPlanPdfTitle": "Keto jídelníček",
+"carbCyclingPdfTitle": "Sacharidové vlny",
+"ketoMealPlanPdfSubtitle": "Nízkosacharidový režim s důrazem na tuky a stabilní příjem bílkovin.",
+"carbCyclingPdfSubtitle": "Sacharidy se cyklují podle jednotlivých dnů.",
+"yourKetoMealPlan": "Tvůj Keto jídelníček",
+"yourPlan": "Tvůj plán",
+"printPdf": "Tisk / PDF",
+"sharePdf": "Sdílet PDF",
+"dailyCarbIntake": "DENNÍ PŘÍJEM SACHARIDŮ",
+"weeklyCarbBank": "TVŮJ TÝDENNÍ BANK SACHARIDŮ",
+"proteinLabel": "Bílkoviny",
+"fatsLabel": "Tuky",
+"generateShoppingList": "GENEROVAT NÁKUPNÍ SEZNAM",
+"showFullWeeklyMealPlan": "ZOBRAZIT CELÝ TÝDENNÍ JÍDELNÍČEK",
+"dayMealBreakdown": "Rozpis a jídelníček na dny:",
+"refeedDay": "REFEED DEN 🚀",
+"closeAndActivate": "ZAVŘÍT A AKTIVOVAT",
+"carbCyclingTitle": "Sacharidové vlny",
+"carbCyclingDescription": "Cyklování sacharidů pro spalování tuku.",
+"startAnalysisAndCycling": "SPUSTIT ANALÝZU A VLNY",
+"ketoDietTitle": "Keto dieta",
+"ketoDietDescription": "Vysoký obsah tuků, minimum sacharidů.",
+"selectKetoAndPreferences": "VYBRAT KETO A UPRAVIT CHUTĚ",
+"fastingTitle": "Přerušovaný půst",
+"fastingDescription": "Časově omezené okno pro jídlo. Zlepšuje regeneraci.",
+"setMealTimes": "NASTAVIT ČASY JÍDLA",
+"enterMealPlan": "VSTOUPIT DO JÍDELNÍČKU",
+"fastingLengthQuestion": "Jak dlouhý půst preferuješ?",
+"fastingWindowQuestion": "KDY TI ZAČÍNÁ OKNO JÍDLA?",
+"mainSquatExercise": "Hlavní dřepový cvik",
+"mainPressExercise": "Hlavní tlakový cvik",
+"mainHingeExercise": "Hlavní tahový cvik (hip hinge)",
+"chestPress": "Hrudník (tlaky)",
+"verticalPull": "Záda (vertikální tah)",
+"horizontalPull": "Záda (horizontální tah)",
+"quads": "Kvadricepsy",
+"hamstrings": "Zadní stehna (hamstringy)",
+
+"perMuscleWeekly": "/ partii týdně",
+
+"competitionModeNote": "Režim pro závody – priorita výkon/forma.",
+"weightLossStrengthNote": "V deficitu nehoníme PR – držíme sílu.",
+"peakModeShortNote": "Peak: technika > objem, delší pauzy.",
+
+"generalTraining": "Obecný trénink",
+"setupGoalAndDateForPeriodization": "Nastav si nejprve cíl a datum, aby šla periodizace.",
+
+
+
+"fullbody3x": "Fullbody 3×",
+"upperLower4x": "Upper / Lower 4×",
+"pushPullLegs6x": "Push Pull Legs 6×",
+"strength3days": "Síla 3 dny",
+
+"@perfectRecompositionTitle": {
+  "description": "Nadpis pro perfektní rekompozici"
+},
+"@perfectRecompositionMessage": {
+  "description": "Zpráva pro perfektní rekompozici"
+},
+
+"@muscleLossWarningTitle": {
+  "description": "Varování při ztrátě svalové hmoty"
+},
+"@muscleLossWarningMessage": {
+  "description": "Zpráva při ztrátě svalové hmoty"
+},
+
+"@armAsymmetryTitle": {
+  "description": "Nadpis pro asymetrii paží"
+},
+"@armAsymmetryMessage": {
+  "description": "Zpráva pro asymetrii paží",
+  "placeholders": {
+    "diff": {
+      "type": "String",
+      "example": "0.7"
+    }
+  }
+},
+
+"@visceralFatWarningTitle": {
+  "description": "Varování pro zvýšený viscerální tuk"
+},
+"@visceralFatWarningMessage": {
+  "description": "Zpráva pro zvýšený viscerální tuk"
+},
+
+"@greatConditionTitle": {
+  "description": "Nadpis pro skvělou formu"
+},
+"@greatConditionMessage": {
+  "description": "Zpráva pro skvělou formu"
+},
+
+"glutes": "Hýždě",
+"shoulders": "Ramena",
+"triceps": "Triceps",
+"biceps": "Biceps",
+"core": "Střed těla",
+"conditioning": "Kondice",
+"squatPattern": "Dřepový pohyb",
+"hingePattern": "Tahový pohyb (hip hinge)",
+"pressPattern": "Tlakový pohyb",
+"verticalPullPattern": "Tah (vertikální)",
+"horizontalRowPattern": "Přítah (horizontální)",
+"corePattern": "Střed těla",
+"locomotionPattern": "Pohyb / kondice",
+"strength": "Síla",
+"hypertrophy": "Svaly / postava",
+"endurance": "Vytrvalost",
+"setupProfileAndGoalFirst": "Nejprve nastav profil a cíl.",
+"trainingQuestionnaireMissing": "Chybí nastavení tréninku (dotazník).",
+"exerciseSelectionTest": "Výběr cviků (test)",
+"movementType": "Typ pohybu",
+"focus": "Zaměření",
+"prescription": "Předpis",
+"setGoalFirst": "Nejprve nastav cíl.",
+"trainingSetupNeeded": "Než vygenerujeme trénink, potřebuji krátké nastavení.",
+
+"repetitions": "Opakování",
+"weeklySetsPerMuscle": "Série na partii (týdně)",
+"rirReserve": "Rezerva (RIR)",
+"buildCustomTraining": "Sestavit vlastní trénink",
+"deloadRecommendation": "Doporučení: deload – pokud cítíš únavu, sniž objem o 30–40 % na 1 týden.",
+"peakModeDescription": "Režim vrcholu (peak): technika > objem, delší pauzy, nízké opakování.",
+"weeklyPlan": "Týdenní plán",
+
+"changeTrainingSplit": "Změnit rozložení tréninků",
+"note": "Poznámka",
+"trainingPlanDescription": "Plán se generuje automaticky podle cíle a času.\nVlastní plán slouží pro klienty se specifickými potřebami, omezeními nebo individuálním rozpisem.",
+"selectedExercise": "Vybraný cvik",
+"noExerciseSelected": "Vybraný cvik: (zatím nevybráno)",
+"slotDebugDescription": "Testovací obrazovka: slot = role + typ pohybu + zaměření + série/opakování/RIR. Klikni na slot a vyber cvik.",
+"fastingBeginner": "Začátečník (12:12)",
+"fastingIntermediate": "Mírně pokročilý (14:10)",
+"fastingClassic": "Klasika (16:8)",
+"fastingAdvanced": "Pokročilý (18:6)",
+"fastingWarrior": "Warrior (20:4)",
+"mealSuggestions": "Návrhy na {count} jídla",
+"@mealSuggestions": {
+  "placeholders": {
+    "count": {}
+  }
+},
+
+"trainingCompetitionMode": "Režim pro závody – priorita výkon/forma.",
+"trainingDeficitStrength": "V deficitu nehoníme PR – držíme sílu.",
+"trainingPeakMode": "Peak: technika > objem, delší pauzy.",
+
+"trainingGeneralTitle": "Obecný trénink",
+"trainingGeneralNote": "Nastav si nejprve cíl a datum, aby šla periodizace.",
+
+"trainingSplitAuto": "Automaticky",
+"trainingSplitFullbody": "Fullbody 3×",
+"trainingSplitUpperLower": "Upper / Lower 4×",
+"trainingSplitPPL": "Push Pull Legs 6×",
+"trainingSplitStrength3day": "Síla 3 dny",
+"coachInsightVeryLowFat": "Velmi nízký tuk – závodní nebo krátkodobá forma.",
+"coachInsightExcellentShape": "Výborná forma.",
+"coachInsightHealthyAthletic": "Zdravá sportovní forma.",
+"coachInsightFatReduction": "Je prostor pro redukci tuku.",
+"coachInsightHighFat": "Vysoký podíl tuku – priorita bude hubnutí.",
+
+"coachInsightVeryLean": "Tuku je velmi málo – zaměříme se spíše na výkon a svaly.",
+
+"coachInsightWaterRetention": "Tělo může zadržovat více vody (stres, sůl, regenerace).",
+"coachInsightLowWater": "Nízký podíl vody – zaměř se na pitný režim a regeneraci.",
+
+"coachInsightFatDown": "Tuk klesá – pokračuj.",
+"coachInsightFatUp": "Tuk roste – upravíme stravu.",
+
+"coachInsightMuscleUp": "Svaly rostou – trénink funguje.",
+"coachInsightMuscleDown": "Svaly klesají – přidáme bílkoviny nebo snížíme deficit.",
+"approxMacros": "Makra (orientačně): B {protein} g | S {carbs} g | T {fat} g | {calories} kcal",
+"@approxMacros": {
+  "placeholders": {
+    "protein": {},
+    "carbs": {},
+    "fat": {},
+    "calories": {}
+  }
+},
+
+"eatenCalories": "Snězeno: {calories} kcal",
+"@eatenCalories": {
+  "placeholders": {
+    "calories": {}
+  }
+},
+
+"targetCaloriesLabel": "Cíl: {calories} kcal",
+"@targetCaloriesLabel": {
+  "placeholders": {
+    "calories": {}
+  }
+},
+
+"remainingGrams": "zbývá {grams} g",
+"@remainingGrams": {
+  "placeholders": {
+    "grams": {}
+  }
+},
+
+"exceededGrams": "přesah {grams} g",
+"@exceededGrams": {
+  "placeholders": {
+    "grams": {}
+  }
+},
+"fastingConfigured": "Nastaveno {hours} h půstu od {time}",
+"@fastingConfigured": {
+  "placeholders": {
+    "hours": {},
+    "time": {}
+  }
+},
+
+  "ingredientsWeekTitle": "Tento týden budeme vařit z:",
+  "ingredientsExcludeTitle": "Označ suroviny, které NECHCEŠ:",
+
+  "salmonOption": "Losos (nemám rád ryby)",
+  "eggs": "Vejce",
+  "beef": "Hovězí maso",
+
+  "generatePlanButton": "TO JE V POHODĚ, GENERUJ!",
+
+  "editTime": "UPRAVIT ČAS ({time})",
+  "@editTime": {
+    "placeholders": {
+      "time": {}
+    }
+  },
+
+"newBadge": "NOVINKA",
+
+"@nextTimeWeight": {
+  "placeholders": {
+    "weight": {},
+    "delta": {}
+  }
+},
+
+"nextTimeKeepWeight": "➡️ Příště drž {weight} kg",
+"@nextTimeKeepWeight": {
+  "placeholders": {
+    "weight": {}
+  }
+},
+
+"pickSkippedDay": "Přeskočený den",
+
+"pickSkippedDayDescription": "Minule jsi přeskočil/a den „{day}“. Chceš ho dnes docvičit?",
+"@pickSkippedDayDescription": {
+  "placeholders": {
+    "day": {}
+  }
+},
+"cancelChange": "Zrušit změnu",
+"continueCurrent": "Pokračovat takhle",
+"finishSkippedDay": "Docvičit",
+"planHasNoDays": "Plán zatím nemá žádné dny.",
+"selectTrainingDay": "Vyber jiný den pro dnešní trénink",
+"selectTrainingDayDescription": "Přeskočený den se uloží a později se nabídne k docvičení.",
+"profileGoalRequired": "Nejprve nastav profil a cíl.",
+"todayTraining": "Dnešní trénink",
+"trainingSetupRequired": "Než vygenerujeme dnešní trénink, vyplň prosím krátké nastavení.",
+"openTrainingSetup": "Otevřít nastavení tréninku",
+"todayTrainingGenerationFailed": "Nepodařilo se vygenerovat dnešní trénink.",
+"changeDay": "Změnit den",
+"temporaryDifferentDay": "Dnes je dočasně zvolený jiný den z plánu.",
+"dateLabel": "Datum",
+"performanceSaved": "Výkon uložen.",
+"log": "Log",
+"customTrainingFormat": "Formát: série × opakování / čas | RIR",
+"defaultTrainingFormat": "Formát: série × opakování | RIR | kg",
+"logPerformance": "Zapsat výkon",
+"loggedAccount": "Přihlášený účet",
+"coachSetupDesktopDescription": "Teď si nastavíme tvoje jméno, bezpečnostní kód a hlavně složku, kam se budou ukládat archivy klientů.",
+"exportClientFolder": "Exportní složka klientů",
+"selectClientArchiveFolder": "Vyber složku pro archiv klientů",
+"useAppFolder": "Použít složku v aplikaci",
+"selectCustomFolder": "Vybrat vlastní složku",
+"useClientsFolder": "Použít Klienti",
+"useDocumentsClients": "Použít Dokumenty/Klienti",
+"iosFolderInfo": "Na iPhonu Apple nedovoluje vybírat libovolné složky jako na počítači. Archivy se proto uloží do interní složky aplikace Klienti.",
+"desktopFolderRecommendation": "Doporučení: vyber si vlastní archivní složku, ideálně v Google Drive nebo OneDrive synchronizované složce. Pak budeš mít klientské archivy dostupné i mimo tento počítač.",
+"finishSetup": "Dokončit nastavení",
+"coachSetupSaved": "Nastavení trenéra bylo uloženo.",
+"confirmPin": "Potvrzení kódu",
+
+"setupProfileFirst": "Nejprve nastav profil.",
+"setupGoalFirst": "Nejprve nastav cíl.",
+"openSetup": "Otevřít nastavení",
+"trainingSetupRequiredDescription": "Než vygenerujeme plán, vyplň prosím krátké nastavení tréninku.",
+
+
+"customPlan": "Vlastní plán",
+"dayOptions": "Možnosti dne",
+"selectAnotherDay": "Vybrat jiný den",
+"returnOriginalDay": "Vrátit původní den",
+
+"trainingFormatCustom": "Formát: série | opakování / čas | RIR",
+"trainingFormatDefault": "Formát: série | opakování | RIR | kg",
+"pickDifferentTrainingDay": "Vyber jiný den pro dnešní trénink",
+"originalDaysStaySaved": "Původní dny v plánu se nemažou.",
+"noExercises": "Bez cviků",
+"mainLift": "HLAVNÍ LIFT",
+
+"reps": "Opakování",
+"rir": "RIR",
+"weightLabel": "Váha",
+"breakfast": "Snídaně",
+"snack": "Svačina",
+
+
+
+"selectActiveClientFirst": "Nejprve vyber aktivního klienta",
+"customTraining": "Vlastní trénink",
+"sharedTemplates": "Sdílené šablony",
+"noSharedTemplatesYet": "Zatím nejsou žádné sdílené šablony",
+"clientPlans": "Klientské plány",
+"noCustomPlanYet": "Zatím není vytvořen žádný plán",
+"category": "Kategorie",
+"planDescription": "Popis plánu",
+"planDescriptionHint": "Např. silový plán na objem",
+"planDetail": "Detail plánu",
+"planNotFound": "Plán nebyl nalezen",
+"description": "Popis",
+"noDescription": "Bez popisu",
+"numberOfDays": "Počet dnů",
+"activateAndOpen": "Aktivovat a otevřít",
+"shareAsTemplate": "Sdílet jako šablonu",
+"editInfo": "Upravit informace",
+"addDay": "Přidat den",
+"deleteWholePlan": "Smazat celý plán",
+"editPlan": "Upravit plán",
+"reallyDeletePlan": "Opravdu smazat plán?",
+"confirmDeletion": "Potvrzení smazání",
+"deletePlanWarning": "Tato akce je nevratná.",
+"back": "Zpět",
+"deleteForever": "Smazat navždy",
+"addTrainingDay": "Přidat tréninkový den",
+"dayName": "Název dne",
+"dayNameHint": "Např. Push Day",
+"add": "Přidat",
+"exercises": "Cviky",
+"addExercise": "Přidat cvik",
+"deleteDay": "Smazat den",
+"noExercisesYet": "Zatím nejsou žádné cviky",
+"reallyDeleteDay": "Opravdu smazat den?",
+"deleteDayWarning": "Den bude trvale odstraněn.",
+"selectFromExerciseDatabase": "Vybrat z databáze cviků",
+"enterCustomExerciseManually": "Zadat vlastní cvik ručně",
+"addCustomExercise": "Přidat vlastní cvik",
+"editExercise": "Upravit cvik",
+"deleteExerciseQuestion": "Odstranit cvik?",
+"yesDelete": "Ano, smazat",
+
+"noExerciseFound": "Nenalezen žádný cvik.",
+
+
+"repsOrTime": "Opakování / čas",
+
+"mealsCountQuestion": "Kolik jídel chceš?",
+"howDoYouWantSuggestions": "Jak chceš návrhy?",
+"singleItemsFromBank": "Jednotlivé potraviny z databanky",
+"completeMeals": "Kompletní jídla",
+
+
+"@addCustomExercise": {
+  "description": "Dialog title for adding custom exercise"
+},
+
+"exerciseName": "Název cviku",
+"@exerciseName": {
+  "description": "Exercise name field"
+},
+
+"exerciseNameHint": "Např. Plank na boku",
+"@exerciseNameHint": {
+  "description": "Hint for exercise name"
+},
+
+"sets": "Série",
+"@sets": {
+  "description": "Sets label"
+},
+
+"repsOrTime": "Opakování / čas",
+"@repsOrTime": {
+  "description": "Reps or time label"
+},
+
+"repsOrTimeHint": "Např. 3 min nebo 8–12",
+"@repsOrTimeHint": {
+  "description": "Hint for reps or time"
+},
+
+
+"@note": {
+  "description": "Exercise note label"
+},
+
+"editExercise": "Upravit cvik",
+"@editExercise": {
+  "description": "Edit exercise dialog title"
+},
+
+"removeExerciseQuestion": "Odstranit cvik?",
+"@removeExerciseQuestion": {
+  "description": "Remove exercise confirmation title"
+},
+
+"yesDelete": "Ano, smazat",
+"@yesDelete": {
+  "description": "Delete confirmation button"
+},
+
+"selectExerciseFromDatabase": "Vybrat z databáze cviků",
+"@selectExerciseFromDatabase": {
+  "description": "Exercise database picker title"
+},
+
+
+"@searchExercise": {
+  "description": "Search exercise label"
+},
+
+
+
+"english": "Anglicky",
+"@english": {
+  "description": "English label"
+},
+
+"equipment": "Vybavení",
+"@equipment": {
+  "description": "Equipment label"
+},
+
+"selectMealsTotal": "Vyber {count} jídel",
+
+"selectType": "Vyber typ",
+
+"vegan": "Veganské",
+"veganCategoryOnly": "Pouze veganská jídla",
+
+"savory": "Slané",
+"sweet": "Sladké",
+"anything": "Cokoliv",
+
+"howManyGrams": "Kolik gramů?",
+"grams": "Gramy",
+
+"enterValidGramRange": "Zadej platné množství mezi 10 a 3000 g",
+
+"completed": "Splněno ✅",
+
+"noMealsInCategory": "V kategorii {category} nejsou žádná jídla",
+
+"selectMeal": "Vyber jídlo pro {slot} ({category})",
+
+"addedMeal": "{meal} přidáno ({grams} g)",
+
+"planSummary": "Shrnutí plánu",
+
+"editGrams": "Upravit gramy",
+
+"addAll": "Přidat vše",
+"newClient": "Nový klient",
+
+"ok": "OK",
+
+
+
+
+"@archivedClientsImported": {
+  "placeholders": {
+    "count": {
+      "type": "int"
+    }
+  }
+},
+
+"@archiveCsvImportFailed": {
+  "placeholders": {
+    "error": {}
+  }
+},
+
+"@clientMovedToArchive": {
+  "placeholders": {
+    "name": {}
+  }
+},
+
+"@clientRestored": {
+  "placeholders": {
+    "name": {}
+  }
+},
+
+"@clientImported": {
+  "placeholders": {
+    "name": {}
+  }
+},
+
+"@fileImportFailedWithError": {
+  "placeholders": {
+    "error": {}
+  }
+},
+
+"@waterPercentageInfo": {
+  "placeholders": {
+    "value": {}
+  }
+},
+
 "@folderPickFailed": {
-"placeholders": {
-"error": {}
-}
+  "placeholders": {
+    "error": {}
+  }
+},
+
+"@signOutFailed": {
+  "placeholders": {
+    "error": {}
+  }
+},
+"@selectMealsTotal": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+
+  "@noMealsInCategory": {
+    "placeholders": {
+      "category": {}
+    }
+  },
+
+  "@selectMeal": {
+    "placeholders": {
+      "slot": {},
+      "category": {}
+    }
+  },
+
+  "@addedMeal": {
+    "placeholders": {
+      "meal": {},
+      "grams": {}
+    }
+  },
+
+
+"@failedToSaveMeasurements": {
+  "placeholders": {
+    "error": {}
+  }
 }
 }

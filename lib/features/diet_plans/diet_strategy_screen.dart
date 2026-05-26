@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../providers/diet_settings_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import 'logic/keto_calculator.dart';
@@ -8,20 +9,20 @@ import 'providers/diet_plan_provider.dart';
 import 'screens/carb_cycling_logic.dart';
 import 'screens/carb_cycling_result_screen.dart';
 import 'screens/carb_cycling_survey_screen.dart';
-import 'screens/create_food_combo_screen.dart';
-import 'screens/daily_meal_plan_editor_screen.dart';
 import 'screens/daily_menu_screen.dart';
-import 'screens/food_combo_library_screen.dart';
 import 'screens/keto_result_screen.dart';
-import 'screens/monthly_template_builder_screen.dart';
-import 'screens/saved_meal_plans_screen.dart';
-import 'screens/weekly_template_builder_screen.dart';
 
 class DietStrategyScreen extends ConsumerWidget {
   const DietStrategyScreen({super.key});
 
-  Future<void> _selectStartTime(BuildContext context, WidgetRef ref) async {
+  Future<void> _selectStartTime(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final profile = ref.read(userProfileProvider);
+
     if (profile == null) return;
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -30,15 +31,35 @@ class DietStrategyScreen extends ConsumerWidget {
     final selectedHours = await showDialog<int>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Jak dlouhý půst preferuješ?'),
+        title: Text(l10n.fastingLengthQuestion),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _fastingOption(dialogContext, 12, 'Začátečník (12:12)'),
-            _fastingOption(dialogContext, 14, 'Mírně pokročilý (14:10)'),
-            _fastingOption(dialogContext, 16, 'Klasika (16:8)'),
-            _fastingOption(dialogContext, 18, 'Pokročilý (18:6)'),
-            _fastingOption(dialogContext, 20, 'Warrior (20:4)'),
+            _fastingOption(
+              dialogContext,
+              12,
+              l10n.fastingBeginner,
+            ),
+            _fastingOption(
+              dialogContext,
+              14,
+              l10n.fastingIntermediate,
+            ),
+            _fastingOption(
+              dialogContext,
+              16,
+              l10n.fastingClassic,
+            ),
+            _fastingOption(
+              dialogContext,
+              18,
+              l10n.fastingAdvanced,
+            ),
+            _fastingOption(
+              dialogContext,
+              20,
+              l10n.fastingWarrior,
+            ),
           ],
         ),
       ),
@@ -50,12 +71,14 @@ class DietStrategyScreen extends ConsumerWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime:
-          profile.fastingStartTime ?? const TimeOfDay(hour: 10, minute: 0),
-      helpText: 'KDY TI ZAČÍNÁ OKNO JÍDLA?',
+          profile.fastingStartTime ??
+          const TimeOfDay(hour: 10, minute: 0),
+      helpText: l10n.fastingWindowQuestion,
     );
 
     if (picked != null) {
       final currentProfile = ref.read(userProfileProvider);
+
       if (currentProfile != null) {
         final updatedProfile = currentProfile.copyWith(
           fastingStartTime: picked,
@@ -64,14 +87,19 @@ class DietStrategyScreen extends ConsumerWidget {
           fastingDuration: selectedHours,
         );
 
-        ref.read(userProfileProvider.notifier).updateProfile(updatedProfile);
+        ref
+            .read(userProfileProvider.notifier)
+            .updateProfile(updatedProfile);
 
-        final fastingPlan = CarbCyclingCalculator.generateFastingMealPlan(
+        final fastingPlan =
+            CarbCyclingCalculator.generateFastingMealPlan(
           profile: updatedProfile,
+          l10n: l10n,
           excluded: ref.read(excludedIngredientsProvider),
         );
 
-        ref.read(dietPlanProvider.notifier).state = fastingPlan;
+        ref.read(dietPlanProvider.notifier).state =
+            fastingPlan;
       }
 
       if (!context.mounted) return;
@@ -79,7 +107,10 @@ class DietStrategyScreen extends ConsumerWidget {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            'Nastaveno $selectedHours h půstu od ${picked.format(context)}',
+            l10n.fastingConfigured(
+              selectedHours,
+              picked.format(context),
+            ),
           ),
           backgroundColor: colorScheme.primary,
         ),
@@ -87,89 +118,139 @@ class DietStrategyScreen extends ConsumerWidget {
     }
   }
 
-  Widget _fastingOption(BuildContext context, int hours, String label) {
+  Widget _fastingOption(
+    BuildContext context,
+    int hours,
+    String label,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ListTile(
       title: Text(label),
-      leading: Icon(Icons.timer_outlined, color: colorScheme.secondary),
+      leading: Icon(
+        Icons.timer_outlined,
+        color: colorScheme.secondary,
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => Navigator.pop(context, hours),
     );
   }
 
-  void _showIngredientCheck(BuildContext context, WidgetRef ref) {
+  void _showIngredientCheck(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     showDialog<void>(
       context: context,
       builder: (dialogContext) => Consumer(
         builder: (dialogContext, dialogRef, child) {
-          final currentExcluded = dialogRef.watch(excludedIngredientsProvider);
+          final currentExcluded =
+              dialogRef.watch(excludedIngredientsProvider);
 
           return AlertDialog(
-            title: const Text('Tento týden budeme vařit z:'),
+            title: Text(l10n.ingredientsWeekTitle),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Označ suroviny, které NECHCEŠ:'),
+                Text(l10n.ingredientsExcludeTitle),
+
                 const Divider(),
+
                 CheckboxListTile(
                   value: currentExcluded.contains('Losos'),
                   onChanged: (_) => dialogRef
-                      .read(excludedIngredientsProvider.notifier)
+                      .read(
+                        excludedIngredientsProvider.notifier,
+                      )
                       .toggleIngredient('Losos'),
-                  title: const Text('Losos (nemám rád ryby)'),
+                  title: Text(l10n.salmonOption),
                   contentPadding: EdgeInsets.zero,
                 ),
+
                 CheckboxListTile(
                   value: currentExcluded.contains('Vejce'),
                   onChanged: (_) => dialogRef
-                      .read(excludedIngredientsProvider.notifier)
+                      .read(
+                        excludedIngredientsProvider.notifier,
+                      )
                       .toggleIngredient('Vejce'),
-                  title: const Text('Vejce'),
+                  title: Text(l10n.eggs),
                   contentPadding: EdgeInsets.zero,
                 ),
+
                 CheckboxListTile(
-                  value: currentExcluded.contains('Hovězí maso'),
+                  value: currentExcluded.contains(
+                    'Hovězí maso',
+                  ),
                   onChanged: (_) => dialogRef
-                      .read(excludedIngredientsProvider.notifier)
+                      .read(
+                        excludedIngredientsProvider.notifier,
+                      )
                       .toggleIngredient('Hovězí maso'),
-                  title: const Text('Hovězí maso'),
+                  title: Text(l10n.beef),
                   contentPadding: EdgeInsets.zero,
                 ),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('ZRUŠIT'),
+                onPressed: () =>
+                    Navigator.pop(dialogContext),
+                child: Text(
+                  l10n.cancel.toUpperCase(),
+                ),
               ),
+
               ElevatedButton(
                 onPressed: () {
-                  final profile = dialogRef.read(userProfileProvider);
+                  final profile =
+                      dialogRef.read(userProfileProvider);
+
                   if (profile == null) {
                     Navigator.pop(dialogContext);
                     return;
                   }
 
-                  final ketoMacros = KetoCalculator.calculateMacros(profile);
-                  final ketoPlan = KetoCalculator.generateWeeklyKetoMealPlan(
-                    protein: ketoMacros['protein'] ?? 0,
-                    fats: ketoMacros['fats'] ?? 0,
-                    carbs: ketoMacros['carbs'] ?? 30,
-                    excludedFoods: dialogRef.read(excludedIngredientsProvider),
+                  final ketoMacros =
+                      KetoCalculator.calculateMacros(
+                    profile,
+                    l10n,
                   );
 
-                  ref.read(dietPlanProvider.notifier).state = ketoPlan;
+                  final ketoPlan =
+                      KetoCalculator.generateWeeklyKetoMealPlan(
+                    protein:
+                        ketoMacros['protein'] ?? 0,
+                    fats:
+                        ketoMacros['fats'] ?? 0,
+                    carbs:
+                        ketoMacros['carbs'] ?? 30,
+                    excludedFoods: dialogRef.read(
+                      excludedIngredientsProvider,
+                    ),
+                    l10n: l10n,
+                  );
+
+                  ref
+                      .read(dietPlanProvider.notifier)
+                      .state = ketoPlan;
 
                   Navigator.pop(dialogContext);
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => KetoResultScreen(macros: ketoMacros),
+                      builder: (_) => KetoResultScreen(
+                        macros: ketoMacros,
+                      ),
                     ),
                   );
                 },
-                child: const Text('TO JE V POHODĚ, GENERUJ!'),
+                child: Text(
+                  l10n.generatePlanButton,
+                ),
               ),
             ],
           );
@@ -178,220 +259,111 @@ class DietStrategyScreen extends ConsumerWidget {
     );
   }
 
-  void _activateLinearPlan(BuildContext context, WidgetRef ref) {
+  void _activateLinearPlan(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
     final current = ref.read(userProfileProvider);
+
     if (current == null) return;
 
-    final linearPlan = CarbCyclingCalculator.createLinearPlan(profile: current);
+    final linearPlan =
+        CarbCyclingCalculator.createLinearPlan(
+      profile: current,
+      l10n: l10n,
+    );
 
     ref.read(userProfileProvider.notifier).updateProfile(
           current.copyWith(selectedPlan: 'Linear'),
         );
 
-    ref.read(dietPlanProvider.notifier).state = linearPlan.mealPlan;
+    ref.read(dietPlanProvider.notifier).state =
+        linearPlan.mealPlan;
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CarbCyclingResultScreen(plan: linearPlan),
+        builder: (_) =>
+            CarbCyclingResultScreen(plan: linearPlan),
       ),
     );
   }
 
-  void _activateKetoPlan(BuildContext context, WidgetRef ref) {
+  void _activateKetoPlan(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
     final current = ref.read(userProfileProvider);
+
     if (current != null) {
       ref.read(userProfileProvider.notifier).updateProfile(
             current.copyWith(selectedPlan: 'Keto'),
           );
     }
+
     _showIngredientCheck(context, ref);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
+
     final profile = ref.watch(userProfileProvider);
-    final isFastingSelected = profile?.selectedPlan == 'Fasting';
+
+    final isFastingSelected =
+        profile?.selectedPlan == 'Fasting';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Výběr dietního plánu'),
+        title: Text(l10n.dietPlanSelection),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _StrategyCard(
-            title: 'Uložené jídelníčky',
+            title: l10n.linearPlanTitle,
             description:
-                'Načti si vlastní kompletní týdenní nebo měsíční šablony a použij je znovu.',
-            icon: Icons.bookmarks_outlined,
-            actions: [
-              _fullWidthButton(
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SavedMealPlansScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.folder_open),
-                  label: const Text('OTEVŘÍT DATABANKU JÍDELNÍČKŮ'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _StrategyCard(
-            title: 'Vytvořit vlastní jídelníček',
-            description:
-                'Ručně poskládej denní jídelníček z hotových jídel a ulož si ho jako vlastní šablonu.',
-            icon: Icons.edit_note,
-            actions: [
-              _fullWidthButton(
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const DailyMealPlanEditorScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.add_task),
-                  label: const Text('OTEVŘÍT DENNÍ EDITOR'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _StrategyCard(
-            title: 'Databanka hotovek',
-            description:
-                'Procházej, duplikuj, upravuj a maž vlastní hotovky z databanky.',
-            icon: Icons.menu_book_outlined,
-            actions: [
-              _fullWidthButton(
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FoodComboLibraryScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.restaurant_menu),
-                  label: const Text('OTEVŘÍT DATABANKU HOTOVEK'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _StrategyCard(
-            title: 'Vytvořit hotovku z potravin',
-            description:
-                'Poskládej vlastní jídlo z jednotlivých potravin a ulož ho do databanky hotovek.',
-            icon: Icons.restaurant_outlined,
-            actions: [
-              _fullWidthButton(
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CreateFoodComboScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.playlist_add),
-                  label: const Text('OTEVŘÍT EDITOR HOTOVKY'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _StrategyCard(
-            title: 'Sestavit týden z denních šablon',
-            description:
-                'Vyber denní šablonu pro každý den a ulož si kompletní týdenní jídelníček.',
-            icon: Icons.view_week_outlined,
-            actions: [
-              _fullWidthButton(
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const WeeklyTemplateBuilderScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.calendar_view_week),
-                  label: const Text('OTEVŘÍT TÝDENNÍ BUILDER'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _StrategyCard(
-            title: 'Sestavit měsíc z týdnů',
-            description:
-                'Vyber 4 uložené týdenní jídelníčky a slož z nich kompletní měsíční plán.',
-            icon: Icons.calendar_month_outlined,
-            actions: [
-              _fullWidthButton(
-                child: FilledButton.tonalIcon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MonthlyTemplateBuilderScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.date_range),
-                  label: const Text('OTEVŘÍT MĚSÍČNÍ BUILDER'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          _StrategyCard(
-            title: 'Konstantní příjem (Linear)',
-            description:
-                'Každý den stejná makra. Nejjednodušší cesta pro stabilní růst svalů.',
+                l10n.linearPlanDescription,
             icon: Icons.horizontal_rule,
-            isActive: profile?.selectedPlan == 'Linear',
+            isActive:
+                profile?.selectedPlan == 'Linear',
             actions: [
               _fullWidthButton(
                 child: FilledButton(
-                  onPressed: () => _activateLinearPlan(context, ref),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colorScheme.secondaryContainer,
-                    foregroundColor: colorScheme.onSecondaryContainer,
+                  onPressed: () =>
+                      _activateLinearPlan(
+                    context,
+                    ref,
+                    l10n,
                   ),
-                  child: const Text('AKTIVOVAT A OTEVŘÍT PLÁN'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor:
+                        colorScheme.secondaryContainer,
+                    foregroundColor:
+                        colorScheme
+                            .onSecondaryContainer,
+                  ),
+                  child: Text(
+                    l10n.activateAndOpenPlan,
+                  ),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
 
           _StrategyCard(
-            title: 'Sacharidové vlny',
-            description: 'Cyklování sacharidů pro spalování tuku.',
+            title: l10n.carbCyclingTitle,
+            description:
+                l10n.carbCyclingDescription,
             icon: Icons.show_chart,
-            isActive: profile?.selectedPlan == 'Vlny',
+            isActive:
+                profile?.selectedPlan == 'Vlny',
             isNew: true,
             actions: [
               _fullWidthButton(
@@ -400,85 +372,130 @@ class DietStrategyScreen extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const CarbCyclingSurveyScreen(),
+                        builder: (_) =>
+                            const CarbCyclingSurveyScreen(),
                       ),
                     );
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: colorScheme.tertiaryContainer,
-                    foregroundColor: colorScheme.onTertiaryContainer,
+                    backgroundColor:
+                        colorScheme.tertiaryContainer,
+                    foregroundColor:
+                        colorScheme
+                            .onTertiaryContainer,
                   ),
-                  child: const Text('SPUSTIT ANALÝZU A VLNY'),
+                  child: Text(
+                    l10n.startAnalysisAndCycling,
+                  ),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
 
           _StrategyCard(
-            title: 'Keto dieta',
-            description: 'Vysoký obsah tuků, minimum sacharidů.',
+            title: l10n.ketoDietTitle,
+            description:
+                l10n.ketoDietDescription,
             icon: Icons.ac_unit,
-            isActive: profile?.selectedPlan == 'Keto',
+            isActive:
+                profile?.selectedPlan == 'Keto',
             isNew: true,
             actions: [
               _fullWidthButton(
                 child: FilledButton(
-                  onPressed: () => _activateKetoPlan(context, ref),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
+                  onPressed: () =>
+                      _activateKetoPlan(
+                    context,
+                    ref,
                   ),
-                  child: const Text('VYBRAT KETO A UPRAVIT CHUTĚ'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor:
+                        colorScheme.primary,
+                    foregroundColor:
+                        colorScheme.onPrimary,
+                  ),
+                  child: Text(
+                    l10n.selectKetoAndPreferences,
+                  ),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
 
           _StrategyCard(
-            title: 'Přerušovaný půst',
+            title: l10n.fastingTitle,
             description:
-                'Časově omezené okno pro jídlo. Zlepšuje regeneraci.',
+                l10n.fastingDescription,
             icon: Icons.timer,
             isActive: isFastingSelected,
             actions: [
               _fullWidthButton(
                 child: FilledButton(
-                  onPressed: () => _selectStartTime(context, ref),
+                  onPressed: () =>
+                      _selectStartTime(
+                    context,
+                    ref,
+                  ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: isFastingSelected
-                        ? colorScheme.primaryContainer
-                        : colorScheme.secondaryContainer,
-                    foregroundColor: isFastingSelected
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onSecondaryContainer,
+                    backgroundColor:
+                        isFastingSelected
+                            ? colorScheme
+                                .primaryContainer
+                            : colorScheme
+                                .secondaryContainer,
+                    foregroundColor:
+                        isFastingSelected
+                            ? colorScheme
+                                .onPrimaryContainer
+                            : colorScheme
+                                .onSecondaryContainer,
                   ),
                   child: Text(
-                    profile?.fastingStartTime != null
-                        ? 'UPRAVIT ČAS (${profile!.fastingStartTime!.format(context)})'
-                        : 'NASTAVIT ČASY JÍDLA',
+                    profile?.fastingStartTime !=
+                            null
+                        ? l10n.editTime(
+                            profile!
+                                .fastingStartTime!
+                                .format(context),
+                          )
+                        : l10n.setMealTimes,
                   ),
                 ),
               ),
-              if (isFastingSelected && profile?.fastingStartTime != null) ...[
+
+              if (isFastingSelected &&
+                  profile?.fastingStartTime !=
+                      null) ...[
                 const SizedBox(height: 12),
+
                 _fullWidthButton(
                   child: FilledButton.icon(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const DailyMenuScreen(),
+                          builder: (_) =>
+                              const DailyMenuScreen(),
                         ),
                       );
                     },
-                    icon: const Icon(Icons.restaurant_menu),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colorScheme.inverseSurface,
-                      foregroundColor: colorScheme.onInverseSurface,
+                    icon: const Icon(
+                      Icons.restaurant_menu,
                     ),
-                    label: const Text('VSTOUPIT DO JÍDELNÍČKU'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          colorScheme.inverseSurface,
+                      foregroundColor:
+                          colorScheme
+                              .onInverseSurface,
+                    ),
+                    label: Text(
+                      l10n.enterMealPlan,
+                    ),
                   ),
                 ),
               ],
@@ -489,7 +506,9 @@ class DietStrategyScreen extends ConsumerWidget {
     );
   }
 
-  Widget _fullWidthButton({required Widget child}) {
+  Widget _fullWidthButton({
+    required Widget child,
+  }) {
     return SizedBox(
       width: double.infinity,
       child: child,
@@ -516,39 +535,53 @@ class _StrategyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius:
+            BorderRadius.circular(16),
         side: BorderSide(
-          color: isActive ? colorScheme.primary : colorScheme.outlineVariant,
+          color: isActive
+              ? colorScheme.primary
+              : colorScheme.outlineVariant,
           width: isActive ? 1.6 : 1,
         ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Icon(
                   icon,
                   size: 32,
                   color: isActive
                       ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
+                      : colorScheme
+                          .onSurfaceVariant,
                 ),
+
                 const SizedBox(width: 16),
+
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                        crossAxisAlignment:
+                            WrapCrossAlignment
+                                .center,
                         spacing: 8,
                         runSpacing: 6,
                         children: [
@@ -556,18 +589,28 @@ class _StrategyCard extends StatelessWidget {
                             title,
                             style: TextStyle(
                               fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
+                              fontWeight:
+                                  FontWeight.bold,
+                              color: colorScheme
+                                  .onSurface,
                             ),
                           ),
-                          if (isNew) _newBadge(context),
+
+                          if (isNew)
+                            _newBadge(
+                              context,
+                              l10n,
+                            ),
                         ],
                       ),
+
                       const SizedBox(height: 4),
+
                       Text(
                         description,
                         style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
+                          color: colorScheme
+                              .onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -576,6 +619,7 @@ class _StrategyCard extends StatelessWidget {
                 ),
               ],
             ),
+
             if (actions.isNotEmpty) ...[
               const SizedBox(height: 16),
               ...actions,
@@ -586,19 +630,28 @@ class _StrategyCard extends StatelessWidget {
     );
   }
 
-  Widget _newBadge(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _newBadge(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) {
+    final colorScheme =
+        Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 2,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius:
+            BorderRadius.circular(6),
       ),
       child: Text(
-        'NOVINKA',
+        l10n.newBadge,
         style: TextStyle(
-          color: colorScheme.onTertiaryContainer,
+          color:
+              colorScheme.onTertiaryContainer,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:dart_application_1/l10n/app_localizations.dart';
 
 import '../../../services/pdf/diet_plan_pdf_service.dart';
 import '../models/carb_cycling_plan.dart';
 import 'meal_plan_view.dart';
 import 'shopping_list_screen.dart';
 import 'weekly_meal_plan_screen.dart';
+
 
 class CarbCyclingResultScreen extends StatelessWidget {
   final CarbCyclingPlan plan;
@@ -13,16 +15,18 @@ class CarbCyclingResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
 
     final days = [
-      'Pondělí',
-      'Úterý',
-      'Středa',
-      'Čtvrtek',
-      'Pátek',
-      'Sobota',
-      'Neděle',
+      l10n.monday,
+      l10n.tuesday,
+      l10n.wednesday,
+      l10n.thursday,
+      l10n.friday,
+      l10n.saturday,
+      l10n.sunday,
     ];
 
     final resolvedMealPlan = plan.mealPlan;
@@ -35,29 +39,35 @@ class CarbCyclingResultScreen extends StatelessWidget {
         ? colorScheme.onSecondaryContainer
         : colorScheme.onPrimaryContainer;
 
-    final pdfTitle = isKeto ? 'Keto jídelníček' : 'Sacharidové vlny';
+    final pdfTitle =
+        isKeto ? l10n.ketoMealPlanPdfTitle : l10n.carbCyclingPdfTitle;
+
     final pdfSubtitle = isKeto
-        ? 'Nízkosacharidový režim s důrazem na tuky a stabilní příjem bílkovin.'
-        : 'Sacharidy se cyklují podle jednotlivých dnů.';
+        ? l10n.ketoMealPlanPdfSubtitle
+        : l10n.carbCyclingPdfSubtitle;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isKeto ? 'Tvůj Keto jídelníček' : 'Tvůj plán'),
+        title: Text(
+          isKeto ? l10n.yourKetoMealPlan : l10n.yourPlan,
+        ),
         actions: [
           if (resolvedMealPlan != null) ...[
             IconButton(
-              tooltip: 'Tisk / PDF',
+              tooltip: l10n.printPdf,
               onPressed: () => DietPlanPdfService.printPlan(
                 resolvedMealPlan,
+                l10n,
                 documentTitle: pdfTitle,
                 subtitle: pdfSubtitle,
               ),
               icon: const Icon(Icons.print_outlined),
             ),
             IconButton(
-              tooltip: 'Sdílet PDF',
+              tooltip: l10n.sharePdf,
               onPressed: () => DietPlanPdfService.sharePlan(
                 resolvedMealPlan,
+                l10n,
                 documentTitle: pdfTitle,
                 subtitle: pdfSubtitle,
               ),
@@ -78,8 +88,8 @@ class CarbCyclingResultScreen extends StatelessWidget {
                   children: [
                     Text(
                       isKeto
-                          ? 'DENNÍ PŘÍJEM SACHARIDŮ'
-                          : 'TVŮJ TÝDENNÍ BANK SACHARIDŮ',
+                          ? l10n.dailyCarbIntake
+                          : l10n.weeklyCarbBank,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -101,12 +111,12 @@ class CarbCyclingResultScreen extends StatelessWidget {
                       children: [
                         _macroMini(
                           context,
-                          'Bílkoviny',
+                          l10n.proteinLabel,
                           '${plan.protein.toStringAsFixed(0)}g',
                         ),
                         _macroMini(
                           context,
-                          'Tuky',
+                          l10n.fatsLabel,
                           '${plan.fats.toStringAsFixed(0)}g',
                         ),
                       ],
@@ -126,9 +136,9 @@ class CarbCyclingResultScreen extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.shopping_basket),
-              label: const Text(
-                'GENEROVAT NÁKUPNÍ SEZNAM',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              label: Text(
+                l10n.generateShoppingList,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               onPressed: resolvedMealPlan == null
                   ? null
@@ -155,9 +165,9 @@ class CarbCyclingResultScreen extends StatelessWidget {
                 ),
               ),
               icon: const Icon(Icons.calendar_month),
-              label: const Text(
-                'ZOBRAZIT CELÝ TÝDENNÍ JÍDELNÍČEK',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              label: Text(
+                l10n.showFullWeeklyMealPlan,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               onPressed: resolvedMealPlan == null
                   ? null
@@ -176,7 +186,7 @@ class CarbCyclingResultScreen extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Rozpis a jídelníček na dny:',
+                l10n.dayMealBreakdown,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -231,7 +241,7 @@ class CarbCyclingResultScreen extends StatelessWidget {
                         ),
                         subtitle: isRefeed
                             ? Text(
-                                'REFEED DEN 🚀',
+                                l10n.refeedDay,
                                 style: TextStyle(
                                   color: colorScheme.tertiary,
                                   fontSize: 11,
@@ -265,7 +275,7 @@ class CarbCyclingResultScreen extends StatelessWidget {
                 backgroundColor: colorScheme.inverseSurface,
                 foregroundColor: colorScheme.onInverseSurface,
               ),
-              child: const Text('ZAVŘÍT A AKTIVOVAT'),
+              child: Text(l10n.closeAndActivate),
             ),
             const SizedBox(height: 40),
           ],

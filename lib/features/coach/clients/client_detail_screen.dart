@@ -125,68 +125,69 @@ class ClientDetailScreen extends ConsumerWidget {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
+        final l10n = AppLocalizations.of(dialogContext)!;
         final colorScheme = Theme.of(dialogContext).colorScheme;
 
         return AlertDialog(
-          title: const Text('Archivace dokončena'),
+          title: Text(l10n.archiveCompleted),
           content: SizedBox(
             width: 650,
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Archiv klienta byl úspěšně vytvořen.',
+                  Text(
+                    l10n.clientArchiveSuccessfullyCreated,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Cílová složka',
+                  Text(
+                    l10n.destinationFolder,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 6),
                   SelectableText(result.clientDirectory.path),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Vytvořené soubory',
+                  Text(
+                    l10n.createdFiles,
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   fileRow(
-                    'Aktuální JSON',
+                    l10n.currentJson,
                     result.currentJsonFile.path.split(Platform.pathSeparator).last,
                   ),
                   fileRow(
-                    'Snapshot',
+                    l10n.snapshot,
                     result.historyJsonFile.path.split(Platform.pathSeparator).last,
                   ),
                   fileRow(
-                    'PDF report',
+                    l10n.pdfReport,
                     result.reportPdfFile.path.split(Platform.pathSeparator).last,
                   ),
                   fileRow(
-                    'Manifest',
+                    l10n.manifest,
                     result.manifestFile.path.split(Platform.pathSeparator).last,
                   ),
                   fileRow(
-                    'InBody CSV',
+                    l10n.inbodyCsv,
                     result.inbodyCsvFile.path.split(Platform.pathSeparator).last,
                   ),
                   fileRow(
-                    'Obvody CSV',
+                    l10n.circumferenceCsv,
                     result.circumferencesCsvFile.path
                         .split(Platform.pathSeparator)
                         .last,
                   ),
                   fileRow(
-                    'Výkony CSV',
+                    l10n.performancesCsv,
                     result.performancesCsvFile.path
                         .split(Platform.pathSeparator)
                         .last,
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Období reportu: ${_fmtDate(result.reportFrom)} - ${_fmtDate(result.reportTo)}',
+                    '${l10n.reportPeriod}: ${_fmtDate(result.reportFrom)} - ${_fmtDate(result.reportTo)}',
                     style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
@@ -196,7 +197,7 @@ class ClientDetailScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Zavřít'),
+              child: Text(l10n.close),
             ),
             TextButton.icon(
               onPressed: () async {
@@ -214,7 +215,7 @@ class ClientDetailScreen extends ConsumerWidget {
                 }
               },
               icon: const Icon(Icons.picture_as_pdf),
-              label: const Text('Otevřít PDF'),
+              label: Text(l10n.openPdf),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -227,7 +228,7 @@ class ClientDetailScreen extends ConsumerWidget {
                   if (dialogContext.mounted) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
-                        content: Text('Složku se nepodařilo otevřít: $e'),
+                        content: Text('${l10n.failedToOpenFolder}: $e'),
                         backgroundColor: colorScheme.error,
                       ),
                     );
@@ -235,7 +236,7 @@ class ClientDetailScreen extends ConsumerWidget {
                 }
               },
               icon: const Icon(Icons.folder_open),
-              label: const Text('Otevřít složku'),
+              label: Text(l10n.openFolder),
             ),
           ],
         );
@@ -249,15 +250,18 @@ class ClientDetailScreen extends ConsumerWidget {
   ) async {
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Import / obnova klienta'),
-        content: const Text(
-          'Vyber, jak chceš klienta obnovit nebo importovat.',
-        ),
-        actions: [
+     builder: (dialogContext) {
+        final l10n = AppLocalizations.of(dialogContext)!;
+
+        return AlertDialog(
+          title: Text(l10n.importRestoreClient),
+          content: Text(
+            l10n.chooseHowToRestoreOrImportClient,
+          ),
+          actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Zavřít'),
+            child: Text(l10n.close),
           ),
           TextButton.icon(
             onPressed: () async {
@@ -265,7 +269,7 @@ class ClientDetailScreen extends ConsumerWidget {
               await _importClientDialog(context, ref);
             },
             icon: const Icon(Icons.code),
-            label: const Text('Vložit JSON ručně'),
+            label: Text(l10n.insertJsonManually),
           ),
           TextButton.icon(
             onPressed: () async {
@@ -273,7 +277,7 @@ class ClientDetailScreen extends ConsumerWidget {
               await _importClientFromJsonFile(context, ref);
             },
             icon: const Icon(Icons.description),
-            label: const Text('Vybrat JSON soubor'),
+            label: Text(l10n.selectJsonFile),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -281,10 +285,11 @@ class ClientDetailScreen extends ConsumerWidget {
               await _restoreClientFromArchiveFolder(context, ref);
             },
             icon: const Icon(Icons.restore),
-            label: const Text('Obnovit z archivní složky'),
+            label: Text(l10n.restoreFromArchiveFolder),
           ),
         ],
-      ),
+      );
+    },
     );
   }
 
@@ -293,6 +298,8 @@ class ClientDetailScreen extends ConsumerWidget {
     WidgetRef ref,
   ) async {
     try {
+      final l10n = AppLocalizations.of(context)!;
+
       const typeGroup = XTypeGroup(
         label: 'JSON',
         extensions: ['json'],
@@ -300,7 +307,7 @@ class ClientDetailScreen extends ConsumerWidget {
 
       final file = await openFile(
         acceptedTypeGroups: const [typeGroup],
-        confirmButtonText: 'Vybrat JSON',
+        confirmButtonText: l10n.selectJson,
       );
 
       if (file == null) return;
@@ -312,7 +319,7 @@ class ClientDetailScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Klient byl úspěšně importován ze souboru:\n${file.path}',
+              '${l10n.clientImportedFromFile}\n${file.path}',
             ),
             backgroundColor: colorScheme.primary,
           ),
@@ -320,10 +327,12 @@ class ClientDetailScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context)!;
+
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Import ze souboru selhal: $e'),
+            content: Text('${l10n.fileImportFailed}: $e'),
             backgroundColor: colorScheme.error,
           ),
         );
@@ -335,9 +344,13 @@ class ClientDetailScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+
+    final l10n = AppLocalizations.of(context)!;
+
     try {
+      
       final folderPath = await getDirectoryPath(
-        confirmButtonText: 'Vybrat archivní složku',
+        confirmButtonText: l10n.selectArchiveFolder,
       );
 
       if (folderPath == null || folderPath.trim().isEmpty) return;
@@ -352,7 +365,7 @@ class ClientDetailScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Klient byl úspěšně obnoven z archivní složky:\n$folderPath',
+              '${l10n.clientRestoredFromArchive}\n$folderPath',
             ),
             backgroundColor: colorScheme.primary,
             duration: const Duration(seconds: 4),
@@ -361,10 +374,12 @@ class ClientDetailScreen extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) {
+        final l10n = AppLocalizations.of(context)!;
+
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Obnova z archivní složky selhala: $e'),
+            content: Text('${l10n.archiveRestoreFailed}: $e'),
             backgroundColor: colorScheme.error,
           ),
         );
@@ -373,7 +388,11 @@ class ClientDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _openConfiguredExportFolder(BuildContext context) async {
+
+    final l10n = AppLocalizations.of(context)!;
+
     try {
+      
       final savedPath = await LocalStorageService.loadClientExportFolderPath();
 
       if (savedPath == null || savedPath.trim().isEmpty) {
@@ -381,8 +400,8 @@ class ClientDetailScreen extends ConsumerWidget {
           final colorScheme = Theme.of(context).colorScheme;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                'Není nastavena vlastní exportní složka. Nastav ji nejdřív v dashboardu.',
+              content:Text(
+                l10n.exportFolderNotConfigured,
               ),
               backgroundColor: colorScheme.tertiary,
             ),
@@ -402,7 +421,7 @@ class ClientDetailScreen extends ConsumerWidget {
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Složku se nepodařilo otevřít: $e'),
+            content: Text('${l10n.folderOpenFailed}: $e'),
             backgroundColor: colorScheme.error,
           ),
         );
@@ -411,8 +430,10 @@ class ClientDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _deleteClientFlow(
+    
     BuildContext context,
     WidgetRef ref, {
+     
     required CoachClient liveClient,
     required bool exportBeforeDelete,
     required dynamic details,
@@ -423,27 +444,32 @@ class ClientDetailScreen extends ConsumerWidget {
     required List<CustomTrainingPlan> clientPlans,
     required List<TrainingSession> history,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(
           exportBeforeDelete
-              ? 'Archivovat a smazat klienta'
-              : 'Smazat klienta',
+              ? l10n.archiveAndDeleteClient
+              : l10n.deleteClient,
         ),
         content: Text(
           exportBeforeDelete
-              ? 'Klient bude nejdřív exportován a potom trvale smazán z aplikace.\n\nOpravdu pokračovat?'
-              : 'Opravdu chceš klienta trvale smazat z aplikace?',
+              ? l10n.archiveAndDeleteClientConfirm
+              : l10n.deleteClientConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zrušit'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(exportBeforeDelete ? 'Archivovat a smazat' : 'Smazat'),
+            child: Text(
+              exportBeforeDelete
+                  ? l10n.archiveAndDelete
+                  : l10n.delete,
+            ),
           ),
         ],
       ),
@@ -498,8 +524,8 @@ class ClientDetailScreen extends ConsumerWidget {
         SnackBar(
           content: Text(
             exportBeforeDelete
-                ? 'Klient byl archivován a smazán.'
-                : 'Klient byl smazán.',
+                ? l10n.clientArchivedAndDeleted
+                : l10n.clientDeleted,
           ),
           backgroundColor:
               exportBeforeDelete ? colorScheme.primary : colorScheme.tertiary,
@@ -510,7 +536,7 @@ class ClientDetailScreen extends ConsumerWidget {
       final colorScheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Chyba při mazání klienta: $e'),
+          content: Text('${l10n.clientDeleteError}: $e'),
           backgroundColor: colorScheme.error,
         ),
       );
@@ -519,6 +545,7 @@ class ClientDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final notesAsync = ref.watch(coachNotesForClientProvider(client.clientId));
@@ -561,7 +588,7 @@ class ClientDetailScreen extends ConsumerWidget {
         title: Text('${liveClient.firstName} ${liveClient.lastName}'),
         actions: [
           IconButton(
-            tooltip: 'Analýza klienta',
+            tooltip: l10n.clientAnalysis,
             icon: const Icon(Icons.assessment),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
@@ -570,17 +597,17 @@ class ClientDetailScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Otevřít exportní složku',
+            tooltip: l10n.openExportFolder,
             icon: const Icon(Icons.folder_open),
             onPressed: () => _openConfiguredExportFolder(context),
           ),
           IconButton(
-            tooltip: 'Import / obnova klienta',
+            tooltip: l10n.importRestoreClient,
             icon: const Icon(Icons.download),
             onPressed: () => _showImportSourceDialog(context, ref),
           ),
           IconButton(
-            tooltip: 'Export klienta',
+            tooltip: l10n.exportClient,
             icon: const Icon(Icons.ios_share),
             onPressed: () async {
               try {
@@ -605,7 +632,7 @@ class ClientDetailScreen extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Chyba exportu: $e'),
+                      content: Text('${l10n.exportError}: $e'),
                       backgroundColor: colorScheme.error,
                     ),
                   );
@@ -614,7 +641,7 @@ class ClientDetailScreen extends ConsumerWidget {
             },
           ),
           IconButton(
-            tooltip: 'Archivovat a smazat klienta',
+            tooltip: l10n.archiveAndDeleteClient,
             icon: Icon(Icons.delete_forever, color: colorScheme.error),
             onPressed: () => _deleteClientFlow(
               context,
@@ -631,7 +658,7 @@ class ClientDetailScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Smazat klienta',
+            tooltip: l10n.deleteClient,
             icon: const Icon(Icons.delete),
             onPressed: () => _deleteClientFlow(
               context,
@@ -648,12 +675,12 @@ class ClientDetailScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Upravit klienta',
+            tooltip: l10n.editClient,
             icon: const Icon(Icons.edit),
             onPressed: () => _editClientBasicsDialog(context, ref, liveClient),
           ),
           IconButton(
-            tooltip: 'Upravit kartu klienta',
+            tooltip: l10n.editClientCard,
             icon: const Icon(Icons.edit_note),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
@@ -663,7 +690,7 @@ class ClientDetailScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Přidat poznámku',
+            tooltip: l10n.addNote,
             icon: const Icon(Icons.note_add),
             onPressed: () => _addNoteDialog(context, ref, liveClient.clientId),
           ),
@@ -672,17 +699,17 @@ class ClientDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _section(context, 'Základní informace', [
-            _row(context, 'Jméno', liveClient.displayName),
-            _row(context, 'ID klienta', liveClient.clientId),
+          _section(context, l10n.basicInformation, [
+            _row(context, l10n.name, liveClient.displayName),
+            _row(context, l10n.clientId, liveClient.clientId),
             _rowWithAction(
               context,
-              label: 'Email',
+              label: l10n.email,
               value: liveClient.email.trim().isEmpty ? '—' : liveClient.email.trim(),
               trailing: liveClient.email.trim().isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Kopírovat email',
+                      tooltip: l10n.copyEmail,
                       icon: const Icon(Icons.copy, size: 18),
                       onPressed: () async {
                         await Clipboard.setData(
@@ -691,38 +718,42 @@ class ClientDetailScreen extends ConsumerWidget {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Email zkopírován do schránky.'),
+                            content: Text(l10n.emailCopied),
                             backgroundColor: colorScheme.primary,
                           ),
                         );
                       },
                     ),
             ),
-            _row(context, 'Registrován', _fmtDate(liveClient.linkedAt)),
-            _row(context, 'Pohlaví', _genderLabel(liveClient.gender)),
-            _row(context, 'Věk', '${liveClient.age} let'),
-            _row(context, 'Výška', '${liveClient.heightCm} cm'),
+            _row(context, l10n.registered, _fmtDate(liveClient.linkedAt)),
+            _row(context, l10n.gender, _genderLabel(liveClient.gender)),
+            _row(context, l10n.age, '${liveClient.age} ${l10n.years}'),
+            _row(context, l10n.height, '${liveClient.heightCm} cm'),
             if (!isSensitive)
-              _row(context, 'Váha', '${liveClient.weightKg.toStringAsFixed(1)} kg'),
+              _row(context, l10n.weight, '${liveClient.weightKg.toStringAsFixed(1)} kg'),
             _row(
               context,
-              'Poslední trénink',
+              l10n.lastWorkout,
               lastSession == null ? '—' : _fmtDate(lastSession),
             ),
             _row(
               context,
-              'Odcvičeno za 7 dní',
-              '$completedDaysInLast7 / 7 dní',
+              l10n.completedLast7Days,
+              '$completedDaysInLast7 / 7 ${l10n.days}',
             ),
             if (!isSensitive)
-              _row(context, 'Plnění (7 dní)', '${(compliance7d * 100).round()} %'),
+              _row(
+                context,
+                l10n.compliance7Days,
+                '${(compliance7d * 100).round()} %',
+              ),
           ]),
 
           if (isSensitive) ...[
             const SizedBox(height: 12),
             _warningBox(
               context,
-              'PPP / Recovery režim',
+              l10n.recoveryMode,
               colorScheme.tertiaryContainer,
               colorScheme.onTertiaryContainer,
             ),
@@ -732,7 +763,7 @@ class ClientDetailScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             _warningBox(
               context,
-              'Klient necvičil déle než 7 dní',
+              l10n.clientInactive7Days,
               colorScheme.errorContainer,
               colorScheme.onErrorContainer,
             ),
@@ -741,16 +772,16 @@ class ClientDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          _section(context, 'Dnešek', [
+          _section(context, l10n.today, [
             CheckboxListTile(
               value: workoutDoneToday,
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
-              title: const Text('Odcvičeno dnes'),
+              title: Text(l10n.completedToday),
               subtitle: Text(
                 workoutDoneToday
-                    ? 'Dnešní trénink je uložen.'
-                    : 'Klikni a uloží se dnešní trénink.',
+                    ? l10n.todayWorkoutSaved
+                    : l10n.tapToSaveTodayWorkout,
                 style: TextStyle(color: colorScheme.onSurfaceVariant),
               ),
               onChanged: workoutDoneToday
@@ -763,7 +794,7 @@ class ClientDetailScreen extends ConsumerWidget {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Dnešní trénink byl uložen.'),
+                          content: Text(l10n.todayWorkoutSaved),
                           backgroundColor: colorScheme.primary,
                         ),
                       );
@@ -773,10 +804,10 @@ class ClientDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          _section(context, 'Status check', [
+          _section(context, l10n.statusCheck, [
             _binaryStatusRow(
               context,
-              label: 'Poslal porovnávací fotky',
+              label: l10n.sentComparisonPhotos,
               value: liveClient.photosDelivered,
               onYes: () async {
                 await ref
@@ -796,13 +827,13 @@ class ClientDetailScreen extends ConsumerWidget {
               },
               onRequest: () => _showRequestPlaceholder(
                 context,
-                'Požadavek na fotky zatím jen připravený pro budoucí notifikace.',
+                l10n.photoRequestPlaceholder,
               ),
             ),
             const SizedBox(height: 10),
             _binaryStatusRow(
               context,
-              label: 'Dodržuje jídelníček',
+              label: l10n.followsDiet,
               value: liveClient.dietFollowed,
               onYes: () async {
                 await ref
@@ -822,13 +853,13 @@ class ClientDetailScreen extends ConsumerWidget {
               },
               onRequest: () => _showRequestPlaceholder(
                 context,
-                'Požadavek na kontrolu stravy zatím jen připravený pro budoucí notifikace.',
+                l10n.dietCheckPlaceholder,
               ),
             ),
             const SizedBox(height: 10),
             _binaryStatusRow(
               context,
-              label: 'Odpověděl na zprávu',
+              label: l10n.respondedToMessage,
               value: liveClient.communicationOk,
               onYes: () async {
                 await ref
@@ -848,36 +879,35 @@ class ClientDetailScreen extends ConsumerWidget {
               },
               onRequest: () => _showRequestPlaceholder(
                 context,
-                'Požadavek na odpověď zatím jen připravený pro budoucí notifikace.',
+                l10n.responseRequestPlaceholder,
               ),
             ),
           ]),
 
           const SizedBox(height: 16),
 
-          _section(context, 'Tréninkové plány klienta', [
+          _section(context, l10n.clientTrainingPlans, [
             Row(
               children: [
                 Expanded(
                   child: Text(
                     clientPlans.isEmpty
-                        ? 'Klient zatím nemá žádný vlastní plán.'
-                        : 'Počet plánů: ${clientPlans.length}',
+                        ? l10n.clientHasNoPlans
+                        : '${l10n.planCount}: ${clientPlans.length}',
                     style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
                 ),
                 ElevatedButton.icon(
                   onPressed: () => _createPlanDialog(context, ref, liveClient.clientId),
                   icon: const Icon(Icons.add),
-                  label: const Text('Nový plán'),
+                  label: Text(l10n.newPlan),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             if (clientPlans.isEmpty)
-              const Text(
-                'Vytvoř první vlastní plán pro tohoto klienta. '
-                'Později do něj přidáme dny a cviky.',
+              Text(
+                l10n.createFirstPlanHint,
               )
             else
               Column(
@@ -890,17 +920,17 @@ class ClientDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          _section(context, 'Údaje pro trenéra', [
+          _section(context, l10n.coachData, [
             detailsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Chyba: $e'),
+              error: (e, _) => Text('${l10n.error}: $e'),
               data: (d) => Column(
                 children: [
-                  _row(context, 'Aktivita', _cap(d.activityType)),
-                  _bigRow(context, 'Zranění', d.injuries),
+                  _row(context, l10n.activity, _cap(d.activityType)),
+                  _bigRow(context, l10n.injuries, d.injuries),
                   _bigRow(
                     context,
-                    'Alergie / Intolerance',
+                    l10n.allergiesIntolerances,
                     '${d.allergies} / ${d.intolerances}',
                   ),
                 ],
@@ -910,21 +940,21 @@ class ClientDetailScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
-          _section(context, 'InBody', [
+          _section(context, l10n.inbody, [
             if (isSensitive)
-              const Text('Data skryta (Recovery režim)')
+              Text(l10n.dataHiddenRecoveryMode)
             else
               inbodyAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Chyba: $e'),
+                error: (e, _) => Text('${l10n.error}: $e'),
                 data: (items) {
-                  if (items.isEmpty) return const Text('Žádná měření.');
+                  if (items.isEmpty) return Text(l10n.noMeasurements);
                   final latest = items.first;
                   return Column(
                     children: [
-                      _row(context, 'Váha', '${latest.weightKg} kg'),
-                      _row(context, 'Tuk', '${latest.percentBodyFat} %'),
-                      _row(context, 'Svaly', '${latest.skeletalMuscleMassKg} kg'),
+                      _row(context, l10n.weight, '${latest.weightKg} kg'),
+                      _row(context, l10n.fat, '${latest.percentBodyFat} %'),
+                      _row(context, l10n.muscles, '${latest.skeletalMuscleMassKg} kg'),
                       const SizedBox(height: 10),
                       _interpretationCard(context, latest),
                       if (items.length > 1) ...[
@@ -932,7 +962,7 @@ class ClientDetailScreen extends ConsumerWidget {
                         _compareInbodyCard(context, latest, items[1]),
                       ],
                       const SizedBox(height: 10),
-                      _inbodyTable(items.take(5).toList()),
+                      _inbodyTable(context, items.take(5).toList())
                     ],
                   );
                 },
@@ -947,22 +977,22 @@ class ClientDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              child: const Text('Přidat InBody'),
+              child: Text(l10n.addInbody),
             ),
           ]),
 
           const SizedBox(height: 16),
 
-          _section(context, 'Obvody', [
+          _section(context, l10n.circumferences, [
             if (isSensitive)
-              const Text('Skryto (Recovery režim)')
+              Text(l10n.hiddenRecoveryMode)
             else
               circsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Chyba: $e'),
+                error: (e, _) => Text('${l10n.error}: $e'),
                 data: (items) => items.isEmpty
-                    ? const Text('Žádné záznamy')
-                    : _circTable(items.take(3).toList()),
+                    ? Text(l10n.noRecords)
+                    : _circTable(context, items.take(3).toList()),
               ),
             const SizedBox(height: 10),
             ElevatedButton(
@@ -972,16 +1002,16 @@ class ClientDetailScreen extends ConsumerWidget {
                       AddCircumferenceEntryScreen(clientId: liveClient.clientId),
                 ),
               ),
-              child: const Text('Přidat obvody'),
+              child: Text(l10n.addCircumferences),
             ),
           ]),
 
           const SizedBox(height: 16),
 
-          _section(context, 'Poznámky trenéra', [
+          _section(context, l10n.coachNotes, [
             notesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Chyba: $e'),
+              error: (e, _) => Text('${l10n.error}: $e'),
               data: (notes) => Column(
                 children: [
                   for (final n in notes)
@@ -1052,6 +1082,7 @@ class ClientDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     CoachClient liveClient,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final firstNameCtrl = TextEditingController(text: liveClient.firstName);
     final lastNameCtrl = TextEditingController(text: liveClient.lastName);
     final emailCtrl = TextEditingController(text: liveClient.email);
@@ -1069,7 +1100,7 @@ class ClientDetailScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setLocalState) => AlertDialog(
-          title: const Text('Upravit klienta'),
+          title: Text(l10n.editClient),
           content: SizedBox(
             width: 420,
             child: SingleChildScrollView(
@@ -1077,16 +1108,16 @@ class ClientDetailScreen extends ConsumerWidget {
                 children: [
                   TextField(
                     controller: firstNameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Jméno',
+                    decoration: InputDecoration(
+                      labelText: l10n.firstName,
                       border: OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: lastNameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Příjmení',
+                    decoration: InputDecoration(
+                      labelText: l10n.lastName,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -1098,12 +1129,12 @@ class ClientDetailScreen extends ConsumerWidget {
                       setLocalState(() {
                         emailError = _isValidEmail(emailCtrl.text.trim())
                             ? null
-                            : 'Zadej platný email';
+                            : l10n.enterValidEmail;
                       });
                     },
                     decoration: InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'napr. klient@email.cz',
+                      labelText: l10n.email,
+                      hintText: l10n.emailHint,
                       border: const OutlineInputBorder(),
                       errorText: emailError,
                     ),
@@ -1111,15 +1142,15 @@ class ClientDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: gender,
-                    items: const [
-                      DropdownMenuItem(value: 'male', child: Text('Muž')),
-                      DropdownMenuItem(value: 'female', child: Text('Žena')),
-                      DropdownMenuItem(value: 'other', child: Text('Jiné')),
+                    items:[
+                      DropdownMenuItem(value: 'male', child: Text(l10n.male)),
+                      DropdownMenuItem(value: 'female', child: Text(l10n.female)),
+                      DropdownMenuItem(value: 'other', child: Text(l10n.other)),
                     ],
                     onChanged: (v) =>
                         setLocalState(() => gender = v ?? liveClient.gender),
-                    decoration: const InputDecoration(
-                      labelText: 'Pohlaví',
+                    decoration: InputDecoration(
+                      labelText: l10n.gender,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -1127,8 +1158,8 @@ class ClientDetailScreen extends ConsumerWidget {
                   TextField(
                     controller: ageCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Věk',
+                    decoration: InputDecoration(
+                      labelText: l10n.age,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -1136,8 +1167,8 @@ class ClientDetailScreen extends ConsumerWidget {
                   TextField(
                     controller: heightCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Výška (cm)',
+                    decoration: InputDecoration(
+                      labelText: l10n.heightCm,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -1146,15 +1177,15 @@ class ClientDetailScreen extends ConsumerWidget {
                     controller: weightCtrl,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
-                    decoration: const InputDecoration(
-                      labelText: 'Váha (kg)',
+                    decoration: InputDecoration(
+                      labelText: l10n.weightKg,
                       border: OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 8),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Recovery / PPP podpora'),
+                    title: Text(l10n.recoverySupport),
                     value: eatingDisorderSupport,
                     onChanged: (v) =>
                         setLocalState(() => eatingDisorderSupport = v),
@@ -1166,11 +1197,11 @@ class ClientDetailScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Zrušit'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Uložit'),
+              child: Text(l10n.save),
             ),
           ],
         ),
@@ -1191,7 +1222,7 @@ class ClientDetailScreen extends ConsumerWidget {
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Zadej prosím platný email.'),
+            content: Text(l10n.enterValidEmail),
             backgroundColor: colorScheme.error,
           ),
         );
@@ -1208,7 +1239,7 @@ class ClientDetailScreen extends ConsumerWidget {
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Zkontroluj prosím jméno, příjmení a číselná pole.'),
+            content: Text(l10n.checkRequiredFields),
             backgroundColor: colorScheme.error,
           ),
         );
@@ -1245,7 +1276,7 @@ class ClientDetailScreen extends ConsumerWidget {
       final colorScheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Základní údaje klienta byly upraveny.'),
+          content: Text(l10n.clientBasicInfoUpdated),
           backgroundColor: colorScheme.primary,
         ),
       );
@@ -1256,33 +1287,35 @@ class ClientDetailScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final controller = TextEditingController();
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Import klienta z JSON'),
+        title: Text(l10n.importClientFromJson),
         content: SizedBox(
           width: 520,
           child: TextField(
             controller: controller,
             minLines: 10,
             maxLines: 18,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               border: OutlineInputBorder(),
-              hintText: 'Vlož exportovaný JSON klienta...',
+              hintText: l10n.pasteExportedJson,
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zrušit'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context, true),
             icon: const Icon(Icons.download),
-            label: const Text('Importovat'),
+            label: Text(l10n.importLabel),
           ),
         ],
       ),
@@ -1300,7 +1333,7 @@ class ClientDetailScreen extends ConsumerWidget {
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Klient byl úspěšně importován.'),
+            content: Text(l10n.clientImportedSuccessfully),
             backgroundColor: colorScheme.primary,
           ),
         );
@@ -1310,7 +1343,7 @@ class ClientDetailScreen extends ConsumerWidget {
         final colorScheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Import selhal: $e'),
+            content: Text('${l10n.importFailed}: $e'),
             backgroundColor: colorScheme.error,
           ),
         );
@@ -1489,6 +1522,8 @@ class ClientDetailScreen extends ConsumerWidget {
     required Future<void> Function() onNo,
     required VoidCallback onRequest,
   }) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
@@ -1508,19 +1543,19 @@ class ClientDetailScreen extends ConsumerWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             ChoiceChip(
-              label: const Text('ANO'),
+              label: Text(l10n.yes),
               selected: value,
               onSelected: (_) => onYes(),
             ),
             ChoiceChip(
-              label: const Text('NE'),
+              label: Text(l10n.no),
               selected: !value,
               onSelected: (_) => onNo(),
             ),
             if (!value)
               OutlinedButton(
                 onPressed: onRequest,
-                child: const Text('Vyžádat'),
+                child: Text(l10n.request),
               ),
           ],
         ),
@@ -1538,24 +1573,30 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _interpretationCard(BuildContext context, CoachInbodyEntry e) {
+  Widget _interpretationCard(
+    BuildContext context,
+    CoachInbodyEntry e,
+  ) {
+
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
     final muscleRatio = e.skeletalMuscleMassKg / e.weightKg;
     final fatP = e.percentBodyFat;
     final lines = <String>[];
 
     if (fatP >= 25) {
-      lines.add('Tělesný tuk je vyšší – priorita bude redukce tuku.');
+      lines.add('l10n.highBodyFatInterpretation.');
     } else if (fatP >= 18) {
-      lines.add('Tělesný tuk je střední – ideální pro formování.');
+      lines.add('l10n.mediumBodyFatInterpretation.');
     } else {
-      lines.add('Tělesný tuk je nízký – soustředíme se na výkon a svaly.');
+      lines.add('l10n.lowBodyFatInterpretation.');
     }
 
     if (muscleRatio >= 0.48) {
-      lines.add('Svalová základna je velmi dobrá.');
+      lines.add('l10n.goodMuscleBase.');
     } else if (muscleRatio < 0.40) {
-      lines.add('Svalů je méně – priorita budování hmoty.');
+      lines.add('l10n.lowMuscleMassInterpretation.');
     }
 
     return Card(
@@ -1572,7 +1613,7 @@ class ClientDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Automatický výklad',
+                l10n.automaticInterpretation,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onPrimaryContainer,
@@ -1602,6 +1643,8 @@ class ClientDetailScreen extends ConsumerWidget {
     CoachInbodyEntry latest,
     CoachInbodyEntry prev,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
     String fmt(double v) => (v >= 0 ? '+' : '') + v.toStringAsFixed(1);
 
@@ -1618,22 +1661,26 @@ class ClientDetailScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Změna od posledně',
+              l10n.changeFromLastTime,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
-            _row(context, 'Hmotnost', '${fmt(latest.weightKg - prev.weightKg)} kg'),
             _row(
               context,
-              'Tuk (%)',
+              l10n.weight,
+              '${fmt(latest.weightKg - prev.weightKg)} kg',
+            ),
+            _row(
+              context,
+              l10n.fatPercent,
               '${fmt(latest.percentBodyFat - prev.percentBodyFat)} %',
             ),
             _row(
               context,
-              'Svaly',
+              l10n.muscles,
               '${fmt(latest.skeletalMuscleMassKg - prev.skeletalMuscleMassKg)} kg',
             ),
           ],
@@ -1642,16 +1689,21 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _inbodyTable(List<CoachInbodyEntry> items) {
+  Widget _inbodyTable(
+    BuildContext context,
+    List<CoachInbodyEntry> items,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
         columnSpacing: 20,
-        columns: const [
-          DataColumn(label: Text('Datum')),
-          DataColumn(label: Text('Váha')),
-          DataColumn(label: Text('Svaly')),
-          DataColumn(label: Text('% tuku')),
+        columns:[
+          DataColumn(label: Text(l10n.date)),
+          DataColumn(label: Text(l10n.weight)),
+          DataColumn(label: Text(l10n.muscles)),
+          DataColumn(label: Text(l10n.fatPercent)),
         ],
         rows: items
             .map(
@@ -1671,17 +1723,23 @@ class ClientDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _circTable(List<CoachCircumferenceEntry> items) {
+  Widget _circTable(
+    BuildContext context,
+    List<CoachCircumferenceEntry> items,
+  ) {
+
+    final l10n = AppLocalizations.of(context)!;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
         columnSpacing: 15,
-        columns: const [
-          DataColumn(label: Text('Datum')),
-          DataColumn(label: Text('Pas')),
-          DataColumn(label: Text('Boky')),
-          DataColumn(label: Text('Stehno')),
-        ],
+        columns: [
+          DataColumn(label: Text(l10n.date)),
+          DataColumn(label: Text(l10n.waist)),
+          DataColumn(label: Text(l10n.hips)),
+          DataColumn(label: Text(l10n.thigh)),
+      ],
         rows: items
             .map(
               (e) => DataRow(
@@ -1705,6 +1763,8 @@ class ClientDetailScreen extends ConsumerWidget {
     String text,
     DateTime updatedAt,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return ListTile(
@@ -1714,7 +1774,7 @@ class ClientDetailScreen extends ConsumerWidget {
         style: TextStyle(color: colorScheme.onSurface),
       ),
       subtitle: Text(
-        'Upraveno: ${_fmtDate(updatedAt)}',
+        '${l10n.updated}: ${_fmtDate(updatedAt)}',
         style: TextStyle(
           fontSize: 12,
           color: colorScheme.onSurfaceVariant,
@@ -1730,9 +1790,9 @@ class ClientDetailScreen extends ConsumerWidget {
                 .deleteNote(noteId);
           }
         },
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: 'edit', child: Text('Upravit')),
-          PopupMenuItem(value: 'delete', child: Text('Smazat')),
+        itemBuilder: (_) => [
+          PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+          PopupMenuItem(value: 'delete', child: Text(l10n.delete)),
         ],
       ),
     );
@@ -1744,6 +1804,8 @@ class ClientDetailScreen extends ConsumerWidget {
     CustomTrainingPlan plan,
     String clientId,
   ) {
+    final l10n = AppLocalizations.of(context)!;
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
@@ -1779,7 +1841,7 @@ class ClientDetailScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Aktivní',
+                  l10n.active,
                   style: TextStyle(
                     color: colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
@@ -1792,8 +1854,8 @@ class ClientDetailScreen extends ConsumerWidget {
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            'Počet dnů: ${plan.days.length}\n'
-            'Vytvořeno: ${_fmtDate(plan.createdAt)}',
+            '${l10n.dayCount}: ${plan.days.length}\n'
+            '${l10n.created}: ${_fmtDate(plan.createdAt)}',
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
         ),
@@ -1807,7 +1869,7 @@ class ClientDetailScreen extends ConsumerWidget {
             } else if (value == 'duplicate') {
               await ref.read(customTrainingPlanProvider.notifier).duplicatePlan(
                     sourcePlanId: plan.id,
-                    newName: '${plan.name} (kopie)',
+                    newName: '${plan.name} (${l10n.copy})',
                   );
             } else if (value == 'rename') {
               await _renamePlanDialog(context, ref, plan);
@@ -1818,21 +1880,21 @@ class ClientDetailScreen extends ConsumerWidget {
             }
           },
           itemBuilder: (_) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'activate',
-              child: Text('Nastavit jako aktivní'),
+              child: Text(l10n.setAsActive),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'duplicate',
-              child: Text('Duplikovat'),
+              child: Text(l10n.duplicate),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'rename',
-              child: Text('Přejmenovat'),
+              child: Text(l10n.rename),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
-              child: Text('Smazat'),
+              child: Text(l10n.delete),
             ),
           ],
         ),
@@ -1845,28 +1907,31 @@ class ClientDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String clientId,
   ) async {
+
+    final l10n = AppLocalizations.of(context)!;
+
     final ctrl = TextEditingController();
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Nový tréninkový plán'),
+        title: Text(l10n.newTrainingPlan),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: OutlineInputBorder(),
-            labelText: 'Název plánu',
-            hintText: 'Např. Petr – šetrný plán',
+            labelText: l10n.planName,
+            hintText: l10n.planNameHint,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zrušit'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Vytvořit'),
+            child: Text(l10n.create),
           ),
         ],
       ),
@@ -1885,27 +1950,29 @@ class ClientDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     CustomTrainingPlan plan,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final ctrl = TextEditingController(text: plan.name);
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Přejmenovat plán'),
+        title: Text(l10n.renamePlan),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: OutlineInputBorder(),
-            labelText: 'Název plánu',
+            labelText: l10n.planName,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zrušit'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Uložit'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -1924,24 +1991,27 @@ class ClientDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String clientId,
   ) async {
+
+    final l10n = AppLocalizations.of(context)!;
+
     final ctrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Nová poznámka'),
+        title: Text(l10n.newNote),
         content: TextField(
           controller: ctrl,
           maxLines: 5,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+          decoration: InputDecoration(border: OutlineInputBorder()),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zrušit'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Uložit'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -1960,24 +2030,27 @@ class ClientDetailScreen extends ConsumerWidget {
     String noteId,
     String currentText,
   ) async {
+
+    final l10n = AppLocalizations.of(context)!;
+
     final ctrl = TextEditingController(text: currentText);
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Upravit poznámku'),
+        title: Text(l10n.editNote),
         content: TextField(
           controller: ctrl,
           maxLines: 6,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+          decoration: InputDecoration(border: OutlineInputBorder()),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zrušit'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Uložit'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -1993,11 +2066,11 @@ class ClientDetailScreen extends ConsumerWidget {
   static String _genderLabel(String g) {
     switch (g.toLowerCase()) {
       case 'male':
-        return 'Muž';
+        return 'Male';
       case 'female':
-        return 'Žena';
+        return 'Female';
       default:
-        return 'Jiné';
+        return 'Other';
     }
   }
 

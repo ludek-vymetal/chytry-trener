@@ -13,22 +13,24 @@ import '../../services/macro_service.dart';
 import '../../services/meal_suggestion_service.dart';
 import '../../services/metabolism_service.dart';
 import 'food_entry_screen.dart';
-import 'package:dart_application_1/models/meal.dart';
+import '../../models/meal.dart';
+import 'package:dart_application_1/l10n/app_localizations.dart';
 
 enum HelpMode { items, combos }
 
 enum _MealSlot { breakfast, snack, lunch, dinner }
 
-String _slotLabel(_MealSlot s) {
+String _slotLabel(BuildContext context, _MealSlot s) {
+  final l10n = AppLocalizations.of(context)!;
   switch (s) {
     case _MealSlot.breakfast:
-      return 'Snídaně';
+      return l10n.breakfast;
     case _MealSlot.snack:
-      return 'Svačina';
+      return l10n.snack;
     case _MealSlot.lunch:
-      return 'Oběd';
+      return l10n.lunch;
     case _MealSlot.dinner:
-      return 'Večeře';
+      return l10n.dinner;
   }
 }
 
@@ -112,6 +114,7 @@ class FoodSummaryScreen extends ConsumerWidget {
   int _missingInt(int target, int eaten) => (target - eaten).clamp(0, 999999);
 
   Future<int?> _pickMealsCount(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     return showModalBottomSheet<int>(
       context: context,
       showDragHandle: true,
@@ -122,8 +125,8 @@ class FoodSummaryScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Na kolik jídel to chceš rozdělit?',
+                Text(
+                  l10n.mealsCountQuestion,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
@@ -150,6 +153,7 @@ class FoodSummaryScreen extends ConsumerWidget {
   }
 
   Future<HelpMode?> _pickHelpMode(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     return showModalBottomSheet<HelpMode>(
       context: context,
       showDragHandle: true,
@@ -160,19 +164,19 @@ class FoodSummaryScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Jak chceš návrhy?',
+                Text(
+                  l10n.howDoYouWantSuggestions,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
                 ListTile(
                   leading: const Icon(Icons.list_alt),
-                  title: const Text('Jednotlivé položky (z banky)'),
+                  title: Text(l10n.singleItemsFromBank),
                   onTap: () => Navigator.pop(ctx, HelpMode.items),
                 ),
                 ListTile(
                   leading: const Icon(Icons.restaurant),
-                  title: const Text('Kompletní jídla (hotovky)'),
+                  title: Text(l10n.completeMeals),
                   onTap: () => Navigator.pop(ctx, HelpMode.combos),
                 ),
               ],
@@ -182,11 +186,13 @@ class FoodSummaryScreen extends ConsumerWidget {
       },
     );
   }
-
+  // ignore: unused_element
   Future<List<_MealSlot>?> _pickSlotsMulti(
     BuildContext context, {
     required int mealsCount,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final initial = _defaultSlotsForMealCount(mealsCount);
     final selected = <_MealSlot>{...initial};
 
@@ -204,7 +210,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Vyber jídla (celkem $mealsCount)',
+                      l10n.selectMealsTotal(mealsCount),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -215,7 +221,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                       final checked = selected.contains(s);
                       return CheckboxListTile(
                         value: checked,
-                        title: Text(_slotLabel(s)),
+                        title: Text(_slotLabel(context, s)),
                         onChanged: (v) {
                           setLocal(() {
                             if (v == true) {
@@ -234,7 +240,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            'Vybráno: ${selected.length}/$mealsCount',
+                            '${l10n.selected}: ${selected.length}/$mealsCount',
                             style: TextStyle(color: Colors.grey[700]),
                           ),
                         ),
@@ -246,7 +252,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                                   Navigator.pop(ctx, list);
                                 }
                               : null,
-                          child: const Text('Pokračovat'),
+                          child: Text(l10n.continueText),
                         ),
                       ],
                     ),
@@ -264,6 +270,8 @@ class FoodSummaryScreen extends ConsumerWidget {
     BuildContext context, {
     required _MealSlot slot,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final baseTime = _slotToComboTime(slot);
 
     final hasTaste =
@@ -285,7 +293,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${_slotLabel(slot)} – vyber typ',
+                      '${_slotLabel(context, slot)} – ${l10n.selectType}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -293,9 +301,9 @@ class FoodSummaryScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     SwitchListTile(
-                      title: const Text('Vegan'),
-                      subtitle: const Text(
-                        'Vybere jen hotovky z kategorie “Veganské”',
+                      title: Text(l10n.vegan),
+                      subtitle: Text(
+                        l10n.veganCategoryOnly,
                       ),
                       value: vegan,
                       onChanged: (v) => setLocal(() => vegan = v),
@@ -306,19 +314,19 @@ class FoodSummaryScreen extends ConsumerWidget {
                         spacing: 8,
                         children: [
                           ChoiceChip(
-                            label: const Text('Slané'),
+                            label: Text(l10n.savory),
                             selected: taste == ComboTaste.savory,
                             onSelected: (_) =>
                                 setLocal(() => taste = ComboTaste.savory),
                           ),
                           ChoiceChip(
-                            label: const Text('Sladké'),
+                            label: Text(l10n.sweet),
                             selected: taste == ComboTaste.sweet,
                             onSelected: (_) =>
                                 setLocal(() => taste = ComboTaste.sweet),
                           ),
                           ChoiceChip(
-                            label: const Text('Cokoliv'),
+                            label: Text(l10n.anything),
                             selected: taste == ComboTaste.any,
                             onSelected: (_) =>
                                 setLocal(() => taste = ComboTaste.any),
@@ -345,7 +353,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                             _ComboFilter(time: baseTime, taste: taste),
                           );
                         },
-                        child: const Text('Pokračovat'),
+                        child: Text(l10n.continueText),
                       ),
                     ),
                   ],
@@ -363,6 +371,8 @@ class FoodSummaryScreen extends ConsumerWidget {
     List<FoodCombo> list, {
     required String title,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
+
     return showDialog<FoodCombo?>(
       context: context,
       builder: (ctx) {
@@ -388,7 +398,7 @@ class FoodSummaryScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, null),
-              child: const Text('Zrušit'),
+              child: Text(l10n.cancel),
             ),
           ],
         );
@@ -443,7 +453,7 @@ class FoodSummaryScreen extends ConsumerWidget {
       fat: (baseFat * scale).round(),
     );
   }
-
+  // ignore: unused_element
   _PerGram _comboPerGram({
     required FoodCombo combo,
     required Map<String, Meal> bankByName,
@@ -499,42 +509,54 @@ class FoodSummaryScreen extends ConsumerWidget {
   }
 
   Future<int?> _askGrams(BuildContext context, int initial) async {
-    final ctrl = TextEditingController(text: initial.toString());
+  final l10n = AppLocalizations.of(context)!;
 
-    final res = await showDialog<int?>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Kolik gramů?'),
-        content: TextField(
-          controller: ctrl,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Gramáž'),
+  final ctrl = TextEditingController(
+    text: initial.toString(),
+  );
+
+  final res = await showDialog<int?>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.howManyGrams),
+      content: TextField(
+        controller: ctrl,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: (l10n.grams),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Zrušit'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final g = int.tryParse(ctrl.text.trim());
-              if (g == null || g < 10 || g > 3000) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Zadej 10–3000 g')),
-                );
-                return;
-              }
-              Navigator.pop(ctx, g);
-            },
-            child: const Text('OK'),
-          ),
-        ],
       ),
-    );
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, null),
+          child: Text(l10n.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final g = int.tryParse(ctrl.text.trim());
 
-    ctrl.dispose();
-    return res;
-  }
+            if (g == null || g < 10 || g > 3000) {
+              ScaffoldMessenger.of(ctx).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    l10n.enterValidGramRange,
+                  ),
+                ),
+              );
+              return;
+            }
+
+            Navigator.pop(ctx, g);
+          },
+          child: Text(l10n.ok),
+        ),
+      ],
+    ),
+  );
+
+  ctrl.dispose();
+  return res;
+}
 
   _Macros _missingForSelectedDay(WidgetRef ref) {
     final profile = ref.read(userProfileProvider);
@@ -601,7 +623,7 @@ class FoodSummaryScreen extends ConsumerWidget {
 
     return (dp * dp * 2.0) + (dc * dc * 1.0) + (df * df * 1.2);
   }
-
+  // ignore: unused_element
   List<int> _solveGramsForCombos({
     required List<_PerGram> perGram,
     required List<int> startGrams,
@@ -717,13 +739,14 @@ class FoodSummaryScreen extends ConsumerWidget {
 
     return grams;
   }
-
+  // ignore: unused_element
   Future<bool> _reviewAndConfirmPlan(
     BuildContext context, {
     required List<_ChosenCombo> chosen,
     required Map<String, Meal> bankByName,
     required _Macros target,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     int sumP() {
       int s = 0;
       for (final x in chosen) {
@@ -788,7 +811,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                 final kcal = sumKcal();
 
                 return AlertDialog(
-                  title: const Text('Rekapitulace plánu'),
+                  title: Text(l10n.planSummary),
                   content: SizedBox(
                     width: double.maxFinite,
                     child: SingleChildScrollView(
@@ -813,13 +836,13 @@ class FoodSummaryScreen extends ConsumerWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      '${_slotLabel(x.slot)}: ${x.combo.name}',
+                                      '${_slotLabel(context, x.slot)}: ${x.combo.name}',
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   Text('${x.grams} g'),
                                   IconButton(
-                                    tooltip: 'Upravit gramy',
+                                    tooltip: l10n.editGrams,
                                     icon: const Icon(Icons.edit, size: 18),
                                     onPressed: () async {
                                       final g = await _askGrams(ctx, x.grams);
@@ -835,7 +858,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                           }),
                           const SizedBox(height: 6),
                           Text(
-                            'Tip: když něco upravíš, solver už to nepřepočítává – je to ruční override.',
+                            l10n.manualOverrideHint,
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 12,
@@ -848,11 +871,11 @@ class FoodSummaryScreen extends ConsumerWidget {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text('Zrušit'),
+                      child: Text(l10n.cancel),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text('Přidat vše'),
+                      child: Text(l10n.addAll),
                     ),
                   ],
                 );
@@ -864,6 +887,7 @@ class FoodSummaryScreen extends ConsumerWidget {
   }
 
   Future<void> _showItemsSuggestions(
+    
     BuildContext context,
     WidgetRef ref, {
     required int mealsCount,
@@ -871,6 +895,7 @@ class FoodSummaryScreen extends ConsumerWidget {
     required int missingC,
     required int missingF,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final bank = ref.read(foodBankProvider);
 
     final suggestions = MealSuggestionService.suggest(
@@ -887,11 +912,11 @@ class FoodSummaryScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: Text('Návrhy na $mealsCount jídla'),
+          title: Text(l10n.mealSuggestions(mealsCount)),
           content: SizedBox(
             width: double.maxFinite,
             child: suggestions.isEmpty
-                ? const Text('Nemám z čeho vybírat. Doplň banku jídel.')
+                ? Text(l10n.noMealsAvailable)
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: suggestions.length,
@@ -919,7 +944,12 @@ class FoodSummaryScreen extends ConsumerWidget {
                             ...s.items.map((x) => Text('• $x')),
                             const SizedBox(height: 10),
                             Text(
-                              'Makra (orientačně): B ${s.protein} g | S ${s.carbs} g | T ${s.fat} g | ${s.calories} kcal',
+                              l10n.approxMacros(
+                                s.protein,
+                                s.carbs,
+                                s.fat,
+                                s.calories,
+                              ),
                               style: TextStyle(color: Colors.grey[700]),
                             ),
                           ],
@@ -931,7 +961,7 @@ class FoodSummaryScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Zavřít'),
+              child: Text(l10n.close),
             ),
           ],
         );
@@ -958,6 +988,8 @@ class FoodSummaryScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final profile = ref.read(userProfileProvider);
     if (profile == null || profile.goal == null) {
       return;
@@ -968,7 +1000,7 @@ class FoodSummaryScreen extends ConsumerWidget {
     final missing = _missingForSelectedDay(ref);
     if (missing.isZero) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Máš splněno ✅')),
+        SnackBar(content: Text(l10n.completed)),
       );
       return;
     }
@@ -987,7 +1019,7 @@ class FoodSummaryScreen extends ConsumerWidget {
       if (m.isZero) {
         if (!context.mounted) return;
         messenger.showSnackBar(
-          const SnackBar(content: Text('Máš splněno ✅')),
+          SnackBar(content: Text(l10n.completed)),
         );
         return;
       }
@@ -1015,7 +1047,9 @@ class FoodSummaryScreen extends ConsumerWidget {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              'V kategorii "${FoodComboService.timeLabel(filter.time)}" nic není.',
+              l10n.noMealsInCategory(
+                FoodComboService.timeLabel(filter.time),
+              ),
             ),
           ),
         );
@@ -1028,23 +1062,30 @@ class FoodSummaryScreen extends ConsumerWidget {
           grams: c.defaultGrams,
           bankByName: bankByName,
         );
+
         final dp = (slotTarget.p - item.protein).abs();
         final dc = (slotTarget.c - item.carbs).abs();
         final df = (slotTarget.f - item.fat).abs();
+
         return (dp * 2 + dc + df).toDouble();
       }
 
       final sorted = filtered.toList()
         ..sort((a, b) => dist(a).compareTo(dist(b)));
+
       final shortlist = sorted.take(25).toList();
 
       final pickedCombo = await _pickOneComboFromList(
         context,
         shortlist,
-        title:
-            'Vyber jídlo: ${_slotLabel(slot)} (${FoodComboService.timeLabel(filter.time)})',
+        title: l10n.selectMeal(
+          _slotLabel(context, slot),
+          FoodComboService.timeLabel(filter.time),
+        ),
       );
+
       if (!context.mounted) return;
+
       if (pickedCombo == null) {
         return;
       }
@@ -1062,409 +1103,400 @@ class FoodSummaryScreen extends ConsumerWidget {
       );
 
       final grams = await _askGrams(context, suggested);
+
       if (!context.mounted) return;
+
       if (grams == null) {
         return;
       }
 
       _addComboToDay(ref, pickedCombo, grams, bankByName);
 
-      messenger.showSnackBar(
-        SnackBar(content: Text('Přidáno: ${pickedCombo.name} ($grams g)')),
-      );
-    }
-  }
-
-  Future<void> _helpFlowCombos(
-    BuildContext context,
-    WidgetRef ref, {
-    required int mealsCount,
-  }) async {
-    final profile = ref.read(userProfileProvider);
-    if (profile == null || profile.goal == null) {
-      return;
-    }
-
-    final messenger = ScaffoldMessenger.of(context);
-
-    final pickedSlots = await _pickSlotsMulti(context, mealsCount: mealsCount);
-    if (!context.mounted) return;
-    if (pickedSlots == null) {
-      return;
-    }
-
-    final target = _missingForSelectedDay(ref);
-    if (target.isZero) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Máš splněno ✅')),
-      );
-      return;
-    }
-
-    final allCombos = ref.read(foodComboProvider);
-    final bankList = ref.read(foodBankProvider);
-    final bankByName = {for (final m in bankList) m.name: m};
-
-    final chosen = <_ChosenCombo>[];
-
-    for (int i = 0; i < pickedSlots.length; i++) {
-      final slot = pickedSlots[i];
-
-      final filter = await _pickComboFilterForSlot(context, slot: slot);
-      if (!context.mounted) return;
-      if (filter == null) {
-        return;
-      }
-
-      final filtered = FoodComboService.filter(
-        allCombos,
-        time: filter.time,
-        taste: filter.taste,
-      );
-
-      if (filtered.isEmpty) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'V kategorii "${FoodComboService.timeLabel(filter.time)}" nic není.',
-            ),
-          ),
-        );
-        return;
-      }
-
-      double dist(FoodCombo c) {
-        final it = _buildLogItemFromComboUsingBank(
-          combo: c,
-          grams: c.defaultGrams,
-          bankByName: bankByName,
-        );
-        final dp = (target.p - it.protein).abs();
-        final dc = (target.c - it.carbs).abs();
-        final df = (target.f - it.fat).abs();
-        return (dp * 2 + dc + df).toDouble();
-      }
-
-      final sorted = filtered.toList()
-        ..sort((a, b) => dist(a).compareTo(dist(b)));
-      final shortlist = sorted.take(25).toList();
-
-      final pickedCombo = await _pickOneComboFromList(
-        context,
-        shortlist,
-        title:
-            'Vyber jídlo: ${_slotLabel(slot)} (${FoodComboService.timeLabel(filter.time)})',
-      );
-      if (!context.mounted) return;
-      if (pickedCombo == null) {
-        return;
-      }
-
-      chosen.add(
-        _ChosenCombo(
-          slot: slot,
-          filter: filter,
-          combo: pickedCombo,
-          grams: pickedCombo.defaultGrams,
-        ),
-      );
-    }
-
-    final per = chosen
-        .map((x) => _comboPerGram(combo: x.combo, bankByName: bankByName))
-        .toList();
-    final start = chosen.map((x) => x.grams).toList();
-
-    final solved = _solveGramsForCombos(
-      perGram: per,
-      startGrams: start,
-      targetP: target.p,
-      targetC: target.c,
-      targetF: target.f,
-      minG: 60,
-      maxG: 900,
-    );
-
-    for (int i = 0; i < chosen.length; i++) {
-      chosen[i].grams = solved[i];
-    }
-
-    final ok = await _reviewAndConfirmPlan(
-      context,
-      chosen: chosen,
-      bankByName: bankByName,
-      target: target,
-    );
-    if (!context.mounted) return;
-    if (!ok) {
-      return;
-    }
-
-    for (final x in chosen) {
-      _addComboToDay(ref, x.combo, x.grams, bankByName);
-    }
-
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Přidáno ✅ (všechny sloty)')),
-    );
-  }
-
-  Future<void> _handleHelpMe(BuildContext context, WidgetRef ref) async {
-    final profile = ref.read(userProfileProvider);
-    if (profile == null || profile.goal == null) {
-      return;
-    }
-
-    final messenger = ScaffoldMessenger.of(context);
-
-    final date = ref.read(selectedFoodDateProvider);
-    final day = ref.read(dailyHistoryProvider).intakeFor(date);
-
-    final tdee = MetabolismService.calculateTDEE(
-      profile,
-      ActivityLevel.moderate,
-    );
-    final macro = MacroService.calculate(profile, tdee);
-
-    final missingP = _missingInt(macro.protein, day.protein);
-    final missingC = _missingInt(macro.carbs, day.carbs);
-    final missingF = _missingInt(macro.fat, day.fat);
-
-    if (missingP == 0 && missingC == 0 && missingF == 0) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Máš splněno ✅')),
-      );
-      return;
-    }
-
-    final mode = await _pickHelpMode(context);
-    if (!context.mounted) return;
-    if (mode == null) {
-      return;
-    }
-
-    final mealsCount = await _pickMealsCount(context);
-    if (!context.mounted) return;
-    if (mealsCount == null) {
-      return;
-    }
-
-    if (mode == HelpMode.items) {
-      await _showItemsSuggestions(
-        context,
-        ref,
-        mealsCount: mealsCount,
-        missingP: missingP,
-        missingC: missingC,
-        missingF: missingF,
-      );
-      if (!context.mounted) return;
-    } else {
-      await _helpFlowCombos(
-        context,
-        ref,
-        mealsCount: mealsCount,
-      );
-      if (!context.mounted) return;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profile = ref.watch(userProfileProvider);
-    if (profile == null || profile.goal == null) {
-      return const Scaffold(
-        body: Center(child: Text('Profil nenalezen')),
-      );
-    }
-
-    final date = ref.watch(selectedFoodDateProvider);
-    final intake = ref.watch(dailyIntakeProvider);
-
-    final tdee = MetabolismService.calculateTDEE(
-      profile,
-      ActivityLevel.moderate,
-    );
-    final macro = MacroService.calculate(profile, tdee);
-
-    final missingP = _missingInt(macro.protein, intake.protein);
-    final missingC = _missingInt(macro.carbs, intake.carbs);
-    final missingF = _missingInt(macro.fat, intake.fat);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dnešní jídlo'),
-        actions: [
-          IconButton(
-            tooltip: 'Vybrat datum',
-            icon: const Icon(Icons.calendar_today),
-            onPressed: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: date,
-                firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-              );
-              if (!context.mounted) return;
-
-              if (picked != null) {
-                ref.read(selectedFoodDateProvider.notifier).state =
-                    DateTime(picked.year, picked.month, picked.day);
-                ref.read(dailyIntakeProvider.notifier).refreshForSelectedDate();
-              }
-            },
-          ),
-          IconButton(
-            tooltip: 'Kopírovat včerejšek',
-            icon: const Icon(Icons.copy),
-            onPressed: () {
-              ref.read(dailyHistoryProvider.notifier).copyYesterdayTo(date);
-              ref.read(dailyIntakeProvider.notifier).refreshForSelectedDate();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Včerejší jídlo zkopírováno')),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Vynulovat den',
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(dailyHistoryProvider.notifier).resetDay(date);
-              ref.read(dailyIntakeProvider.notifier).refreshForSelectedDate();
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const FoodEntryScreen()),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Přidat jídlo'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _HeaderCard(date: date),
-          const SizedBox(height: 12),
-          _CaloriesCard(eaten: intake.calories, target: macro.targetCalories),
-          const SizedBox(height: 12),
-          _MacroBarsCard(
-            intakeP: intake.protein,
-            intakeC: intake.carbs,
-            intakeF: intake.fat,
-            targetP: macro.protein,
-            targetC: macro.carbs,
-            targetF: macro.fat,
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Zbývá do dne',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  l10n.addedMeal(
+                    pickedCombo.name,
+                    grams,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'B $missingP g | S $missingC g | T $missingF g',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 12),
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _handleHelpMe(context, ref),
-                          icon: const Icon(Icons.auto_awesome),
-                          label: const Text('Pomoz mi se zbytkem jídla'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () =>
-                              _recalculateRemainderAuto(context, ref),
-                          icon: const Icon(Icons.replay),
-                          label: const Text('Přepočítat zbytek dne'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
+              ),
+            );
+          }
+        }
+        Future<void> _helpFlowCombos(
+          BuildContext context,
+          WidgetRef ref, {
+          required int mealsCount,
+        }) async {
+         
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Coming soon',
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          _ItemsCard(
-            title: 'Jídla (${intake.items.length})',
-            child: intake.items.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text('Zatím tu nic není. Přidej první jídlo.'),
-                  )
-                : ListView.separated(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: intake.items.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, i) {
-                      final it = intake.items[i];
-                      return ListTile(
-                        title: Text(it.name),
-                        subtitle: Text(
-                          '${it.grams} g • ${it.calories} kcal • '
-                          'B ${it.protein} / S ${it.carbs} / T ${it.fat}',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () {
-                            ref
-                                .read(dailyHistoryProvider.notifier)
-                                .removeAt(date, i);
-                            ref
-                                .read(dailyIntakeProvider.notifier)
-                                .refreshForSelectedDate();
-                          },
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          const SizedBox(height: 90),
-        ],
+          );
+        }
+      Future<void> _handleHelpMe(
+        BuildContext context,
+        WidgetRef ref,
+      ) async {
+        final l10n = AppLocalizations.of(context)!;
+
+        final profile = ref.read(userProfileProvider);
+
+        if (profile == null || profile.goal == null) {
+          return;
+        }
+
+        final messenger = ScaffoldMessenger.of(context);
+
+        final date = ref.read(selectedFoodDateProvider);
+        final day = ref.read(dailyHistoryProvider).intakeFor(date);
+
+        final tdee = MetabolismService.calculateTDEE(
+          profile,
+          ActivityLevel.moderate,
+        );
+
+        final macro = MacroService.calculate(profile, tdee);
+
+        final missingP = _missingInt(
+          macro.protein,
+          day.protein,
+        );
+
+        final missingC = _missingInt(
+          macro.carbs,
+          day.carbs,
+        );
+
+        final missingF = _missingInt(
+          macro.fat,
+          day.fat,
+        );
+
+        if (missingP == 0 &&
+            missingC == 0 &&
+            missingF == 0) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(l10n.completed),
+            ),
+          );
+          return;
+        }
+
+        final mode = await _pickHelpMode(context);
+
+        if (!context.mounted) return;
+
+        if (mode == null) {
+          return;
+        }
+
+        final mealsCount = await _pickMealsCount(context);
+
+        if (!context.mounted) return;
+
+        if (mealsCount == null) {
+          return;
+        }
+
+        if (mode == HelpMode.items) {
+          await _showItemsSuggestions(
+            context,
+            ref,
+            mealsCount: mealsCount,
+            missingP: missingP,
+            missingC: missingC,
+            missingF: missingF,
+          );
+
+          if (!context.mounted) return;
+        } else {
+          await _helpFlowCombos(
+            context,
+            ref,
+            mealsCount: mealsCount,
+          );
+
+          if (!context.mounted) return;
+        }
+      }
+
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final l10n = AppLocalizations.of(context)!;
+
+  final profile = ref.watch(userProfileProvider);
+
+  if (profile == null || profile.goal == null) {
+    return Scaffold(
+      body: Center(
+        child: Text(l10n.profileNotFound),
       ),
     );
   }
-}
 
+  final date = ref.watch(selectedFoodDateProvider);
+  final intake = ref.watch(dailyIntakeProvider);
+
+  final tdee = MetabolismService.calculateTDEE(
+    profile,
+    ActivityLevel.moderate,
+  );
+
+  final macro = MacroService.calculate(profile, tdee);
+
+  final missingP = _missingInt(macro.protein, intake.protein);
+  final missingC = _missingInt(macro.carbs, intake.carbs);
+  final missingF = _missingInt(macro.fat, intake.fat);
+
+  return Scaffold(
+    appBar: AppBar(
+      title: Text(l10n.todayFood),
+      actions: [
+        IconButton(
+          tooltip: l10n.selectDate,
+          icon: const Icon(Icons.calendar_today),
+          onPressed: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: date,
+              firstDate: DateTime.now().subtract(
+                const Duration(days: 365),
+              ),
+              lastDate: DateTime.now().add(
+                const Duration(days: 365),
+              ),
+            );
+
+            if (!context.mounted) return;
+
+            if (picked != null) {
+              ref.read(selectedFoodDateProvider.notifier).state =
+                  DateTime(
+                picked.year,
+                picked.month,
+                picked.day,
+              );
+
+              ref
+                  .read(dailyIntakeProvider.notifier)
+                  .refreshForSelectedDate();
+            }
+          },
+        ),
+
+        IconButton(
+          tooltip: l10n.copyYesterday,
+          icon: const Icon(Icons.copy),
+          onPressed: () {
+            ref
+                .read(dailyHistoryProvider.notifier)
+                .copyYesterdayTo(date);
+
+            ref
+                .read(dailyIntakeProvider.notifier)
+                .refreshForSelectedDate();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.yesterdayCopied),
+              ),
+            );
+          },
+        ),
+
+        IconButton(
+          tooltip: l10n.resetDay,
+          icon: const Icon(Icons.refresh),
+          onPressed: () {
+            ref
+                .read(dailyHistoryProvider.notifier)
+                .resetDay(date);
+
+            ref
+                .read(dailyIntakeProvider.notifier)
+                .refreshForSelectedDate();
+          },
+        ),
+      ],
+    ),
+
+    floatingActionButton: FloatingActionButton.extended(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const FoodEntryScreen(),
+          ),
+        );
+      },
+      icon: const Icon(Icons.add),
+      label: Text(l10n.addFood),
+    ),
+
+    body: ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _HeaderCard(date: date),
+
+        const SizedBox(height: 12),
+
+        _CaloriesCard(
+          eaten: intake.calories,
+          target: macro.targetCalories,
+        ),
+
+        const SizedBox(height: 12),
+
+        _MacroBarsCard(
+          intakeP: intake.protein,
+          intakeC: intake.carbs,
+          intakeF: intake.fat,
+          targetP: macro.protein,
+          targetC: macro.carbs,
+          targetF: macro.fat,
+        ),
+
+        const SizedBox(height: 12),
+
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.remainingForToday,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  'B $missingP g | S $missingC g | T $missingF g',
+                  style: const TextStyle(fontSize: 16),
+                ),
+
+                const SizedBox(height: 12),
+
+                Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () =>
+                            _handleHelpMe(context, ref),
+                        icon: const Icon(Icons.auto_awesome),
+                        label: Text(
+                          l10n.helpWithRemainingFood,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            _recalculateRemainderAuto(
+                          context,
+                          ref,
+                        ),
+                        icon: const Icon(Icons.replay),
+                        label: Text(
+                          l10n.recalculateRemainingDay,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        _ItemsCard(
+          title: '${l10n.foods} (${intake.items.length})',
+          child: intake.items.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(l10n.noFoodYet),
+                )
+              : ListView.separated(
+                  physics:
+                      const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: intake.items.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, i) {
+                    final it = intake.items[i];
+
+                    return ListTile(
+                      title: Text(it.name),
+                      subtitle: Text(
+                        '${it.grams} g • ${it.calories} kcal • '
+                        'B ${it.protein} / S ${it.carbs} / T ${it.fat}',
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () {
+                          ref
+                              .read(
+                                dailyHistoryProvider.notifier,
+                              )
+                              .removeAt(date, i);
+
+                          ref
+                              .read(
+                                dailyIntakeProvider.notifier,
+                              )
+                              .refreshForSelectedDate();
+                        },
+                      ),
+                    );
+                  },
+                ),
+        ),
+
+        const SizedBox(height: 90),
+      ],
+    ),
+  );
+}
+}
 class _HeaderCard extends StatelessWidget {
   final DateTime date;
 
-  const _HeaderCard({required this.date});
+  const _HeaderCard({
+    required this.date,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final d = '${date.day}.${date.month}.${date.year}';
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const Icon(Icons.restaurant_menu),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Datum: $d',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+            const Icon(Icons.calendar_today),
+            const SizedBox(width: 12),
+            Text(
+              '${date.day}.${date.month}.${date.year}',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -1478,44 +1510,31 @@ class _CaloriesCard extends StatelessWidget {
   final int eaten;
   final int target;
 
-  const _CaloriesCard({required this.eaten, required this.target});
+  const _CaloriesCard({
+    required this.eaten,
+    required this.target,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final left = target - eaten;
-    final leftLabel = left >= 0 ? 'Zbývá' : 'Přesah';
-    final leftVal = left.abs();
+    final progress =
+        target <= 0 ? 0.0 : (eaten / target).clamp(0.0, 1.0);
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Kalorie',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              'Calories',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(child: Text('Snězeno: $eaten kcal')),
-                Text(
-                  '$leftLabel: $leftVal kcal',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: target <= 0 ? 0 : (eaten / target).clamp(0.0, 1.0),
-              minHeight: 10,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Cíl: $target kcal',
-              style: TextStyle(color: Colors.grey[700]),
-            ),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(value: progress),
+            const SizedBox(height: 12),
+            Text('$eaten / $target kcal'),
           ],
         ),
       ),
@@ -1527,6 +1546,7 @@ class _MacroBarsCard extends StatelessWidget {
   final int intakeP;
   final int intakeC;
   final int intakeF;
+
   final int targetP;
   final int targetC;
   final int targetF;
@@ -1540,30 +1560,21 @@ class _MacroBarsCard extends StatelessWidget {
     required this.targetF,
   });
 
-  Widget _bar(String label, int v, int t) {
-    final left = t - v;
-    final txt = left >= 0 ? 'zbývá $left g' : 'přesah ${left.abs()} g';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text('$label: $v / $t g')),
-              Text(
-                txt,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(
-            value: t <= 0 ? 0 : (v / t).clamp(0.0, 1.0),
-            minHeight: 10,
-          ),
-        ],
-      ),
+  Widget _buildBar(
+    String label,
+    int value,
+    int target,
+  ) {
+    final progress =
+        target <= 0 ? 0.0 : (value / target).clamp(0.0, 1.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$label: $value / $target g'),
+        const SizedBox(height: 6),
+        LinearProgressIndicator(value: progress),
+      ],
     );
   }
 
@@ -1571,18 +1582,14 @@ class _MacroBarsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Makra',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            _bar('Bílkoviny', intakeP, targetP),
-            _bar('Sacharidy', intakeC, targetC),
-            _bar('Tuky', intakeF, targetF),
+            _buildBar('Protein', intakeP, targetP),
+            const SizedBox(height: 12),
+            _buildBar('Carbs', intakeC, targetC),
+            const SizedBox(height: 12),
+            _buildBar('Fat', intakeF, targetF),
           ],
         ),
       ),
@@ -1594,23 +1601,27 @@ class _ItemsCard extends StatelessWidget {
   final String title;
   final Widget child;
 
-  const _ItemsCard({required this.title, required this.child});
+  const _ItemsCard({
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-              child: Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
             ),
+            const SizedBox(height: 12),
             child,
           ],
         ),

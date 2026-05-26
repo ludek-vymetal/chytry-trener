@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../l10n/app_localizations.dart';
 import '../../core/training/exercises/exercise.dart';
 import '../../core/training/exercises/exercise_db.dart';
 import '../../models/custom_training_plan.dart';
@@ -15,28 +15,37 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final activeClientAsync = ref.watch(activeClientIdProvider);
     final allPlans = ref.watch(customTrainingPlanProvider);
     final sharedTemplates = ref.watch(sharedTrainingTemplatesProvider);
 
     return activeClientAsync.when(
       loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       ),
       error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Vlastní trénink')),
-        body: Center(child: Text('Chyba: $e')),
+        appBar: AppBar(
+          title: Text(l10n.customTraining),
+        ),
+        body: Center(
+          child: Text('${l10n.error}: $e'),
+        ),
       ),
       data: (clientId) {
         if (clientId == null || clientId.isEmpty) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Vlastní trénink')),
-            body: const Center(
+            appBar: AppBar(
+              title: Text(l10n.customTraining),
+            ),
+            body: Center(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Nejdřív vyber aktivního klienta v trenérském módu. '
-                  'Bez aktivního klienta nejde vlastní plán uložit.',
+                  l10n.selectActiveClientFirst,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -47,45 +56,73 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         final clientPlans =
             allPlans.where((p) => p.clientId == clientId).toList();
 
-        final groupedTemplates = _groupTemplatesByCategory(sharedTemplates);
-        final groupedPlans = _groupPlansByCategory(clientPlans);
+        final groupedTemplates =
+            _groupTemplatesByCategory(sharedTemplates);
+
+        final groupedPlans =
+            _groupPlansByCategory(clientPlans);
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Vlastní trénink'),
+            title: Text(l10n.customTraining),
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _createPlanDialog(context, ref, clientId),
+            onPressed: () =>
+                _createPlanDialog(context, ref, clientId),
             icon: const Icon(Icons.add),
-            label: const Text('Nový plán'),
+            label: Text(l10n.newPlan),
           ),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               FilledButton.icon(
                 onPressed: () =>
-                    _insertConstantinCutPlan(context, ref, clientId),
-                icon: const Icon(Icons.local_fire_department),
-                label: const Text('🔥 VLOŽIT 90DENNÍ VYRÝSOVÁNÍ'),
+                    _insertConstantinCutPlan(
+                  context,
+                  ref,
+                  clientId,
+                ),
+                icon: const Icon(
+                  Icons.local_fire_department,
+                ),
+                label: const Text(
+                  '🔥 VLOŽIT 90DENNÍ VYRÝSOVÁNÍ',
+                ),
               ),
+
               const SizedBox(height: 12),
+
               FilledButton.tonalIcon(
                 onPressed: () =>
-                    _insertPowerliftingMeetPrepPlan(context, ref, clientId),
+                    _insertPowerliftingMeetPrepPlan(
+                  context,
+                  ref,
+                  clientId,
+                ),
                 icon: const Icon(Icons.fitness_center),
-                label: const Text('🏋️ VLOŽIT PŘÍPRAVU NA ZÁVODY – TROJBOJ'),
+                label: const Text(
+                  '🏋️ VLOŽIT PŘÍPRAVU NA ZÁVODY – TROJBOJ',
+                ),
               ),
+
               const SizedBox(height: 24),
+
               Text(
-                'Sdílené šablony',
-                style: Theme.of(context).textTheme.titleLarge,
+                l10n.sharedTemplates,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge,
               ),
+
               const SizedBox(height: 10),
+
               if (sharedTemplates.isEmpty)
-                const Card(
+                Card(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Zatím nemáš žádné sdílené šablony.'),
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      l10n.noSharedTemplatesYet,
+                    ),
                   ),
                 )
               else
@@ -96,19 +133,24 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                     clientId: clientId,
                   ),
                 ),
+
               const SizedBox(height: 24),
+
               Text(
-                'Plány klienta',
-                style: Theme.of(context).textTheme.titleLarge,
+                l10n.clientPlans,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge,
               ),
+
               const SizedBox(height: 10),
+
               if (clientPlans.isEmpty)
-                const Card(
+                Card(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Text(
-                      'Zatím nemáš žádný vlastní plán.\n\n'
-                      'Klikni na „Nový plán“ a vytvoř první.',
+                      l10n.noCustomPlanYet,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -120,6 +162,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                     plans: entry.value,
                   ),
                 ),
+
               const SizedBox(height: 80),
             ],
           ),
@@ -127,6 +170,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
       },
     );
   }
+}
 
   Map<CustomTrainingCategory, List<SharedTrainingTemplate>>
       _groupTemplatesByCategory(List<SharedTrainingTemplate> templates) {
@@ -158,6 +202,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     WidgetRef ref,
     String clientId,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController();
     final descriptionCtrl = TextEditingController();
     CustomTrainingCategory selectedCategory = CustomTrainingCategory.custom;
@@ -166,20 +211,20 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Nový plán'),
+          title: Text(l10n.newPlan),
           content: SingleChildScrollView(
             child: Column(
               children: [
                 DropdownButtonFormField<CustomTrainingCategory>(
                   initialValue: selectedCategory,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Kategorie',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: l10n.category,
                   ),
                   items: CustomTrainingCategory.values.map((category) {
                     return DropdownMenuItem(
                       value: category,
-                      child: Text(_categoryLabel(category)),
+                      child: Text(_categoryLabel(context, category)),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -192,10 +237,10 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Název plánu',
-                    hintText: 'Např. Obrovské prsa',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: l10n.planName,
+                    hintText: l10n.planNameHint,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -203,10 +248,10 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                   controller: descriptionCtrl,
                   minLines: 2,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Na co slouží / v čem je zvláštní',
-                    hintText: 'Např. síla hrudníku, objem prsních svalů...',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: l10n.planDescription,
+                    hintText: l10n.planDescriptionHint,
                   ),
                 ),
               ],
@@ -215,11 +260,11 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Zrušit'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Vytvořit'),
+              child: Text(l10n.create),
             ),
           ],
         ),
@@ -243,6 +288,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     WidgetRef ref,
     String clientId,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final plans = ref.read(customTrainingPlanProvider);
     final newName = _buildUniquePlanName(
       '🔥 90denní vyrýsování',
@@ -270,8 +316,8 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     if (createdPlan == null) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Plán se nepodařilo vytvořit.'),
+        SnackBar(
+          content: Text(l10n.planInserted),
         ),
       );
       return;
@@ -312,6 +358,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     WidgetRef ref,
     String clientId,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final maxes = await showDialog<_PowerliftingMaxes>(
       context: context,
       builder: (_) => const _PowerliftingMaxesDialog(),
@@ -352,16 +399,21 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
 
     if (createdPlan == null) {
       if (!context.mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Plán se nepodařilo vytvořit.'),
+        SnackBar(
+          content: Text(
+            l10n.planCreationFailed,
+          ),
         ),
       );
+
       return;
     }
 
     final notifier = ref.read(customTrainingPlanProvider.notifier);
-    final templateDays = _powerliftingMeetPrepDays(maxes);
+    if (!context.mounted) return;
+    final templateDays = _powerliftingMeetPrepDays(context, maxes);
 
     for (final day in templateDays) {
       await notifier.addDay(
@@ -641,14 +693,16 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
   }
 
   List<CustomTrainingDay> _powerliftingMeetPrepDays(
+    BuildContext context,
     _PowerliftingMaxes maxes,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final squatBase = maxes.squat1rm;
     final benchTm = _trainingMax(maxes.bench1rm);
     final deadliftBase = maxes.deadlift1rm;
 
     final phaseWeeks = <_PowerWeekConfig>[
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 1,
         phaseLabel: 'Objem',
         squatPct: 0.70,
@@ -661,7 +715,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '5',
         deadliftReps: '4',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 2,
         phaseLabel: 'Objem',
         squatPct: 0.725,
@@ -674,7 +728,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '5',
         deadliftReps: '4',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 3,
         phaseLabel: 'Objem',
         squatPct: 0.75,
@@ -687,7 +741,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '5',
         deadliftReps: '4',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 4,
         phaseLabel: 'Objem',
         squatPct: 0.775,
@@ -700,7 +754,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '5',
         deadliftReps: '4',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 5,
         phaseLabel: 'Síla',
         squatPct: 0.80,
@@ -713,7 +767,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '4',
         deadliftReps: '3',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 6,
         phaseLabel: 'Síla',
         squatPct: 0.825,
@@ -726,7 +780,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '4',
         deadliftReps: '3',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 7,
         phaseLabel: 'Síla',
         squatPct: 0.85,
@@ -739,7 +793,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '4',
         deadliftReps: '3',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 8,
         phaseLabel: 'Síla',
         squatPct: 0.875,
@@ -752,7 +806,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '4',
         deadliftReps: '3',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 9,
         phaseLabel: 'Intenzifikace',
         squatPct: 0.90,
@@ -765,7 +819,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '3',
         deadliftReps: '2',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 10,
         phaseLabel: 'Intenzifikace',
         squatPct: 0.925,
@@ -778,7 +832,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '3',
         deadliftReps: '2',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 11,
         phaseLabel: 'Peak / CNS',
         squatPct: 0.90,
@@ -792,7 +846,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
         deadliftSets: '3 + 2 singly',
         deadliftReps: '2 + 1',
       ),
-      const _PowerWeekConfig(
+      _PowerWeekConfig(
         week: 12,
         phaseLabel: 'Taper / závod',
         squatPct: 0.85,
@@ -884,9 +938,10 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
               weightKg: squatMain,
               note:
                   'Fáze: ${week.phaseLabel}\n'
-                  'Datum závodu: ${_fmtDate(maxes.meetDate)}\n'
+                  '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
                   'Výchozí 1RM: ${maxes.squat1rm.toStringAsFixed(1)} kg\n'
-                  'Pracovní váha: ${_formatWeightAndPercent(squatMain, week.squatPct)}'
+                  'Pracovní váha: '
+                  '${_formatWeightAndPercent(squatMain, week.squatPct)}'
                   '${topSingleSquat == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleSquat, week.topSinglePct!)}'}',
             ),
             CustomTrainingExercise(
@@ -899,13 +954,15 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                   'Technická práce.\n'
                   'Pracovní váha: ${_formatWeightAndPercent(squatTech, squatTechPercent)}',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Rumunský mrtvý tah',
               sets: '4',
               reps: '6–8',
               rir: '2–3',
             ),
-            const CustomTrainingExercise(
+            
+            
+            CustomTrainingExercise(
               customName: 'Břicho / core',
               sets: '3',
               reps: '10–15 / 20–30 s',
@@ -924,9 +981,10 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
               weightKg: benchMain,
               note:
                   'Fáze: ${week.phaseLabel}\n'
-                  'Datum závodu: ${_fmtDate(maxes.meetDate)}\n'
+                  '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
                   'Training max: ${benchTm.toStringAsFixed(1)} kg\n'
-                  'Pracovní váha: ${_formatWeightAndPercent(benchMain, week.benchPct)}'
+                  'Pracovní váha: '
+                  '${_formatWeightAndPercent(benchMain, week.benchPct)}'
                   '${topSingleBench == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleBench, week.topSinglePct!)}'}',
             ),
             CustomTrainingExercise(
@@ -939,28 +997,28 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                   'Backoff práce po hlavním bench dni.\n'
                   'Pracovní váha: ${_formatWeightAndPercent(benchBackoff, backoffPercent)}',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Incline Bench',
               sets: '3',
               reps: '8–10',
               rir: '2–3',
               note: 'Horní hrudník a přenos do bench pressu.',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Dips',
               sets: '3',
               reps: '6–10',
               rir: '2–3',
               note: 'Triceps, tlaková síla, lockout.',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Triceps Pushdown',
               sets: '3',
               reps: '10–15',
               rir: '2–3',
               note: 'Lokální objem pro triceps.',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Přítahy v předklonu',
               sets: '4',
               reps: '6–10',
@@ -979,24 +1037,26 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
               weightKg: deadliftMain,
               note:
                   'Fáze: ${week.phaseLabel}\n'
-                  'Datum závodu: ${_fmtDate(maxes.meetDate)}\n'
+                  '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
                   'Výchozí 1RM: ${maxes.deadlift1rm.toStringAsFixed(1)} kg\n'
-                  'Pracovní váha: ${_formatWeightAndPercent(deadliftMain, week.deadliftPct)}'
+                  'Pracovní váha: '
+                  '${_formatWeightAndPercent(deadliftMain, week.deadliftPct)}'
                   '${topSingleDeadlift == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleDeadlift, week.topSinglePct!)}'}',
             ),
-            const CustomTrainingExercise(
+
+            CustomTrainingExercise(
               customName: 'Hamstringy',
               sets: '3',
               reps: '8–12',
               rir: '2–3',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Shyby / horní kladka',
               sets: '4',
               reps: '6–10',
               rir: '2',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Záda / mezilopatky',
               sets: '3',
               reps: '10–15',
@@ -1036,13 +1096,13 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
               note:
                   'Bench-specific doplněk se zaměřením na triceps a lockout.',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Tlaky nad hlavu / ramena',
               sets: '3',
               reps: '6–10',
               rir: '2–3',
             ),
-            const CustomTrainingExercise(
+            CustomTrainingExercise(
               customName: 'Rotátory / prevence ramen',
               sets: '2–3',
               reps: '12–20',
@@ -1064,7 +1124,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             rir: '—',
             note: 'Všechny týdny jsou rozpočítané zpětně od tohoto data.',
           ),
-          const CustomTrainingExercise(
+          CustomTrainingExercise(
             customName: 'Týdny 1–4',
             sets: '1',
             reps: 'Objem + technika',
@@ -1072,7 +1132,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             note:
                 'Buduješ základ, stabilitu a přesnost pohybu. Vyšší objem, nižší intenzita, žádné zbytečné selhání.',
           ),
-          const CustomTrainingExercise(
+          CustomTrainingExercise(
             customName: 'Týdny 5–8',
             sets: '1',
             reps: 'Síla',
@@ -1080,7 +1140,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             note:
                 'Zvedáš intenzitu, snižuješ počet opakování a připravuješ se na těžší specifickou práci.',
           ),
-          const CustomTrainingExercise(
+          CustomTrainingExercise(
             customName: 'Týdny 9–10',
             sets: '1',
             reps: 'Intenzifikace',
@@ -1088,7 +1148,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             note:
                 'Těžké trojky a dvojky. Důraz na závodní provedení a kontrolu únavy.',
           ),
-          const CustomTrainingExercise(
+          CustomTrainingExercise(
             customName: 'Týden 11',
             sets: '1',
             reps: 'Peak / CNS',
@@ -1096,7 +1156,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             note:
                 'Ano, tohle je přesně prostor pro nabuzení nervového systému. Nízký objem, vysoká intenzita, žádné zbytečné doplňky navíc.',
           ),
-          const CustomTrainingExercise(
+          CustomTrainingExercise(
             customName: 'Týden 12',
             sets: '1',
             reps: 'Taper / závod',
@@ -1135,8 +1195,179 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
 
   String _formatWeightAndPercent(double weight, double percent) {
     return '${(percent * 100).toStringAsFixed(percent * 100 % 1 == 0 ? 0 : 1)} % = ${weight.toStringAsFixed(1)} kg';
+}
+
+
+class _PowerliftingMaxes {
+  final double squat1rm;
+  final double bench1rm;
+  final double deadlift1rm;
+  final DateTime meetDate;
+
+  const _PowerliftingMaxes({
+    required this.squat1rm,
+    required this.bench1rm,
+    required this.deadlift1rm,
+    required this.meetDate,
+  });
+}
+
+class _PowerWeekConfig {
+  final int week;
+  final String phaseLabel;
+
+  final double squatPct;
+  final double benchPct;
+  final double deadliftPct;
+
+  final double? topSinglePct;
+
+  final String squatSets;
+  final String squatReps;
+
+  final String benchHeavySets;
+  final String benchHeavyReps;
+
+  final String deadliftSets;
+  final String deadliftReps;
+
+  _PowerWeekConfig({
+    required this.week,
+    required this.phaseLabel,
+    required this.squatPct,
+    required this.benchPct,
+    required this.deadliftPct,
+    this.topSinglePct,
+    required this.squatSets,
+    required this.squatReps,
+    required this.benchHeavySets,
+    required this.benchHeavyReps,
+    required this.deadliftSets,
+    required this.deadliftReps,
+  });
+}
+
+class _PowerliftingMaxesDialog extends StatefulWidget {
+  const _PowerliftingMaxesDialog();
+
+  @override
+  State<_PowerliftingMaxesDialog> createState() =>
+      _PowerliftingMaxesDialogState();
+}
+
+class _PowerliftingMaxesDialogState
+    extends State<_PowerliftingMaxesDialog> {
+  final squatCtrl = TextEditingController();
+  final benchCtrl = TextEditingController();
+  final deadliftCtrl = TextEditingController();
+
+  DateTime meetDate = DateTime.now().add(
+    const Duration(days: 84),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(l10n.enterMaxes),
+      content: SingleChildScrollView(
+        child: Column(
+          children: [
+            TextField(
+              controller: squatCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.squat1rm,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: benchCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.bench1rm,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: deadliftCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: l10n.deadlift1rm,
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            FilledButton(
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: meetDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(
+                    const Duration(days: 365),
+                  ),
+                );
+
+                if (!context.mounted) return;
+
+                if (picked != null) {
+                  setState(() {
+                    meetDate = picked;
+                  });
+                }
+              },
+              child: Text(
+                '${l10n.meetDate}: '
+                '${meetDate.day}.${meetDate.month}.${meetDate.year}',
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final squat =
+                double.tryParse(squatCtrl.text);
+            final bench =
+                double.tryParse(benchCtrl.text);
+            final deadlift =
+                double.tryParse(deadliftCtrl.text);
+
+            if (squat == null ||
+                bench == null ||
+                deadlift == null) {
+              return;
+            }
+
+            Navigator.pop(
+              context,
+              _PowerliftingMaxes(
+                squat1rm: squat,
+                bench1rm: bench,
+                deadlift1rm: deadlift,
+                meetDate: meetDate,
+              ),
+            );
+          },
+          child: Text(l10n.createPlan),
+        ),
+      ],
+    );
   }
 }
+
+
 
 class _TemplateCategorySection extends StatelessWidget {
   final CustomTrainingCategory category;
@@ -1151,12 +1382,13 @@ class _TemplateCategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
         Text(
-          _categoryLabel(category),
+          _categoryLabel(context, category),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
@@ -1170,7 +1402,38 @@ class _TemplateCategorySection extends StatelessWidget {
     );
   }
 }
+String _categoryLabel(
+  BuildContext context,
+  CustomTrainingCategory category,
+) {
+  final l10n = AppLocalizations.of(context)!;
 
+  switch (category) {
+    case CustomTrainingCategory.strength:
+      return l10n.strengthTrainings;
+
+    case CustomTrainingCategory.bulk:
+      return l10n.bulk;
+
+    case CustomTrainingCategory.cut:
+      return l10n.cut;
+
+    case CustomTrainingCategory.recomp:
+      return l10n.recomp;
+
+    case CustomTrainingCategory.conditioning:
+      return l10n.conditioning;
+
+    case CustomTrainingCategory.powerlifting:
+      return l10n.powerlifting;
+
+    case CustomTrainingCategory.bodybuilding:
+      return l10n.bodybuilding;
+
+    case CustomTrainingCategory.custom:
+      return l10n.other;
+  }
+}
 class _PlanCategorySection extends StatelessWidget {
   final CustomTrainingCategory category;
   final List<CustomTrainingPlan> plans;
@@ -1182,12 +1445,13 @@ class _PlanCategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
         Text(
-          _categoryLabel(category),
+          _categoryLabel(context, category),
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
@@ -1208,33 +1472,33 @@ class _SharedTemplateCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
+
         title: Text(
           template.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
+
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            '${template.description ?? 'Bez popisu'}\nPočet dnů: ${template.days.length}',
+            '${template.description ?? l10n.noDescription}\n'
+            '${l10n.daysCount}: ${template.days.length}',
           ),
         ),
+
         isThreeLine: true,
+
         trailing: Wrap(
           spacing: 8,
           children: [
-            IconButton(
-              tooltip: 'Smazat šablonu',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () async {
-                await ref
-                    .read(sharedTrainingTemplatesProvider.notifier)
-                    .deleteTemplate(template.id);
-              },
-            ),
             FilledButton(
               onPressed: () async {
                 await ref
@@ -1246,15 +1510,16 @@ class _SharedTemplateCard extends ConsumerWidget {
                     );
 
                 if (!context.mounted) return;
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Šablona "${template.name}" byla vložena ke klientovi.',
+                      l10n.templateInserted(template.name),
                     ),
                   ),
                 );
               },
-              child: const Text('Vložit'),
+              child: Text(l10n.insert),
             ),
           ],
         ),
@@ -1266,13 +1531,17 @@ class _SharedTemplateCard extends ConsumerWidget {
 class _PlanCard extends ConsumerWidget {
   final CustomTrainingPlan plan;
 
-  const _PlanCard({required this.plan});
+  const _PlanCard({
+    required this.plan,
+  });
 
   Future<void> _activateAndOpen(
     BuildContext context,
     WidgetRef ref,
   ) async {
-    await ref.read(customTrainingPlanProvider.notifier).setActivePlan(
+    await ref
+        .read(customTrainingPlanProvider.notifier)
+        .setActivePlan(
           clientId: plan.clientId,
           planId: plan.id,
         );
@@ -1293,36 +1562,50 @@ class _PlanCard extends ConsumerWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => _PlanDetailScreen(planId: plan.id),
+        builder: (_) => _PlanDetailScreen(
+          planId: plan.id,
+        ),
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
+
         title: Row(
           children: [
             Expanded(
               child: Text(
                 plan.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
+
             if (plan.isActive)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.shade100,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius:
+                      BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'Aktivní',
-                  style: TextStyle(
+                child: Text(
+                  l10n.active,
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
@@ -1331,29 +1614,41 @@ class _PlanCard extends ConsumerWidget {
               ),
           ],
         ),
+
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            '${plan.description ?? 'Bez popisu'}\nPočet dnů: ${plan.days.length}',
+            '${plan.description ?? l10n.noDescription}\n'
+            '${l10n.daysCount}: ${plan.days.length}',
           ),
         ),
+
         isThreeLine: true,
+
         onTap: () => _openPlanDetail(context),
+
         trailing: Wrap(
           spacing: 8,
           children: [
             FilledButton(
-              onPressed: () => _activateAndOpen(context, ref),
-              child: const Text('Otevřít'),
+              onPressed: () =>
+                  _activateAndOpen(context, ref),
+              child: Text(l10n.open),
             ),
+
             OutlinedButton(
               onPressed: () {
-                ref.read(customTrainingPlanProvider.notifier).setActivePlan(
+                ref
+                    .read(
+                      customTrainingPlanProvider
+                          .notifier,
+                    )
+                    .setActivePlan(
                       clientId: plan.clientId,
                       planId: plan.id,
                     );
               },
-              child: const Text('Aktivovat'),
+              child: Text(l10n.activate),
             ),
           ],
         ),
@@ -1371,9 +1666,12 @@ class _PlanDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final allPlans = ref.watch(customTrainingPlanProvider);
 
     CustomTrainingPlan? plan;
+
     for (final p in allPlans) {
       if (p.id == planId) {
         plan = p;
@@ -1383,9 +1681,11 @@ class _PlanDetailScreen extends ConsumerWidget {
 
     if (plan == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Detail plánu')),
-        body: const Center(
-          child: Text('Plán nebyl nalezen.'),
+        appBar: AppBar(
+          title: Text(l10n.planDetail),
+        ),
+        body: Center(
+          child: Text(l10n.planNotFound),
         ),
       );
     }
@@ -1401,19 +1701,23 @@ class _PlanDetailScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Kategorie: ${_categoryLabel(plan.category)}\n'
-                'Popis: ${plan.description ?? 'Bez popisu'}\n'
-                'Počet dnů: ${plan.days.length}',
+                '${l10n.category}: ${_categoryLabel(context, plan.category)}\n'
+                '${l10n.description}: ${plan.description ?? l10n.noDescription}\n'
+                '${l10n.numberOfDays}: ${plan.days.length}',
               ),
             ),
           ),
+
           const SizedBox(height: 12),
+
           Row(
             children: [
               Expanded(
                 child: FilledButton.icon(
                   onPressed: () async {
-                    await ref.read(customTrainingPlanProvider.notifier).setActivePlan(
+                    await ref
+                        .read(customTrainingPlanProvider.notifier)
+                        .setActivePlan(
                           clientId: plan!.clientId,
                           planId: plan.id,
                         );
@@ -1423,24 +1727,30 @@ class _PlanDetailScreen extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const TrainingPlanScreen(),
+                        builder: (_) =>
+                            const TrainingPlanScreen(),
                       ),
                     );
                   },
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Aktivovat a otevřít'),
+                  label: Text(l10n.activateAndOpen),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 8),
+
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () async {
                     await ref
-                        .read(sharedTrainingTemplatesProvider.notifier)
+                        .read(
+                          sharedTrainingTemplatesProvider
+                              .notifier,
+                        )
                         .addTemplateFromPlan(plan!);
 
                     if (!context.mounted) return;
@@ -1448,43 +1758,57 @@ class _PlanDetailScreen extends ConsumerWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'Plán "${plan.name}" byl uložen jako sdílená šablona.',
-                        ),
+                          l10n.planSavedAsTemplate(plan.name),
+                        )
                       ),
                     );
                   },
                   icon: const Icon(Icons.share),
-                  label: const Text('Sdílet jako šablonu'),
+                  label: Text(l10n.shareAsTemplate),
                 ),
               ),
+
               const SizedBox(width: 8),
+
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _editPlanMetaDialog(context, ref, plan!),
+                  onPressed: () => _editPlanMetaDialog(
+                    context,
+                    ref,
+                    plan!,
+                  ),
                   icon: const Icon(Icons.edit),
-                  label: const Text('Upravit info'),
+                  label: Text(l10n.editInfo),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 8),
+
           Row(
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _addDayDialog(context, ref, plan!),
+                  onPressed: () => _addDayDialog(
+                    context,
+                    ref,
+                    plan!,
+                  ),
                   icon: const Icon(Icons.add),
-                  label: const Text('Přidat den'),
+                  label: Text(l10n.addDay),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 12),
+
           if (plan.days.isEmpty)
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Tento plán zatím nemá žádné dny.'),
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.planHasNoDays),
               ),
             )
           else
@@ -1495,11 +1819,17 @@ class _PlanDetailScreen extends ConsumerWidget {
                 dayIndex: dayIndex,
               ),
             ),
+
           const SizedBox(height: 12),
+
           OutlinedButton.icon(
-            onPressed: () => _confirmDeletePlan(context, ref, plan!),
+            onPressed: () => _confirmDeletePlan(
+              context,
+              ref,
+              plan!,
+            ),
             icon: const Icon(Icons.delete_outline),
-            label: const Text('Smazat celý plán'),
+            label: Text(l10n.deleteWholePlan),
           ),
         ],
       ),
@@ -1511,53 +1841,70 @@ class _PlanDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     CustomTrainingPlan plan,
   ) async {
-    final nameCtrl = TextEditingController(text: plan.name);
-    final descriptionCtrl = TextEditingController(text: plan.description ?? '');
-    CustomTrainingCategory selectedCategory = plan.category;
+    final l10n = AppLocalizations.of(context)!;
+
+    final nameCtrl = TextEditingController(
+      text: plan.name,
+    );
+
+    final descriptionCtrl = TextEditingController(
+      text: plan.description ?? '',
+    );
+
+    CustomTrainingCategory selectedCategory =
+        plan.category;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Upravit plán'),
+          title: Text(l10n.editPlan),
           content: SingleChildScrollView(
             child: Column(
               children: [
                 DropdownButtonFormField<CustomTrainingCategory>(
                   initialValue: selectedCategory,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Kategorie',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: l10n.category,
                   ),
-                  items: CustomTrainingCategory.values.map((category) {
+                  items: CustomTrainingCategory.values
+                      .map((category) {
                     return DropdownMenuItem(
                       value: category,
-                      child: Text(_categoryLabel(category)),
+                      child: Text(
+                        _categoryLabel(context, category)
+                      ),
                     );
                   }).toList(),
                   onChanged: (value) {
                     if (value == null) return;
+
                     setState(() {
                       selectedCategory = value;
                     });
                   },
                 ),
+
                 const SizedBox(height: 12),
+
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Název plánu',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: l10n.planName,
                   ),
                 ),
+
                 const SizedBox(height: 12),
+
                 TextField(
                   controller: descriptionCtrl,
                   minLines: 2,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Popis',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    labelText: l10n.description,
                   ),
                 ),
               ],
@@ -1565,12 +1912,14 @@ class _PlanDetailScreen extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Zrušit'),
+              onPressed: () =>
+                  Navigator.pop(dialogContext, false),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Uložit'),
+              onPressed: () =>
+                  Navigator.pop(dialogContext, true),
+              child: Text(l10n.save),
             ),
           ],
         ),
@@ -1578,113 +1927,128 @@ class _PlanDetailScreen extends ConsumerWidget {
     );
 
     if (ok == true && nameCtrl.text.trim().isNotEmpty) {
-      await ref.read(customTrainingPlanProvider.notifier).updatePlanMeta(
+      await ref
+          .read(customTrainingPlanProvider.notifier)
+          .updatePlanMeta(
             planId: plan.id,
             name: nameCtrl.text.trim(),
-            description: descriptionCtrl.text.trim().isEmpty
-                ? null
-                : descriptionCtrl.text.trim(),
+            description:
+                descriptionCtrl.text.trim().isEmpty
+                    ? null
+                    : descriptionCtrl.text.trim(),
             category: selectedCategory,
           );
     }
   }
+}
 
   Future<void> _confirmDeletePlan(
-    BuildContext context,
-    WidgetRef ref,
-    CustomTrainingPlan plan,
-  ) async {
-    final first = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Opravdu odstranit plán?'),
-        content: Text('Chceš odstranit plán „${plan.name}“?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Ne'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Ano'),
-          ),
-        ],
-      ),
-    );
+  BuildContext context,
+  WidgetRef ref,
+  CustomTrainingPlan plan,
+) async {
+  final l10n = AppLocalizations.of(context)!;
 
-    if (first != true) return;
+  final first = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.reallyDeletePlan),
+      content: Text(
+        l10n.confirmDeletePlan(plan.name),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: Text(l10n.no),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(l10n.yes),
+        ),
+      ],
+    ),
+  );
+
+  if (first != true) return;
+  if (!context.mounted) return;
+
+  final second = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.confirmDeletion),
+      content: Text(
+        l10n.deletePlanWarning,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: Text(l10n.back),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+          ),
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(l10n.deleteForever),
+        ),
+      ],
+    ),
+  );
+
+  if (second == true) {
+    await ref
+        .read(customTrainingPlanProvider.notifier)
+        .deletePlan(plan.id);
+
     if (!context.mounted) return;
 
-    final second = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Vážně odstranit?'),
-        content: const Text(
-          'Tato akce smaže celý plán včetně všech dnů a cviků. '
-          'Tuhle změnu nepůjde vrátit.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Zpět'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Definitivně smazat'),
-          ),
-        ],
-      ),
-    );
-
-    if (second == true) {
-      await ref.read(customTrainingPlanProvider.notifier).deletePlan(plan.id);
-
-      if (!context.mounted) return;
-      Navigator.pop(context);
-    }
-  }
-
-  Future<void> _addDayDialog(
-    BuildContext context,
-    WidgetRef ref,
-    CustomTrainingPlan plan,
-  ) async {
-    final ctrl = TextEditingController();
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Přidat tréninkový den'),
-        content: TextField(
-          controller: ctrl,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: 'Název dne',
-            hintText: 'Např. Hrudník + triceps',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Zrušit'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Přidat'),
-          ),
-        ],
-      ),
-    );
-
-    if (ok == true && ctrl.text.trim().isNotEmpty) {
-      await ref.read(customTrainingPlanProvider.notifier).addDay(
-            planId: plan.id,
-            dayName: ctrl.text.trim(),
-          );
-    }
+    Navigator.pop(context);
   }
 }
+
+Future<void> _addDayDialog(
+  BuildContext context,
+  WidgetRef ref,
+  CustomTrainingPlan plan,
+) async {
+  final l10n = AppLocalizations.of(context)!;
+  final ctrl = TextEditingController();
+
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.addTrainingDay),
+      content: TextField(
+        controller: ctrl,
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          labelText: l10n.dayName,
+          hintText: l10n.dayNameHint,
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: Text(l10n.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(l10n.add),
+        ),
+      ],
+    ),
+  );
+
+  if (ok == true && ctrl.text.trim().isNotEmpty) {
+    await ref
+        .read(customTrainingPlanProvider.notifier)
+        .addDay(
+          planId: plan.id,
+          dayName: ctrl.text.trim(),
+        );
+  }
+}
+
 
 class _DayCard extends ConsumerWidget {
   final CustomTrainingPlan plan;
@@ -1697,6 +2061,7 @@ class _DayCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final day = plan.days[dayIndex];
 
     return Card(
@@ -1704,7 +2069,9 @@ class _DayCard extends ConsumerWidget {
       elevation: 0,
       child: ExpansionTile(
         title: Text(day.name),
-        subtitle: Text('Cviků: ${day.exercises.length}'),
+        subtitle: Text(
+          '${l10n.exercises}: ${day.exercises.length}',
+        ),
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         children: [
           Row(
@@ -1718,56 +2085,48 @@ class _DayCard extends ConsumerWidget {
                     dayIndex,
                   ),
                   icon: const Icon(Icons.add),
-                  label: const Text('Přidat cvik'),
+                  label: Text(l10n.addExercise),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => _confirmDeleteDay(context, ref),
+                  onPressed: () =>
+                      _confirmDeleteDay(context, ref),
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('Smazat den'),
+                  label: Text(l10n.deleteDay),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          if (day.exercises.isEmpty)
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Zatím bez cviků.'),
-            )
-          else
-            Column(
-              children: [
-                for (int i = 0; i < day.exercises.length; i++)
-                  _ExerciseTile(
-                    planId: plan.id,
-                    dayIndex: dayIndex,
-                    exerciseIndex: i,
-                    exercise: day.exercises[i],
-                  ),
-              ],
-            ),
         ],
       ),
     );
   }
 
-  Future<void> _confirmDeleteDay(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmDeleteDay(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final first = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Opravdu odstranit den?'),
-        content: Text('Chceš smazat den „${plan.days[dayIndex].name}“?'),
-        actions: [
+        title: Text(l10n.reallyDeleteDay),
+        content: Text(
+          l10n.confirmDeleteDay(plan.days[dayIndex].name),
+        ),
+                actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Ne'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, false),
+            child: Text(l10n.no),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Ano'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, true),
+            child: Text(l10n.yes),
           ),
         ],
       ),
@@ -1779,254 +2138,315 @@ class _DayCard extends ConsumerWidget {
     final second = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Vážně odstranit den?'),
-        content: const Text(
-          'Smažou se i všechny cviky v tomto dni. '
-          'Tuhle změnu nepůjde vrátit.',
+        title: Text(l10n.confirmDeletion),
+        content: Text(
+          l10n.deleteDayWarning,
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Zpět'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, false),
+            child: Text(l10n.back),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Definitivně smazat'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () =>
+                Navigator.pop(dialogContext, true),
+            child: Text(l10n.deleteForever),
           ),
         ],
       ),
     );
 
     if (second == true) {
-      await ref.read(customTrainingPlanProvider.notifier).removeDay(
+      await ref
+          .read(customTrainingPlanProvider.notifier)
+          .removeDay(
             planId: plan.id,
             dayIndex: dayIndex,
           );
     }
   }
-
   Future<void> _showAddExerciseOptions(
-    BuildContext context,
-    WidgetRef ref,
-    String planId,
-    int dayIndex,
-  ) async {
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Wrap(
+  BuildContext context,
+  WidgetRef ref,
+  String planId,
+  int dayIndex,
+) async {
+  final l10n = AppLocalizations.of(context)!;
+
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    builder: (sheetContext) => SafeArea(
+      child: Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.fitness_center),
+            title: Text(l10n.selectFromExerciseDatabase),
+            onTap: () => Navigator.pop(sheetContext, 'db'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit_note),
+            title: Text(l10n.enterCustomExerciseManually),
+            onTap: () => Navigator.pop(sheetContext, 'custom'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (!context.mounted) return;
+
+  if (choice == 'db') {
+    await _addExerciseFromDatabaseDialog(
+      context,
+      ref,
+      planId,
+      dayIndex,
+    );
+  } else if (choice == 'custom') {
+    await _addCustomExerciseDialog(
+      context,
+      ref,
+      planId,
+      dayIndex,
+    );
+  }
+}
+
+Future<void> _addExerciseFromDatabaseDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String planId,
+  int dayIndex,
+) async {
+  final l10n = AppLocalizations.of(context)!;
+
+  final Exercise? selected =
+      await Navigator.push<Exercise>(
+    context,
+    MaterialPageRoute(
+      builder: (_) =>
+          const _ExerciseDatabasePickerScreen(),
+    ),
+  );
+
+  if (selected == null) return;
+  if (!context.mounted) return;
+
+  final setsCtrl = TextEditingController(text: '3');
+  final repsCtrl = TextEditingController(text: '8–12');
+  final rirCtrl = TextEditingController(text: '2');
+  final noteCtrl = TextEditingController();
+
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(selected.displayName),
+      content: SingleChildScrollView(
+        child: Column(
           children: [
-            ListTile(
-              leading: const Icon(Icons.fitness_center),
-              title: const Text('Vybrat z databáze cviků'),
-              onTap: () => Navigator.pop(sheetContext, 'db'),
+            TextField(
+              controller: setsCtrl,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.sets,
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.edit_note),
-              title: const Text('Zadat vlastní cvik ručně'),
-              onTap: () => Navigator.pop(sheetContext, 'custom'),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: repsCtrl,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.repsOrTime,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: rirCtrl,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: l10n.rir
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: noteCtrl,
+              maxLines: 2,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.note,
+              ),
             ),
           ],
         ),
       ),
-    );
-
-    if (!context.mounted) return;
-
-    if (choice == 'db') {
-      await _addExerciseFromDatabaseDialog(context, ref, planId, dayIndex);
-    } else if (choice == 'custom') {
-      await _addCustomExerciseDialog(context, ref, planId, dayIndex);
-    }
-  }
-
-  Future<void> _addExerciseFromDatabaseDialog(
-    BuildContext context,
-    WidgetRef ref,
-    String planId,
-    int dayIndex,
-  ) async {
-    final Exercise? selected = await Navigator.push<Exercise>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const _ExerciseDatabasePickerScreen(),
-      ),
-    );
-
-    if (selected == null) return;
-    if (!context.mounted) return;
-
-    final setsCtrl = TextEditingController(text: '3');
-    final repsCtrl = TextEditingController(text: '8–12');
-    final rirCtrl = TextEditingController(text: '2');
-    final noteCtrl = TextEditingController();
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(selected.displayName),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: setsCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Série',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: repsCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Opakování / čas',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: rirCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'RIR',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: noteCtrl,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Poznámka',
-                ),
-              ),
-            ],
-          ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(dialogContext, false),
+          child: Text(l10n.cancel),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Zrušit'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Přidat'),
-          ),
-        ],
-      ),
-    );
-
-    if (ok == true) {
-      await ref.read(customTrainingPlanProvider.notifier).addExerciseToDay(
-            planId: planId,
-            dayIndex: dayIndex,
-            exercise: CustomTrainingExercise(
-              exerciseId: selected.id,
-              customName: selected.displayName,
-              sets: setsCtrl.text.trim().isEmpty ? '3' : setsCtrl.text.trim(),
-              reps: repsCtrl.text.trim().isEmpty ? '8–12' : repsCtrl.text.trim(),
-              rir: rirCtrl.text.trim().isEmpty ? '2' : rirCtrl.text.trim(),
-              note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
-            ),
-          );
-    }
-  }
-
-  Future<void> _addCustomExerciseDialog(
-    BuildContext context,
-    WidgetRef ref,
-    String planId,
-    int dayIndex,
-  ) async {
-    final nameCtrl = TextEditingController();
-    final setsCtrl = TextEditingController(text: '3');
-    final repsCtrl = TextEditingController(text: '8–12');
-    final rirCtrl = TextEditingController(text: '2');
-    final noteCtrl = TextEditingController();
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Přidat vlastní cvik'),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Název cviku',
-                  hintText: 'Např. Plank na boku',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: setsCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Série',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: repsCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Opakování / čas',
-                  hintText: 'Např. 3 min nebo 8–12',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: rirCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'RIR',
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: noteCtrl,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Poznámka',
-                ),
-              ),
-            ],
-          ),
+        ElevatedButton(
+          onPressed: () =>
+              Navigator.pop(dialogContext, true),
+          child: Text(l10n.add),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Zrušit'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Přidat'),
-          ),
-        ],
-      ),
-    );
+      ],
+    ),
+  );
 
-    if (ok == true && nameCtrl.text.trim().isNotEmpty) {
-      await ref.read(customTrainingPlanProvider.notifier).addExerciseToDay(
-            planId: planId,
-            dayIndex: dayIndex,
-            exercise: CustomTrainingExercise(
-              exerciseId: null,
-              customName: nameCtrl.text.trim(),
-              sets: setsCtrl.text.trim().isEmpty ? '3' : setsCtrl.text.trim(),
-              reps: repsCtrl.text.trim().isEmpty ? '8–12' : repsCtrl.text.trim(),
-              rir: rirCtrl.text.trim().isEmpty ? '2' : rirCtrl.text.trim(),
-              note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
-            ),
-          );
-    }
+  if (ok == true) {
+    await ref
+        .read(customTrainingPlanProvider.notifier)
+        .addExerciseToDay(
+          planId: planId,
+          dayIndex: dayIndex,
+          exercise: CustomTrainingExercise(
+            exerciseId: selected.id,
+            customName: selected.displayName,
+            sets: setsCtrl.text.trim().isEmpty
+                ? '3'
+                : setsCtrl.text.trim(),
+            reps: repsCtrl.text.trim().isEmpty
+                ? '8–12'
+                : repsCtrl.text.trim(),
+            rir: rirCtrl.text.trim().isEmpty
+                ? '2'
+                : rirCtrl.text.trim(),
+            note: noteCtrl.text.trim().isEmpty
+                ? null
+                : noteCtrl.text.trim(),
+          ),
+        );
   }
 }
 
+Future<void> _addCustomExerciseDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String planId,
+  int dayIndex,
+) async {
+  final l10n = AppLocalizations.of(context)!;
+
+  final nameCtrl = TextEditingController();
+  final setsCtrl = TextEditingController(text: '3');
+  final repsCtrl = TextEditingController(text: '8–12');
+  final rirCtrl = TextEditingController(text: '2');
+  final noteCtrl = TextEditingController();
+
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.addCustomExercise),
+      content: SingleChildScrollView(
+        child: Column(
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.exerciseName,
+                hintText: l10n.exerciseNameHint,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: setsCtrl,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.sets,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: repsCtrl,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.repsOrTime,
+                hintText: l10n.repsOrTimeHint,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: rirCtrl,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.rir
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: noteCtrl,
+              maxLines: 2,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: l10n.note,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(dialogContext, false),
+          child: Text(l10n.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () =>
+              Navigator.pop(dialogContext, true),
+          child: Text(l10n.add),
+        ),
+      ],
+    ),
+  );
+
+  if (ok == true &&
+      nameCtrl.text.trim().isNotEmpty) {
+    await ref
+        .read(customTrainingPlanProvider.notifier)
+        .addExerciseToDay(
+          planId: planId,
+          dayIndex: dayIndex,
+          exercise: CustomTrainingExercise(
+            exerciseId: null,
+            customName: nameCtrl.text.trim(),
+            sets: setsCtrl.text.trim().isEmpty
+                ? '3'
+                : setsCtrl.text.trim(),
+            reps: repsCtrl.text.trim().isEmpty
+                ? '8–12'
+                : repsCtrl.text.trim(),
+            rir: rirCtrl.text.trim().isEmpty
+                ? '2'
+                : rirCtrl.text.trim(),
+            note: noteCtrl.text.trim().isEmpty
+                ? null
+                : noteCtrl.text.trim(),
+          ),
+        );
+  }
+}
+}
+// ignore: unused_element
 class _ExerciseTile extends ConsumerWidget {
   final String planId;
   final int dayIndex;
@@ -2052,10 +2472,16 @@ class _ExerciseTile extends ConsumerWidget {
           ' | RIR ${exercise.rir}'
           '${exercise.note != null ? '\n${exercise.note}' : ''}',
         ),
-        onTap: () => _editExerciseDialog(context, ref),
+        onTap: () => _editExerciseDialog(
+          context,
+          ref,
+        ),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
-          onPressed: () => _confirmDeleteExercise(context, ref),
+          onPressed: () => _confirmDeleteExercise(
+            context,
+            ref,
+          ),
         ),
       ),
     );
@@ -2065,27 +2491,37 @@ class _ExerciseTile extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Odstranit cvik?'),
-        content: Text('Chceš odstranit cvik „${exercise.customName}“?'),
+        title: Text(l10n.deleteExerciseQuestion),
+        content: Text(
+          l10n.confirmDeleteExercise(exercise.customName),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Ne'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, false),
+            child: Text(l10n.no),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Ano, smazat'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () =>
+                Navigator.pop(dialogContext, true),
+            child: Text(l10n.yesDelete),
           ),
         ],
       ),
     );
 
     if (ok == true) {
-      await ref.read(customTrainingPlanProvider.notifier).removeExerciseFromDay(
+      await ref
+          .read(customTrainingPlanProvider.notifier)
+          .removeExerciseFromDay(
             planId: planId,
             dayIndex: dayIndex,
             exerciseIndex: exerciseIndex,
@@ -2097,57 +2533,81 @@ class _ExerciseTile extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final nameCtrl = TextEditingController(text: exercise.customName);
-    final setsCtrl = TextEditingController(text: exercise.sets);
-    final repsCtrl = TextEditingController(text: exercise.reps);
-    final rirCtrl = TextEditingController(text: exercise.rir);
-    final noteCtrl = TextEditingController(text: exercise.note ?? '');
+    final l10n = AppLocalizations.of(context)!;
+
+    final nameCtrl = TextEditingController(
+      text: exercise.customName,
+    );
+
+    final setsCtrl = TextEditingController(
+      text: exercise.sets,
+    );
+
+    final repsCtrl = TextEditingController(
+      text: exercise.reps,
+    );
+
+    final rirCtrl = TextEditingController(
+      text: exercise.rir,
+    );
+
+    final noteCtrl = TextEditingController(
+      text: exercise.note ?? '',
+    );
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Upravit cvik'),
+        title: Text(l10n.editExercise),
         content: SingleChildScrollView(
           child: Column(
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Název cviku',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: l10n.exerciseName,
                 ),
               ),
+
               const SizedBox(height: 10),
+
               TextField(
                 controller: setsCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Série',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: l10n.sets,
                 ),
               ),
+
               const SizedBox(height: 10),
+
               TextField(
                 controller: repsCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Opakování / čas',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: l10n.repsOrTime,
                 ),
               ),
+
               const SizedBox(height: 10),
+
               TextField(
                 controller: rirCtrl,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'RIR',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: l10n.rir
                 ),
               ),
+
               const SizedBox(height: 10),
+
               TextField(
                 controller: noteCtrl,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Poznámka',
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: l10n.note,
                 ),
               ),
             ],
@@ -2155,42 +2615,57 @@ class _ExerciseTile extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Zrušit'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Uložit'),
+            onPressed: () =>
+                Navigator.pop(dialogContext, true),
+            child: Text(l10n.save),
           ),
         ],
       ),
     );
 
-    if (ok == true && nameCtrl.text.trim().isNotEmpty) {
-      await ref.read(customTrainingPlanProvider.notifier).updateExerciseInDay(
+    if (ok == true &&
+        nameCtrl.text.trim().isNotEmpty) {
+      await ref
+          .read(customTrainingPlanProvider.notifier)
+          .updateExerciseInDay(
             planId: planId,
             dayIndex: dayIndex,
             exerciseIndex: exerciseIndex,
             exercise: CustomTrainingExercise(
               exerciseId: exercise.exerciseId,
               customName: nameCtrl.text.trim(),
-              sets: setsCtrl.text.trim().isEmpty ? '3' : setsCtrl.text.trim(),
-              reps: repsCtrl.text.trim().isEmpty ? '8–12' : repsCtrl.text.trim(),
-              rir: rirCtrl.text.trim().isEmpty ? '2' : rirCtrl.text.trim(),
+              sets: setsCtrl.text.trim().isEmpty
+                  ? '3'
+                  : setsCtrl.text.trim(),
+              reps: repsCtrl.text.trim().isEmpty
+                  ? '8–12'
+                  : repsCtrl.text.trim(),
+              rir: rirCtrl.text.trim().isEmpty
+                  ? '2'
+                  : rirCtrl.text.trim(),
               weightKg: exercise.weightKg,
-              note: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
+              note: noteCtrl.text.trim().isEmpty
+                  ? null
+                  : noteCtrl.text.trim(),
             ),
           );
     }
   }
 }
 
-class _ExerciseDatabasePickerScreen extends StatefulWidget {
+class _ExerciseDatabasePickerScreen
+    extends StatefulWidget {
   const _ExerciseDatabasePickerScreen();
 
   @override
-  State<_ExerciseDatabasePickerScreen> createState() =>
-      _ExerciseDatabasePickerScreenState();
+  State<_ExerciseDatabasePickerScreen>
+      createState() =>
+          _ExerciseDatabasePickerScreenState();
 }
 
 class _ExerciseDatabasePickerScreenState
@@ -2199,287 +2674,76 @@ class _ExerciseDatabasePickerScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final filtered = ExerciseDB.all.where((e) {
       if (_query.trim().isEmpty) return true;
+
       final q = _query.trim().toLowerCase();
+
       return e.name.toLowerCase().contains(q) ||
           e.displayName.toLowerCase().contains(q) ||
-          (e.czName?.toLowerCase().contains(q) ?? false);
+          (e.czName?.toLowerCase().contains(q) ??
+              false);
     }).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vyber cvik z databáze'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: TextField(
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Hledat cvik',
-              ),
-              onChanged: (v) => setState(() => _query = v),
-            ),
+   return Scaffold(
+  appBar: AppBar(
+    title: Text(
+      l10n.selectExerciseFromDatabase,
+    ),
+  ),
+  body: Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(
+          12,
+          12,
+          12,
+          8,
+        ),
+        child: TextField(
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: l10n.searchExercise,
           ),
-          Expanded(
-            child: filtered.isEmpty
-                ? const Center(
-                    child: Text('Nenalezen žádný cvik.'),
-                  )
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (_, index) {
-                      final ex = filtered[index];
-                      return Card(
-                        child: ListTile(
-                          title: Text(ex.displayName),
-                          subtitle: Text(
-                            'Anglicky: ${ex.name}\nVybavení: ${ex.equipment.join(', ')}',
-                          ),
-                          onTap: () => Navigator.pop(context, ex),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+          onChanged: (v) {
+            setState(() {
+              _query = v;
+            });
+          },
+        ),
       ),
-    );
-  }
-}
 
-class _PowerWeekConfig {
-  final int week;
-  final String phaseLabel;
-  final double squatPct;
-  final double benchPct;
-  final double deadliftPct;
-  final double? topSinglePct;
-  final String squatSets;
-  final String squatReps;
-  final String benchHeavySets;
-  final String benchHeavyReps;
-  final String deadliftSets;
-  final String deadliftReps;
-
-  const _PowerWeekConfig({
-    required this.week,
-    required this.phaseLabel,
-    required this.squatPct,
-    required this.benchPct,
-    required this.deadliftPct,
-    this.topSinglePct,
-    required this.squatSets,
-    required this.squatReps,
-    required this.benchHeavySets,
-    required this.benchHeavyReps,
-    required this.deadliftSets,
-    required this.deadliftReps,
-  });
-}
-
-class _PowerliftingMaxes {
-  final double squat1rm;
-  final double bench1rm;
-  final double deadlift1rm;
-  final DateTime meetDate;
-
-  const _PowerliftingMaxes({
-    required this.squat1rm,
-    required this.bench1rm,
-    required this.deadlift1rm,
-    required this.meetDate,
-  });
-}
-
-class _PowerliftingMaxesDialog extends StatefulWidget {
-  const _PowerliftingMaxesDialog();
-
-  @override
-  State<_PowerliftingMaxesDialog> createState() =>
-      _PowerliftingMaxesDialogState();
-}
-
-class _PowerliftingMaxesDialogState extends State<_PowerliftingMaxesDialog> {
-  final _squatCtrl = TextEditingController();
-  final _benchCtrl = TextEditingController();
-  final _deadliftCtrl = TextEditingController();
-
-  DateTime? _meetDate;
-
-  @override
-  void dispose() {
-    _squatCtrl.dispose();
-    _benchCtrl.dispose();
-    _deadliftCtrl.dispose();
-    super.dispose();
-  }
-
-  double? _parse(String value) {
-    return double.tryParse(value.trim().replaceAll(',', '.'));
-  }
-
-  String _fmtDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.'
-        '${date.month.toString().padLeft(2, '0')}.'
-        '${date.year}';
-  }
-
-  Future<void> _pickMeetDate() async {
-    final now = DateTime.now();
-    final initialDate = _meetDate ?? now.add(const Duration(days: 84));
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 730)),
-      helpText: 'DATUM ZÁVODU',
-    );
-
-    if (picked == null) return;
-
-    setState(() {
-      _meetDate = picked;
-    });
-  }
-
-  void _submit() {
-    final squat = _parse(_squatCtrl.text);
-    final bench = _parse(_benchCtrl.text);
-    final deadlift = _parse(_deadliftCtrl.text);
-
-    if (squat == null || squat <= 0) {
-      _toast('Vyplň platný dřep 1RM.');
-      return;
-    }
-    if (bench == null || bench <= 0) {
-      _toast('Vyplň platný bench 1RM.');
-      return;
-    }
-    if (deadlift == null || deadlift <= 0) {
-      _toast('Vyplň platný mrtvý tah 1RM.');
-      return;
-    }
-    if (_meetDate == null) {
-      _toast('Vyber datum závodu.');
-      return;
-    }
-
-    Navigator.of(context).pop(
-      _PowerliftingMaxes(
-        squat1rm: squat,
-        bench1rm: bench,
-        deadlift1rm: deadlift,
-        meetDate: _meetDate!,
-      ),
-    );
-  }
-
-  void _toast(String text) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Maximálky pro trojboj'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _squatCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Dřep 1RM (kg)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _benchCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Bench press 1RM (kg)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _deadliftCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Mrtvý tah 1RM (kg)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: _pickMeetDate,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Datum závodu',
-                  border: OutlineInputBorder(),
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
+      Expanded(
+        child: filtered.isEmpty
+            ? Center(
                 child: Text(
-                  _meetDate == null
-                      ? 'Vybrat datum závodu'
-                      : _fmtDate(_meetDate!),
+                  l10n.noExerciseFound,
                 ),
-              ),
+              )
+            : ListView.builder(
+                itemCount: filtered.length,
+                itemBuilder: (_, index) {
+                  final ex = filtered[index];
+
+                  return Card(
+                    child: ListTile(
+                      title: Text(ex.displayName),
+                      subtitle: Text(
+                        'Anglicky: ${ex.name}\n'
+                        'Vybavení: ${ex.equipment.join(', ')}',
+                      ),
+                                     onTap: () => Navigator.pop(
+                      context,
+                      ex,
+                    ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(height: 12),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Bench používá training max = 90 %, dřep a mrtvý tah jedou z reálného 1RM. Zaokrouhlení je na 2.5 kg.',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Zrušit'),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Vložit plán'),
         ),
       ],
-    );
-  }
+    ),
+  );
 }
-
-String _categoryLabel(CustomTrainingCategory category) {
-  switch (category) {
-    case CustomTrainingCategory.strength:
-      return 'Silové tréninky';
-    case CustomTrainingCategory.bulk:
-      return 'Nabírací';
-    case CustomTrainingCategory.cut:
-      return 'Shazovací';
-    case CustomTrainingCategory.recomp:
-      return 'Rekompozice';
-    case CustomTrainingCategory.conditioning:
-      return 'Kondice';
-    case CustomTrainingCategory.powerlifting:
-      return 'Trojboj';
-    case CustomTrainingCategory.bodybuilding:
-      return 'Bodybuilding';
-    case CustomTrainingCategory.custom:
-      return 'Ostatní';
-  }
 }

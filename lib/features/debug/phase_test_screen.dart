@@ -7,6 +7,7 @@ import '../../core/phase/phase_planner_service.dart';
 import '../../core/phase/phase_resolver.dart';
 import '../../core/phase/plan_mode.dart';
 import '../../core/time/time_context.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/macro_service.dart';
 import '../../services/metabolism_service.dart';
@@ -16,12 +17,16 @@ class PhaseTestScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
-          child: Text('Není nastaven profil nebo cíl'),
+          child: Text(
+            l10n.profileOrGoalNotSet,
+          ),
         ),
       );
     }
@@ -48,7 +53,9 @@ class PhaseTestScreen extends ConsumerWidget {
     );
 
     final activeMode =
-        current.accelerated ? PlanMode.accelerated : PlanMode.normal;
+        current.accelerated
+            ? PlanMode.accelerated
+            : PlanMode.normal;
 
     final strategy = FoodStrategyAdapter.from(
       goal: goal,
@@ -56,83 +63,177 @@ class PhaseTestScreen extends ConsumerWidget {
       mode: activeMode,
     );
 
-    final macros = MacroService.calculate(profile, tdee);
+    final macros = MacroService.calculate(
+      profile,
+      tdee,
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('TEST LOGIKY FÁZÍ (CORE)'),
+        title: Text(
+          l10n.phaseLogicCoreTest,
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            _title('ZDROJ DAT'),
-            _row('Aktuální váha', '${profile.weight} kg'),
-            _row('TDEE', '${tdee.round()} kcal'),
-            const SizedBox(height: 16),
+            _title(l10n.dataSource),
 
-            _title('CÍL'),
-            _row('Typ', goal.type.toString().split('.').last),
-            _row('Důvod', goal.reason.toString().split('.').last),
-            _row('Datum cíle', _d(goal.targetDate)),
-            _row('Týdnů do cíle (ctx)', '${ctx.weeksToTarget}'),
-            const SizedBox(height: 16),
-
-            _title('AKTUÁLNÍ VYHODNOCENÍ'),
-            _row('Aktuální fáze', current.phase.name),
-            _row('Fáze label', _phaseLabel(current.phase.name)),
-            _row('Režim', activeMode.name),
-            _row('Aktivní segment', _segmentText(current.activePlan)),
-            const SizedBox(height: 16),
-
-            _title('FOOD STRATEGY'),
-            _row('Strategie', strategy.label),
-            _row('Důvod', strategy.rationale),
             _row(
-              'Kcal multiplier',
-              strategy.calorieMultiplier.toStringAsFixed(2),
+              l10n.currentWeight,
+              '${profile.weight} kg',
             ),
+
             _row(
-              'Protein',
+              l10n.tdee,
+              '${tdee.round()} kcal',
+            ),
+
+            const SizedBox(height: 16),
+
+            _title(l10n.goal),
+
+            _row(
+              l10n.type,
+              goal.type.toString().split('.').last,
+            ),
+
+            _row(
+              l10n.reason,
+              goal.reason.toString().split('.').last,
+            ),
+
+            _row(
+              l10n.goalDate,
+              _d(goal.targetDate),
+            ),
+
+            _row(
+              l10n.weeksToGoal,
+              '${ctx.weeksToTarget}',
+            ),
+
+            const SizedBox(height: 16),
+
+            _title(l10n.currentEvaluation),
+
+            _row(
+              l10n.currentPhase,
+              current.phase.name,
+            ),
+
+            _row(
+              l10n.phaseLabel,
+              _phaseLabel(current.phase.name),
+            ),
+
+            _row(
+              l10n.mode,
+              activeMode.name,
+            ),
+
+            _row(
+              l10n.activeSegment,
+              _segmentText(current.activePlan),
+            ),
+
+            const SizedBox(height: 16),
+
+            _title(l10n.foodStrategy),
+
+            _row(
+              l10n.strategy,
+              strategy.labelKey,
+            ),
+
+            _row(
+              l10n.reason,
+              strategy.labelKey,
+            ),
+
+            _row(
+              l10n.calorieMultiplier,
+              strategy.calorieMultiplier
+                  .toStringAsFixed(2),
+            ),
+
+            _row(
+              l10n.protein,
               '${strategy.proteinGPerKg.toStringAsFixed(2)} g/kg',
             ),
+
             _row(
-              'Tuky',
+              l10n.fats,
               '${strategy.fatGPerKg.toStringAsFixed(2)} g/kg',
             ),
-            _row('High carbs', strategy.preferHighCarbs ? 'ANO' : 'NE'),
+
+            _row(
+              l10n.highCarbs,
+              strategy.preferHighCarbs
+                  ? l10n.yes
+                  : l10n.no,
+            ),
+
             const SizedBox(height: 16),
 
-            _title('PHASE PLAN (celý plán)'),
+            _title(l10n.phasePlan),
+
             ...plans.map(
               (plan) => Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       Text(
                         '${_phaseLabel(plan.phase.name)}${plan.accelerated ? ' (ACCEL)' : ''}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
                       ),
+
                       const SizedBox(height: 6),
-                      Text(_segmentText(plan)),
+
+                      Text(
+                        _segmentText(plan),
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
 
-            _title('VÝSLEDNÁ MAKRA'),
-            _row('Kalorie', '${macros.targetCalories}'),
-            _row('Protein', '${macros.protein} g'),
-            _row('Sacharidy', '${macros.carbs} g'),
-            _row('Tuky', '${macros.fat} g'),
+            _title(l10n.finalMacros),
+
+            _row(
+              l10n.calories,
+              '${macros.targetCalories}',
+            ),
+
+            _row(
+              l10n.protein,
+              '${macros.protein} g',
+            ),
+
+            _row(
+              l10n.carbs,
+              '${macros.carbs} g',
+            ),
+
+            _row(
+              l10n.fats,
+              '${macros.fat} g',
+            ),
+
             const SizedBox(height: 24),
 
             Text(
-              'Vše je řízené datem přes Core engine.',
+              l10n.coreEngineInfo,
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 12,
@@ -156,14 +257,19 @@ class PhaseTestScreen extends ConsumerWidget {
     switch (phaseName) {
       case 'build':
         return 'Build';
+
       case 'cut':
         return 'Cut';
+
       case 'peak':
         return 'Peak';
+
       case 'dietBreak':
         return 'Diet break';
+
       case 'maintain':
         return 'Maintain';
+
       default:
         return phaseName;
     }
@@ -171,7 +277,9 @@ class PhaseTestScreen extends ConsumerWidget {
 
   Widget _title(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(
+        bottom: 6,
+      ),
       child: Text(
         text,
         style: const TextStyle(
@@ -183,23 +291,34 @@ class PhaseTestScreen extends ConsumerWidget {
     );
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(
+    String label,
+    String value,
+  ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        vertical: 2,
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 140,
             child: Text(
               label,
-              style: const TextStyle(color: Colors.black54),
+              style: const TextStyle(
+                color: Colors.black54,
+              ),
             ),
           ),
+
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

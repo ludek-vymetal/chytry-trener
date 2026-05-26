@@ -1,25 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 import '../../../providers/coach/coach_clients_controller.dart';
 
-class AddClientScreen extends ConsumerStatefulWidget {
-  const AddClientScreen({super.key});
+class AddClientScreen
+    extends ConsumerStatefulWidget {
+  const AddClientScreen({
+    super.key,
+  });
 
   @override
-  ConsumerState<AddClientScreen> createState() => _AddClientScreenState();
+  ConsumerState<AddClientScreen>
+      createState() =>
+          _AddClientScreenState();
 }
 
-class _AddClientScreenState extends ConsumerState<AddClientScreen> {
-  final firstNameCtrl = TextEditingController();
-  final lastNameCtrl = TextEditingController();
-  final emailCtrl = TextEditingController();
-  final ageCtrl = TextEditingController();
-  final heightCtrl = TextEditingController();
-  final weightCtrl = TextEditingController();
+class _AddClientScreenState
+    extends ConsumerState<AddClientScreen> {
+  final firstNameCtrl =
+      TextEditingController();
+
+  final lastNameCtrl =
+      TextEditingController();
+
+  final emailCtrl =
+      TextEditingController();
+
+  final ageCtrl =
+      TextEditingController();
+
+  final heightCtrl =
+      TextEditingController();
+
+  final weightCtrl =
+      TextEditingController();
 
   String gender = 'male';
-  bool eatingDisorderSupport = false;
+
+  bool eatingDisorderSupport =
+      false;
+
   bool saving = false;
 
   @override
@@ -30,43 +52,100 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
     ageCtrl.dispose();
     heightCtrl.dispose();
     weightCtrl.dispose();
+
     super.dispose();
   }
 
   bool get _emailValid {
-    final email = emailCtrl.text.trim();
-    if (email.isEmpty) return true;
+    final email =
+        emailCtrl.text.trim();
 
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    return emailRegex.hasMatch(email);
+    if (email.isEmpty) {
+      return true;
+    }
+
+    final emailRegex = RegExp(
+      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+    );
+
+    return emailRegex.hasMatch(
+      email,
+    );
   }
 
   bool get valid {
-    return firstNameCtrl.text.trim().isNotEmpty &&
-        lastNameCtrl.text.trim().isNotEmpty &&
+    return firstNameCtrl.text
+            .trim()
+            .isNotEmpty &&
+        lastNameCtrl.text
+            .trim()
+            .isNotEmpty &&
         _emailValid &&
-        int.tryParse(ageCtrl.text.trim()) != null &&
-        int.tryParse(heightCtrl.text.trim()) != null &&
-        double.tryParse(weightCtrl.text.trim().replaceAll(',', '.')) != null;
+        int.tryParse(
+              ageCtrl.text.trim(),
+            ) !=
+            null &&
+        int.tryParse(
+              heightCtrl.text.trim(),
+            ) !=
+            null &&
+        double.tryParse(
+              weightCtrl.text
+                  .trim()
+                  .replaceAll(',', '.'),
+            ) !=
+            null;
   }
 
   Future<void> save() async {
+    final l10n =
+        AppLocalizations.of(context)!;
+
     if (!valid || saving) {
       return;
     }
 
-    setState(() => saving = true);
+    setState(() {
+      saving = true;
+    });
 
     try {
-      await ref.read(coachClientsControllerProvider.notifier).addClientManual(
-            firstName: firstNameCtrl.text.trim(),
-            lastName: lastNameCtrl.text.trim(),
-            email: emailCtrl.text.trim(),
+      await ref
+          .read(
+            coachClientsControllerProvider
+                .notifier,
+          )
+          .addClientManual(
+            firstName:
+                firstNameCtrl.text
+                    .trim(),
+
+            lastName:
+                lastNameCtrl.text
+                    .trim(),
+
+            email:
+                emailCtrl.text
+                    .trim(),
+
             gender: gender,
-            age: int.parse(ageCtrl.text.trim()),
-            heightCm: int.parse(heightCtrl.text.trim()),
-            weightKg: double.parse(weightCtrl.text.trim().replaceAll(',', '.')),
-            isEatingDisorderSupport: eatingDisorderSupport,
+
+            age: int.parse(
+              ageCtrl.text.trim(),
+            ),
+
+            heightCm: int.parse(
+              heightCtrl.text.trim(),
+            ),
+
+            weightKg: double.parse(
+              weightCtrl.text
+                  .trim()
+                  .replaceAll(',', '.'),
+            ),
+
+            isEatingDisorderSupport:
+                eatingDisorderSupport,
           );
 
       if (mounted) {
@@ -75,24 +154,43 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nepodařilo se uložit klienta: $e')),
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.failedToSaveClient(
+              e.toString(),
+            ),
+          ),
+        ),
       );
     } finally {
       if (mounted) {
-        setState(() => saving = false);
+        setState(() {
+          saving = false;
+        });
       }
     }
   }
 
-  String _nextClientIdFrom(List<CoachClientWithStats> clients) {
+  String _nextClientIdFrom(
+    List<CoachClientWithStats>
+        clients,
+  ) {
     int maxNum = 0;
 
     for (final c in clients) {
-      final id = c.client.clientId;
-      if (id.startsWith('C') && id.length > 1) {
-        final n = int.tryParse(id.substring(1));
-        if (n != null && n > maxNum) {
+      final id =
+          c.client.clientId;
+
+      if (id.startsWith('C') &&
+          id.length > 1) {
+        final n = int.tryParse(
+          id.substring(1),
+        );
+
+        if (n != null &&
+            n > maxNum) {
           maxNum = n;
         }
       }
@@ -103,140 +201,368 @@ class _AddClientScreenState extends ConsumerState<AddClientScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final clientsAsync = ref.watch(coachClientsControllerProvider);
+    final l10n =
+        AppLocalizations.of(context)!;
+
+    final clientsAsync = ref.watch(
+      coachClientsControllerProvider,
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nový klient')),
+      appBar: AppBar(
+        title: Text(
+          l10n.newClient,
+        ),
+      ),
+
       body: clientsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Chyba: $e')),
+        loading: () => const Center(
+          child:
+              CircularProgressIndicator(),
+        ),
+
+        error: (e, _) => Center(
+          child: Text(
+            '${l10n.error}: $e',
+          ),
+        ),
+
         data: (clients) {
-          final nextId = _nextClientIdFrom(clients);
+          final nextId =
+              _nextClientIdFrom(
+            clients,
+          );
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.all(
+              16,
+            ),
+
             children: [
               Card(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                color: Theme.of(
+                  context,
+                )
+                    .colorScheme
+                    .surfaceContainerHighest,
+
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding:
+                      const EdgeInsets.all(
+                    12,
+                  ),
+
                   child: Row(
                     children: [
-                      const Icon(Icons.badge),
-                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.badge,
+                      ),
+
+                      const SizedBox(
+                        width: 12,
+                      ),
+
                       Text(
-                        'ID klienta: $nextId',
-                        style: const TextStyle(
+                        '${l10n.clientId}: $nextId',
+
+                        style:
+                            const TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight
+                                  .bold,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Základní informace',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+              const SizedBox(
+                height: 16,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: firstNameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Jméno',
-                  border: OutlineInputBorder(),
+
+              Text(
+                l10n.basicInformation,
+
+                style:
+                    const TextStyle(
+                  fontSize: 18,
+                  fontWeight:
+                      FontWeight.bold,
                 ),
-                onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(
+                height: 16,
+              ),
+
               TextField(
-                controller: lastNameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Příjmení',
-                  border: OutlineInputBorder(),
+                controller:
+                    firstNameCtrl,
+
+                decoration:
+                    InputDecoration(
+                  labelText:
+                      l10n.firstName,
+
+                  border:
+                      const OutlineInputBorder(),
                 ),
-                onChanged: (_) => setState(() {}),
+
+                onChanged: (_) {
+                  setState(() {});
+                },
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(
+                height: 12,
+              ),
+
               TextField(
-                controller: emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'napr. klient@email.cz',
-                  border: const OutlineInputBorder(),
-                  errorText: _emailValid ? null : 'Zadej platný email',
+                controller:
+                    lastNameCtrl,
+
+                decoration:
+                    InputDecoration(
+                  labelText:
+                      l10n.lastName,
+
+                  border:
+                      const OutlineInputBorder(),
                 ),
-                onChanged: (_) => setState(() {}),
+
+                onChanged: (_) {
+                  setState(() {});
+                },
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: gender,
-                items: const [
-                  DropdownMenuItem(value: 'male', child: Text('Muž')),
-                  DropdownMenuItem(value: 'female', child: Text('Žena')),
-                  DropdownMenuItem(value: 'other', child: Text('Jiné')),
+
+              const SizedBox(
+                height: 12,
+              ),
+
+              TextField(
+                controller:
+                    emailCtrl,
+
+                keyboardType:
+                    TextInputType
+                        .emailAddress,
+
+                decoration:
+                    InputDecoration(
+                  labelText:
+                      l10n.email,
+
+                  hintText:
+                      'napr. klient@email.cz',
+
+                  border:
+                      const OutlineInputBorder(),
+
+                  errorText:
+                      _emailValid
+                          ? null
+                          : l10n
+                              .enterValidEmail,
+                ),
+
+                onChanged: (_) {
+                  setState(() {});
+                },
+              ),
+
+              const SizedBox(
+                height: 12,
+              ),
+
+              DropdownButtonFormField<
+                  String>(
+                initialValue:
+                    gender,
+
+                items: [
+                  DropdownMenuItem(
+                    value: 'male',
+
+                    child: Text(
+                      l10n.male,
+                    ),
+                  ),
+
+                  DropdownMenuItem(
+                    value: 'female',
+
+                    child: Text(
+                      l10n.female,
+                    ),
+                  ),
+
+                  DropdownMenuItem(
+                    value: 'other',
+
+                    child: Text(
+                      l10n.other,
+                    ),
+                  ),
                 ],
-                onChanged: (v) => setState(() => gender = v ?? 'male'),
-                decoration: const InputDecoration(
-                  labelText: 'Pohlaví',
-                  border: OutlineInputBorder(),
+
+                onChanged: (v) {
+                  setState(() {
+                    gender =
+                        v ?? 'male';
+                  });
+                },
+
+                decoration:
+                    InputDecoration(
+                  labelText:
+                      l10n.gender,
+
+                  border:
+                      const OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(
+                height: 12,
+              ),
+
               TextField(
                 controller: ageCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Věk',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: heightCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Výška (cm)',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: weightCtrl,
+
                 keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Váha (kg)',
-                  border: OutlineInputBorder(),
+                    TextInputType
+                        .number,
+
+                decoration:
+                    InputDecoration(
+                  labelText:
+                      l10n.age,
+
+                  border:
+                      const OutlineInputBorder(),
                 ),
-                onChanged: (_) => setState(() {}),
+
+                onChanged: (_) {
+                  setState(() {});
+                },
               ),
-              const SizedBox(height: 16),
+
+              const SizedBox(
+                height: 12,
+              ),
+
+              TextField(
+                controller:
+                    heightCtrl,
+
+                keyboardType:
+                    TextInputType
+                        .number,
+
+                decoration:
+                    InputDecoration(
+                  labelText:
+                      l10n.heightCm,
+
+                  border:
+                      const OutlineInputBorder(),
+                ),
+
+                onChanged: (_) {
+                  setState(() {});
+                },
+              ),
+
+              const SizedBox(
+                height: 12,
+              ),
+
+              TextField(
+                controller:
+                    weightCtrl,
+
+                keyboardType:
+                    const TextInputType
+                        .numberWithOptions(
+                  decimal: true,
+                ),
+
+                decoration:
+                    InputDecoration(
+                  labelText:
+                      l10n.weightKg,
+
+                  border:
+                      const OutlineInputBorder(),
+                ),
+
+                onChanged: (_) {
+                  setState(() {});
+                },
+              ),
+
+              const SizedBox(
+                height: 16,
+              ),
+
               SwitchListTile(
-                title: const Text('Režim recovery / PPP podpora'),
-                subtitle: const Text(
-                  'Zapne bezpečnostní limity (žádné agresivní hubnutí)',
+                title: Text(
+                  l10n
+                      .recoveryModeSupport,
                 ),
-                value: eatingDisorderSupport,
-                onChanged: (v) => setState(() => eatingDisorderSupport = v),
+
+                subtitle: Text(
+                  l10n
+                      .recoveryModeDescription,
+                ),
+
+                value:
+                    eatingDisorderSupport,
+
+                onChanged: (v) {
+                  setState(() {
+                    eatingDisorderSupport =
+                        v;
+                  });
+                },
               ),
-              const SizedBox(height: 18),
+
+              const SizedBox(
+                height: 18,
+              ),
+
               SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.save),
+                width:
+                    double.infinity,
+
+                child:
+                    ElevatedButton.icon(
+                  icon: const Icon(
+                    Icons.save,
+                  ),
+
                   label: saving
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth:
+                                2,
+                          ),
                         )
-                      : const Text('Uložit klienta'),
-                  onPressed: valid && !saving ? save : null,
+                      : Text(
+                          l10n
+                              .saveClient,
+                        ),
+
+                  onPressed:
+                      valid && !saving
+                          ? save
+                          : null,
                 ),
               ),
             ],
