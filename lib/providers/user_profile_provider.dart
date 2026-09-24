@@ -5,11 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/phase/phase.dart';
-import '../core/phase/phase_planner_service.dart';
-import '../core/phase/phase_resolver.dart';
-import '../core/phase/plan_mode.dart';
-import '../core/time/time_context.dart';
 import '../core/training/intake/training_intake.dart';
 import '../core/training/training_split.dart';
 import '../models/body_circumference.dart';
@@ -436,63 +431,11 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   // ==========================================================
 
   Future<void> _onStateChanged() async {
-    _updateLegacyPhaseByDate();
+    // Pozn.: dřív se tu goal.phase přepisovala podle kalendáře, čímž se
+    // ztrácela volba uživatele (nabrat / vyrýsovat / udržet). Plánovač
+    // fází teď tuto volbu čte přímo, takže se už nepřepisuje.
     _recalculateMacros();
     await _saveToPrefs();
-  }
-
-  void _updateLegacyPhaseByDate() {
-    final current = state;
-    final goal = current?.goal;
-
-    if (current == null || goal == null) return;
-
-    final now = DateTime.now();
-
-    final ctx = TimeContext(
-      now: now,
-      targetDate: goal.targetDate,
-      mode: _mapGoalPlanModeToPlanMode(goal.planMode),
-    );
-
-    final plans = PhasePlannerService.buildPlan(ctx);
-    if (plans.isEmpty) return;
-
-    final resolved = PhaseResolver.resolveCurrentPhase(
-      plans: plans,
-      date: now,
-    );
-
-    final newLegacyPhase = _mapPhaseTypeToGoalPhase(resolved.phase);
-
-    if (goal.phase != newLegacyPhase) {
-      final updatedGoal = goal.copyWith(phase: newLegacyPhase);
-      state = current.copyWith(goal: updatedGoal);
-    }
-  }
-
-  GoalPhase _mapPhaseTypeToGoalPhase(PhaseType phase) {
-    switch (phase) {
-      case PhaseType.gaining:
-        return GoalPhase.build;
-      case PhaseType.cutting:
-        return GoalPhase.cut;
-      case PhaseType.peaking:
-        return GoalPhase.cut;
-      case PhaseType.maintenance:
-        return GoalPhase.maintain;
-    }
-  }
-
-  PlanMode _mapGoalPlanModeToPlanMode(GoalPlanMode mode) {
-    switch (mode) {
-      case GoalPlanMode.accelerated:
-        return PlanMode.accelerated;
-      case GoalPlanMode.normal:
-        return PlanMode.normal;
-      case GoalPlanMode.auto:
-        return PlanMode.normal;
-    }
   }
 
   void _recalculateMacros() {

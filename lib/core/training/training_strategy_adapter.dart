@@ -23,7 +23,12 @@ class TrainingStrategyAdapter {
 
     switch (effectiveGoalType) {
       case GoalType.strength:
-        return _strengthByPhase(phase, safeMode, goal.reason);
+        return _strengthByPhase(
+          phase,
+          safeMode,
+          goal.reason,
+          blockLabel: activePhase.label,
+        );
 
       case GoalType.physique:
         return _physiqueByPhase(phase, safeMode, goal.reason);
@@ -75,9 +80,31 @@ class TrainingStrategyAdapter {
   static TrainingStrategy _strengthByPhase(
     PhaseType phase,
     PlanMode mode,
-    GoalReason reason,
-  ) {
+    GoalReason reason, {
+    String? blockLabel,
+  }) {
     late final TrainingStrategy base;
+
+    // Objemový blok daleko před závodem: víc opakování a objemu.
+    if (phase == PhaseType.gaining && blockLabel == 'Objem') {
+      const volume = TrainingStrategy(
+        label: 'Síla (objem)',
+        rationale: 'Budování základu: víc opakování a objemu, střední intenzita.',
+        repsMin: 4,
+        repsMax: 8,
+        setsMin: 12,
+        setsMax: 18,
+        rirMin: 1.5,
+        rirMax: 3.0,
+        volumeMultiplier: 1.1,
+        allowDeload: true,
+        deloadVolume: 0.7,
+        isPeaking: false,
+      );
+      return reason == GoalReason.eatingDisorderSupport
+          ? _applyEatingDisorderSupport(volume)
+          : volume;
+    }
 
     switch (phase) {
       case PhaseType.gaining:
@@ -184,8 +211,8 @@ class TrainingStrategyAdapter {
 
       case PhaseType.peaking:
         base = const TrainingStrategy(
-          label: 'Postava (rýsování)',
-          rationale: 'Nižší objem, drž kvalitu, více regenerace.',
+          label: 'Postava (peak / stabilizace)',
+          rationale: 'Nižší objem, minimum únavy, plnost svalů a výkon.',
           repsMin: 6,
           repsMax: 12,
           setsMin: 6,

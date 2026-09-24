@@ -65,7 +65,7 @@ class TrainingService {
     );
 
     final plans =
-        PhasePlannerService.buildPlan(ctx);
+        PhasePlannerService.buildPlan(ctx, goal: goal);
 
     if (plans.isEmpty) {
       return _default(profile);
@@ -95,6 +95,7 @@ class TrainingService {
 
     return _toPrescription(
       strategy: strategy,
+      blockLabel: current.activePlan.label,
       split: split,
       goal: goal,
       weeksToTarget: ctx.weeksToTarget,
@@ -105,13 +106,16 @@ class TrainingService {
 
   static TrainingPrescription _toPrescription({
     required TrainingStrategy strategy,
+    String? blockLabel,
     required TrainingSplit split,
     required Goal goal,
     required int weeksToTarget,
     required int weeksUntilPhaseEnd,
   }) {
     return TrainingPrescription(
-      title: strategy.label,
+      title: blockLabel == null
+          ? strategy.label
+          : '${strategy.label} – $blockLabel',
 
       note: _buildNote(
         strategy,

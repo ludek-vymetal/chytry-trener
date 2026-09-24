@@ -27,6 +27,7 @@ class FoodStrategyAdapter {
       base,
       activePhase.phase,
       goal.type,
+      weeklyLossPct: activePhase.weeklyLossPct,
     );
 
     base = _applyReason(
@@ -123,8 +124,9 @@ class FoodStrategyAdapter {
   static FoodStrategy _applyPhase(
     FoodStrategy s,
     PhaseType phase,
-    GoalType goalType,
-  ) {
+    GoalType goalType, {
+    double? weeklyLossPct,
+  }) {
     final effectiveGoalType =
         (goalType ==
                 GoalType.weightGainSupport)
@@ -149,8 +151,9 @@ class FoodStrategyAdapter {
 
         if (effectiveGoalType ==
             GoalType.strength) {
+          // Síla: údržba až mírný přebytek.
           return FoodStrategy(
-            calorieMultiplier: 1.12,
+            calorieMultiplier: 1.05,
             proteinGPerKg: 2.0,
             fatGPerKg: 0.95,
             preferHighCarbs: true,
@@ -189,6 +192,7 @@ class FoodStrategyAdapter {
         }
 
         return FoodStrategy(
+          // Použije se jen jako záloha, když fáze nemá zadané tempo úbytku.
           calorieMultiplier: 0.85,
           proteinGPerKg:
               _max(s.proteinGPerKg, 2.3),
@@ -200,11 +204,14 @@ class FoodStrategyAdapter {
               '${s.labelKey}_cutting',
           rationaleKey:
               'phase_cutting_default',
+          weeklyLossPct: weeklyLossPct,
         );
 
       case PhaseType.peaking:
+        // Peak / stabilizace / taper: údržba – plnost svalů a výkon,
+        // minimum únavy. Hubnutí už v této fázi neprobíhá.
         return FoodStrategy(
-          calorieMultiplier: 0.88,
+          calorieMultiplier: 1.0,
           proteinGPerKg:
               _max(s.proteinGPerKg, 2.4),
           fatGPerKg: _max(
@@ -256,6 +263,7 @@ class FoodStrategyAdapter {
           labelKey: s.labelKey,
           rationaleKey:
               'reason_summer_shape',
+          weeklyLossPct: s.weeklyLossPct,
         );
 
       case GoalReason.competition:
@@ -269,6 +277,7 @@ class FoodStrategyAdapter {
           labelKey: s.labelKey,
           rationaleKey:
               'reason_competition',
+          weeklyLossPct: s.weeklyLossPct,
         );
 
       case GoalReason.eatingDisorderSupport:
@@ -300,29 +309,30 @@ class FoodStrategyAdapter {
   static FoodStrategy _applyAccelerated(
     FoodStrategy s,
   ) {
+    // Zrychlený režim už NEvynucuje deficit v každé fázi. Rychlejší tempo
+    // úbytku v redukčních fázích nastavuje přímo plánovač fází
+    // (PhasePlan.weeklyLossPct), ostatní fáze zůstávají beze změny.
     if (s.labelKey.contains(
       'support',
     )) {
       return s;
     }
 
-    final mult = _max(
-      0.78,
-      _min(s.calorieMultiplier, 0.88),
-    );
-
     return FoodStrategy(
-      calorieMultiplier: mult,
+      calorieMultiplier:
+          s.calorieMultiplier,
       proteinGPerKg:
-          _max(s.proteinGPerKg, 2.4),
-      fatGPerKg:
-          _max(s.fatGPerKg, 0.7),
+          s.weeklyLossPct != null
+              ? _max(s.proteinGPerKg, 2.4)
+              : s.proteinGPerKg,
+      fatGPerKg: s.fatGPerKg,
       preferHighCarbs:
           s.preferHighCarbs,
       labelKey:
           '${s.labelKey}_accelerated',
       rationaleKey:
           'accelerated_mode',
+      weeklyLossPct: s.weeklyLossPct,
     );
   }
 
@@ -332,8 +342,9 @@ class FoodStrategyAdapter {
   ) {
     if (phase == PhaseType.peaking) {
       return FoodStrategy(
+        // Peak před soutěží = stabilizace na údržbě, ne další deficit.
         calorieMultiplier:
-            _min(s.calorieMultiplier, 0.90),
+            s.calorieMultiplier,
         proteinGPerKg:
             _max(s.proteinGPerKg, 2.5),
         fatGPerKg: _max(
@@ -345,6 +356,7 @@ class FoodStrategyAdapter {
             '${s.labelKey}_competition',
         rationaleKey:
             'competition_peaking',
+        weeklyLossPct: s.weeklyLossPct,
       );
     }
 
@@ -384,6 +396,7 @@ class FoodStrategyAdapter {
           s.preferHighCarbs,
       labelKey: s.labelKey,
       rationaleKey: s.rationaleKey,
+      weeklyLossPct: s.weeklyLossPct,
     );
   }
 

@@ -697,9 +697,11 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     _PowerliftingMaxes maxes,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    final squatBase = maxes.squat1rm;
+    // Všechny tři disciplíny se počítají z training maxu (90 % 1RM),
+    // aby procenta odpovídala předepsaným opakováním a RIR.
+    final squatBase = _trainingMax(maxes.squat1rm);
     final benchTm = _trainingMax(maxes.bench1rm);
-    final deadliftBase = maxes.deadlift1rm;
+    final deadliftBase = _trainingMax(maxes.deadlift1rm);
 
     final phaseWeeks = <_PowerWeekConfig>[
       _PowerWeekConfig(
@@ -862,9 +864,23 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
       ),
     ];
 
+    // Když je závod dřív než za 12 týdnů, začneme rovnou správným týdnem
+    // (první týdny vynecháme), aby peak a taper vyšly na datum závodu.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final meetDay = DateTime(
+      maxes.meetDate.year,
+      maxes.meetDate.month,
+      maxes.meetDate.day,
+    );
+    final daysToMeet = meetDay.difference(today).inDays;
+    final weeksAvailable = (daysToMeet / 7).ceil().clamp(2, 12).toInt();
+    final weeksToUse =
+        phaseWeeks.where((w) => w.week > 12 - weeksAvailable).toList();
+
     final days = <CustomTrainingDay>[];
 
-    for (final week in phaseWeeks) {
+    for (final week in weeksToUse) {
       final squatMain = _weightFromMax(squatBase, week.squatPct);
       final benchMain = _weightFromTm(benchTm, week.benchPct);
       final deadliftMain = _weightFromMax(deadliftBase, week.deadliftPct);
@@ -940,6 +956,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                   'Fáze: ${week.phaseLabel}\n'
                   '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
                   'Výchozí 1RM: ${maxes.squat1rm.toStringAsFixed(1)} kg\n'
+                  'Training max: ${squatBase.toStringAsFixed(1)} kg\n'
                   'Pracovní váha: '
                   '${_formatWeightAndPercent(squatMain, week.squatPct)}'
                   '${topSingleSquat == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleSquat, week.topSinglePct!)}'}',
@@ -1039,6 +1056,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                   'Fáze: ${week.phaseLabel}\n'
                   '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
                   'Výchozí 1RM: ${maxes.deadlift1rm.toStringAsFixed(1)} kg\n'
+                  'Training max: ${deadliftBase.toStringAsFixed(1)} kg\n'
                   'Pracovní váha: '
                   '${_formatWeightAndPercent(deadliftMain, week.deadliftPct)}'
                   '${topSingleDeadlift == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleDeadlift, week.topSinglePct!)}'}',

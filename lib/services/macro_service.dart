@@ -75,7 +75,8 @@ class MacroService {
     final weeksToTarget = ctx.weeksToTarget;
 
     // 3) PHASE PLAN
-    final List<PhasePlan> plans = PhasePlannerService.buildPlan(ctx);
+    final List<PhasePlan> plans =
+        PhasePlannerService.buildPlan(ctx, goal: goal);
 
     // 4) CURRENT PHASE
     final current = PhaseResolver.resolveCurrentPhase(
@@ -114,6 +115,7 @@ class MacroService {
     final result = _calculateFromStrategy(
       tdee: tdee,
       minCalories: _minCaloriesFor(profile),
+      currentWeightKg: weight,
       weightForCaloriesKg: kgForCalories,
       weightForProteinKg: kgForProtein,
       strategy: strategy,
@@ -125,7 +127,7 @@ class MacroService {
       protein: result.protein,
       carbs: result.carbs,
       fat: result.fat,
-      phaseLabel: _phaseLabel(current.phase),
+      phaseLabel: current.activePlan.label ?? _phaseLabel(current.phase),
       planModeLabel: planModeLabel,
       weeksToTarget: weeksToTarget,
       strategyLabel: strategy.labelKey,
@@ -174,12 +176,25 @@ class MacroService {
   static _MacroResult _calculateFromStrategy({
     required double tdee,
     required double minCalories,
+    required double currentWeightKg,
     required double weightForCaloriesKg,
     required double weightForProteinKg,
     required FoodStrategy strategy,
   }) {
-    // Kalorie (multiplier zvolí strategy)
+    // Kalorie: v redukčních fázích podle cílového tempa úbytku
+    // (% tělesné hmotnosti týdně), jinak násobek TDEE.
     var calories = tdee * strategy.calorieMultiplier;
+
+    final lossPct = strategy.weeklyLossPct;
+    if (lossPct != null && lossPct > 0) {
+      // 1 kg tukové tkáně ≈ 7700 kcal
+      final dailyDeficit = currentWeightKg * (lossPct / 100) * 7700 / 7;
+      calories = tdee - dailyDeficit;
+
+      // Max. deficit 25 % TDEE (stejné pravidlo jako FoodSafetyRules).
+      final maxDeficitFloor = tdee * (1 - FoodStrategyAdapter.safety.maxDeficitPct);
+      if (calories < maxDeficitFloor) calories = maxDeficitFloor;
+    }
 
     // Bezpečnostní minimum kalorií. Pokud je samotné TDEE nižší než
     // minimum, nejdeme nad TDEE (nechceme vynucovat přebytek).

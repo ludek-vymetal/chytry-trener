@@ -60,7 +60,7 @@ class TrainingService {
     );
 
     final plans =
-        PhasePlannerService.buildPlan(ctx);
+        PhasePlannerService.buildPlan(ctx, goal: goal);
 
     final current =
         PhaseResolver.resolveCurrentPhase(

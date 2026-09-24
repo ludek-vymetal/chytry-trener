@@ -45,7 +45,7 @@ class PhaseTestScreen extends ConsumerWidget {
       mode: PlanMode.normal,
     );
 
-    final plans = PhasePlannerService.buildPlan(ctx);
+    final plans = PhasePlannerService.buildPlan(ctx, goal: goal);
 
     final current = PhaseResolver.resolveCurrentPhase(
       plans: plans,

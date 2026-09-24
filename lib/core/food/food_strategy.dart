@@ -8,6 +8,11 @@ class FoodStrategy {
   final String labelKey;
   final String rationaleKey;
 
+  /// Cílové tempo úbytku v % tělesné hmotnosti za týden. Když je nastaveno,
+  /// kalorie se počítají jako TDEE − deficit odpovídající tomuto tempu
+  /// (místo [calorieMultiplier]).
+  final double? weeklyLossPct;
+
   const FoodStrategy({
     required this.calorieMultiplier,
     required this.proteinGPerKg,
@@ -15,6 +20,7 @@ class FoodStrategy {
     required this.preferHighCarbs,
     required this.labelKey,
     required this.rationaleKey,
+    this.weeklyLossPct,
   });
 }
 
