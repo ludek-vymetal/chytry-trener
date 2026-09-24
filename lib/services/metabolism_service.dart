@@ -22,6 +22,19 @@ class MetabolismService {
     }
   }
 
+  /// Úroveň aktivity odvozená z počtu tréninků týdně (TrainingIntake).
+  /// Když uživatel ještě nevyplnil tréninkový vstup, zůstává původní
+  /// výchozí hodnota `moderate`.
+  static ActivityLevel activityFor(UserProfile profile) {
+    final freq = profile.trainingIntake?.frequencyPerWeek;
+    if (freq == null) return ActivityLevel.moderate;
+
+    if (freq <= 1) return ActivityLevel.sedentary;
+    if (freq == 2) return ActivityLevel.light;
+    if (freq <= 4) return ActivityLevel.moderate;
+    return ActivityLevel.high;
+  }
+
   static double calculateTDEE(
     UserProfile profile,
     ActivityLevel activity,

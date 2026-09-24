@@ -183,20 +183,13 @@ class _AddClientScreenState
       final id =
           c.client.clientId;
 
-      if (id.startsWith('C') &&
-          id.length > 1) {
-        final n = int.tryParse(
-          id.substring(1),
-        );
-
-        if (n != null &&
-            n > maxNum) {
-          maxNum = n;
-        }
+      final n = CoachClientsController.clientIdNumber(id);
+      if (n != null && n > maxNum) {
+        maxNum = n;
       }
     }
 
-    return 'C${(maxNum + 1).toString().padLeft(4, '0')}';
+    return 'C${(maxNum + 1).toString().padLeft(4, '0')}-…';
   }
 
   @override

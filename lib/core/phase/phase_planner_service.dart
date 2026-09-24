@@ -8,8 +8,16 @@ class PhasePlannerService {
     final now = _normalize(context.now);
     final target = _normalize(context.targetDate);
 
+    // Cílové datum už uplynulo → nepadat, ale držet udržovací fázi,
+    // dokud si uživatel nenastaví nový cíl.
     if (target.isBefore(now)) {
-      throw Exception('Cílové datum je v minulosti');
+      return [
+        PhasePlan(
+          phase: PhaseType.maintenance,
+          start: target,
+          end: now.add(const Duration(days: 365)),
+        ),
+      ];
     }
 
     final weeks = context.weeksToTarget;

@@ -71,6 +71,39 @@ class _CoachShellState
     }
   }
 
+  Future<void> _deleteAccount(
+    BuildContext context,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final password = await showDialog<String>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+
+    if (password == null || password.isEmpty) return;
+
+    try {
+      await ref
+          .read(coachAuthControllerProvider.notifier)
+          .deleteAccount(password: password);
+
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.accountDeleted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.deleteAccountFailed(e.toString())),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n =
@@ -127,6 +160,14 @@ class _CoachShellState
 
             onPressed: () {
               _signOut(context);
+            },
+          ),
+
+          IconButton(
+            tooltip: l10n.deleteAccount,
+            icon: const Icon(Icons.no_accounts),
+            onPressed: () {
+              _deleteAccount(context);
             },
           ),
 
@@ -189,6 +230,72 @@ class _CoachShellState
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _passwordController = TextEditingController();
+  bool _obscured = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AlertDialog(
+      title: Text(l10n.deleteAccountTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.deleteAccountWarning),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscured,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: l10n.deleteAccountPasswordLabel,
+                suffixIcon: IconButton(
+                  onPressed: () => setState(() => _obscured = !_obscured),
+                  icon: Icon(
+                    _obscured ? Icons.visibility_off : Icons.visibility,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: colorScheme.error,
+            foregroundColor: colorScheme.onError,
+          ),
+          onPressed: () => Navigator.pop(context, _passwordController.text),
+          child: Text(l10n.deleteAccountConfirm),
+        ),
+      ],
     );
   }
 }

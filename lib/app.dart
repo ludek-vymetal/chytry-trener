@@ -402,6 +402,10 @@ class RoleGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(appRoleReadyProvider)) {
+      return const _FullscreenLoader();
+    }
+
     if (role == null) {
       return const RoleSelectScreen();
     }

@@ -20,7 +20,7 @@
 "activeClientCoachLocked": "Active: Client ✅ (Coach locked)",
 "noAccess": "No access",
 "selectMode": "Select Mode",
-"modeDescription": "Regular user = onboarding + AI plan.\nCoach mode = client management.",
+"modeDescription": "Regular user = onboarding + personal plan.\nCoach mode = client management.",
 "userModeLocked": "User Mode (locked)",
 "coachModeLocked": "Coach Mode (locked)",
 "unlockClient": "Unlock Client (Paywall)",
@@ -1301,9 +1301,40 @@
     "error": {}
   }
 },
-
+"confirmDeleteTemplate": "Are you sure you want to delete template \"{name}\"?",
+"@confirmDeleteTemplate": {
+  "placeholders": {
+    "name": {}
+  }
+},
 "failedToSaveMeasurements": "Failed to save measurements: {error}",
 "@failedToSaveMeasurements": {
+  "placeholders": {
+    "error": {}
+  }
+},
+"forgotPassword": "Forgot password?",
+"passwordResetEnterEmail": "Enter your email above first.",
+"passwordResetSent": "We sent a password reset link to {email}.",
+"@passwordResetSent": {
+  "placeholders": {
+    "email": {}
+  }
+},
+"passwordResetFailed": "Could not send the reset email: {error}",
+"@passwordResetFailed": {
+  "placeholders": {
+    "error": {}
+  }
+},
+"deleteAccount": "Delete account",
+"deleteAccountTitle": "Delete coach account?",
+"deleteAccountWarning": "This permanently deletes your account and all client data stored in the cloud. Coach data on this device will be removed too. This cannot be undone.",
+"deleteAccountPasswordLabel": "Confirm with your password",
+"deleteAccountConfirm": "Delete permanently",
+"accountDeleted": "Your account has been deleted.",
+"deleteAccountFailed": "Could not delete the account: {error}",
+"@deleteAccountFailed": {
   "placeholders": {
     "error": {}
   }

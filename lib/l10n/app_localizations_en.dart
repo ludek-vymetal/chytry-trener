@@ -72,7 +72,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectMode => 'Select Mode';
 
   @override
-  String get modeDescription => 'Regular user = onboarding + AI plan.\nCoach mode = client management.';
+  String get modeDescription => 'Regular user = onboarding + personal plan.\nCoach mode = client management.';
 
   @override
   String get userModeLocked => 'User Mode (locked)';
@@ -2962,7 +2962,51 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String confirmDeleteTemplate(Object name) {
+    return 'Are you sure you want to delete template \"$name\"?';
+  }
+
+  @override
   String failedToSaveMeasurements(Object error) {
     return 'Failed to save measurements: $error';
+  }
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get passwordResetEnterEmail => 'Enter your email above first.';
+
+  @override
+  String passwordResetSent(Object email) {
+    return 'We sent a password reset link to $email.';
+  }
+
+  @override
+  String passwordResetFailed(Object error) {
+    return 'Could not send the reset email: $error';
+  }
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete coach account?';
+
+  @override
+  String get deleteAccountWarning => 'This permanently deletes your account and all client data stored in the cloud. Coach data on this device will be removed too. This cannot be undone.';
+
+  @override
+  String get deleteAccountPasswordLabel => 'Confirm with your password';
+
+  @override
+  String get deleteAccountConfirm => 'Delete permanently';
+
+  @override
+  String get accountDeleted => 'Your account has been deleted.';
+
+  @override
+  String deleteAccountFailed(Object error) {
+    return 'Could not delete the account: $error';
   }
 }

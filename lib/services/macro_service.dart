@@ -113,6 +113,7 @@ class MacroService {
 
     final result = _calculateFromStrategy(
       tdee: tdee,
+      minCalories: _minCaloriesFor(profile),
       weightForCaloriesKg: kgForCalories,
       weightForProteinKg: kgForProtein,
       strategy: strategy,
@@ -172,12 +173,18 @@ class MacroService {
 
   static _MacroResult _calculateFromStrategy({
     required double tdee,
+    required double minCalories,
     required double weightForCaloriesKg,
     required double weightForProteinKg,
     required FoodStrategy strategy,
   }) {
     // Kalorie (multiplier zvolí strategy)
-    final calories = tdee * strategy.calorieMultiplier;
+    var calories = tdee * strategy.calorieMultiplier;
+
+    // Bezpečnostní minimum kalorií. Pokud je samotné TDEE nižší než
+    // minimum, nejdeme nad TDEE (nechceme vynucovat přebytek).
+    final floor = minCalories < tdee ? minCalories : tdee;
+    if (calories < floor) calories = floor;
 
     // Protein z cílové váhy
     var proteinG = weightForProteinKg * strategy.proteinGPerKg;
@@ -186,24 +193,40 @@ class MacroService {
     var fatG = weightForCaloriesKg * strategy.fatGPerKg;
 
     // Bezpečnostní minima
+    final minFatG = weightForCaloriesKg * 0.6;
     if (proteinG < weightForProteinKg * 1.6) proteinG = weightForProteinKg * 1.6;
-    if (fatG < weightForCaloriesKg * 0.6) fatG = weightForCaloriesKg * 0.6;
+    if (fatG < minFatG) fatG = minFatG;
 
-    final proteinCalories = proteinG * 4;
-    final fatCalories = fatG * 9;
+    // Když se bílkoviny + tuky nevejdou do kalorií, nejdřív ubereme tuky
+    // až na jejich minimum.
+    final overflow = proteinG * 4 + fatG * 9 - calories;
+    if (overflow > 0) {
+      final reducedFat = fatG - overflow / 9;
+      fatG = reducedFat < minFatG ? minFatG : reducedFat;
+    }
 
     // Sacharidy jako zbytek
-    final carbsCalories = calories - proteinCalories - fatCalories;
-    final carbsG = carbsCalories / 4;
+    final carbsCalories = calories - proteinG * 4 - fatG * 9;
+    final carbsG = carbsCalories < 0 ? 0.0 : carbsCalories / 4;
 
-    final safeCarbs = carbsG < 0 ? 0.0 : carbsG;
+    final protein = proteinG.round();
+    final fat = fatG.round();
+    final carbs = carbsG.round();
+
+    // Cílové kalorie vždy odpovídají součtu maker (aby čísla v UI seděla).
+    final macroCalories = protein * 4 + carbs * 4 + fat * 9;
 
     return _MacroResult(
-      targetCalories: calories.round(),
-      protein: proteinG.round(),
-      fat: fatG.round(),
-      carbs: safeCarbs.round(),
+      targetCalories: macroCalories,
+      protein: protein,
+      fat: fat,
+      carbs: carbs,
     );
+  }
+
+  /// Minimální rozumný denní příjem (běžně doporučovaná hranice).
+  static double _minCaloriesFor(UserProfile profile) {
+    return profile.gender == 'male' ? 1500 : 1200;
   }
 
   // ==========================================================
@@ -221,11 +244,15 @@ class MacroService {
     final carbsCalories = calories - proteinCalories - fatCalories;
     final carbsG = carbsCalories / 4;
 
+    final protein = proteinG.round();
+    final fat = fatG.round();
+    final carbs = (carbsG < 0 ? 0 : carbsG).round();
+
     return MacroTarget(
-      targetCalories: calories.round(),
-      protein: proteinG.round(),
-      fat: fatG.round(),
-      carbs: (carbsG < 0 ? 0 : carbsG).round(),
+      targetCalories: protein * 4 + carbs * 4 + fat * 9,
+      protein: protein,
+      fat: fat,
+      carbs: carbs,
       phaseLabel: 'N/A',
       planModeLabel: 'default',
       weeksToTarget: 0,

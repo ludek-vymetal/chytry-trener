@@ -4,19 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/app_localizations.dart';
 
 import '../../../providers/coach/coach_auth_provider.dart';
-import '../../../providers/coach/coach_circumference_controller.dart';
-import '../../../providers/coach/coach_clients_controller.dart';
-import '../../../providers/coach/coach_diagnostic_controller.dart';
-import '../../../providers/coach/coach_goal_controller.dart';
-import '../../../providers/coach/coach_inbody_controller.dart';
-import '../../../providers/coach/coach_notes_controller.dart';
-import '../../../providers/coach/coach_setup_provider.dart';
-
-import '../../../providers/daily_history_provider.dart';
-import '../../../providers/daily_intake_provider.dart';
-import '../../../providers/training_session_provider.dart';
-
-import '../../../services/coach/coach_cloud_sync_service.dart';
 
 class CoachAuthScreen
     extends ConsumerStatefulWidget {
@@ -105,7 +92,8 @@ class _CoachAuthScreenState
             );
       }
 
-      await _postAuthBootstrap();
+      // Synchronizaci a obnovu dat po přihlášení řeší CoachSessionBootstrap
+      // (app.dart), jakmile se změní stav přihlášení.
 
       if (!mounted) return;
 
@@ -139,50 +127,32 @@ class _CoachAuthScreenState
     }
   }
 
-  Future<void>
-      _postAuthBootstrap() async {
-    await CoachCloudSyncService
-        .safePullMergeToLocal();
+  Future<void> _forgotPassword() async {
+    final l10n = AppLocalizations.of(context)!;
+    final email = _emailController.text.trim();
 
-    ref.invalidate(
-      coachClientsControllerProvider,
-    );
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.passwordResetEnterEmail)),
+      );
+      return;
+    }
 
-    ref.invalidate(
-      coachNotesControllerProvider,
-    );
+    try {
+      await ref
+          .read(coachAuthControllerProvider.notifier)
+          .sendPasswordReset(email);
 
-    ref.invalidate(
-      coachInbodyControllerProvider,
-    );
-
-    ref.invalidate(
-      coachCircumferenceControllerProvider,
-    );
-
-    ref.invalidate(
-      coachDiagnosticControllerProvider,
-    );
-
-    ref.invalidate(
-      coachGoalControllerProvider,
-    );
-
-    ref.invalidate(
-      trainingSessionProvider,
-    );
-
-    ref.invalidate(
-      dailyHistoryProvider,
-    );
-
-    ref.invalidate(
-      dailyIntakeProvider,
-    );
-
-    ref.invalidate(
-      coachSetupProvider,
-    );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.passwordResetSent(email))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.passwordResetFailed(e.toString()))),
+      );
+    }
   }
 
   String? _validateEmail(
@@ -514,6 +484,15 @@ class _CoachAuthScreenState
                         const SizedBox(
                           height: 12,
                         ),
+
+                        if (!_isRegisterMode)
+                          Center(
+                            child: TextButton(
+                              onPressed:
+                                  _isSubmitting ? null : _forgotPassword,
+                              child: Text(l10n.forgotPassword),
+                            ),
+                          ),
 
                         Center(
                           child:

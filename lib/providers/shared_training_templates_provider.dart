@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,13 +32,17 @@ class SharedTrainingTemplatesNotifier
       if (migrated.isNotEmpty) {
         state = migrated;
         await CoachStorageService.saveSharedTrainingTemplates(state);
-        await CoachStorageService.pushAllLocalSnapshotsToCloud();
+
+        // Stará data jsou zmigrovaná → smazat, aby se po smazání všech
+        // šablon znovu nenačetla.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_oldStorageKey);
         return;
       }
 
       state = [];
     } catch (e) {
-      print('Chyba při načítání sdílených šablon: $e');
+      debugPrint('Chyba při načítání sdílených šablon: $e');
       state = [];
     }
   }
@@ -61,17 +66,17 @@ class SharedTrainingTemplatesNotifier
           )
           .toList();
     } catch (e) {
-      print('Chyba při migraci starých sdílených šablon: $e');
+      debugPrint('Chyba při migraci starých sdílených šablon: $e');
       return [];
     }
   }
 
   Future<void> _save() async {
     try {
+      // saveSharedTrainingTemplates už nahrává svůj snapshot do cloudu.
       await CoachStorageService.saveSharedTrainingTemplates(state);
-      await CoachStorageService.pushAllLocalSnapshotsToCloud();
     } catch (e) {
-      print('Chyba při ukládání sdílených šablon: $e');
+      debugPrint('Chyba při ukládání sdílených šablon: $e');
     }
   }
 
@@ -143,11 +148,10 @@ class SharedTrainingTemplatesNotifier
     );
 
     await customPlansNotifier.addImportedPlan(newPlan);
-    await CoachStorageService.pushAllLocalSnapshotsToCloud();
   }
 }
 
 final sharedTrainingTemplatesProvider = StateNotifierProvider<
     SharedTrainingTemplatesNotifier, List<SharedTrainingTemplate>>(
   (ref) => SharedTrainingTemplatesNotifier(),
-);
+);

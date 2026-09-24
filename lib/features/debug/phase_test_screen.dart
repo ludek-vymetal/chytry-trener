@@ -36,7 +36,7 @@ class PhaseTestScreen extends ConsumerWidget {
 
     final tdee = MetabolismService.calculateTDEE(
       profile,
-      ActivityLevel.moderate,
+      MetabolismService.activityFor(profile),
     );
 
     final ctx = TimeContext(
@@ -325,4 +325,4 @@ class PhaseTestScreen extends ConsumerWidget {
       ),
     );
   }
-}
+}

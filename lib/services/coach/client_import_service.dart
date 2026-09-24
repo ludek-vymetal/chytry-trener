@@ -291,6 +291,7 @@ class ClientImportService {
 
     await _importSessions(
       data: data,
+      finalClientId: finalClientId,
       ref: ref,
     );
 
@@ -701,6 +702,7 @@ class ClientImportService {
 
   Future<void> _importSessions({
     required Map<String, dynamic> data,
+    required String finalClientId,
     required WidgetRef ref,
   }) async {
     final raw = data['sessions'];
@@ -715,7 +717,9 @@ class ClientImportService {
 
     if (sessions.isEmpty) return;
 
-    await ref.read(trainingSessionProvider.notifier).importSessions(sessions);
+    await ref
+        .read(trainingSessionProvider.notifier)
+        .importSessions(sessions, forClientId: finalClientId);
 
     debugPrint('IMPORT SESSIONS OK -> count=${sessions.length}');
   }

@@ -517,27 +517,32 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
     state = AsyncData(await _mapWithStats(_visibleClients(updated)));
   }
 
-  Future<int> _getNextClientNumber() async {
-    final current = await CoachStorageService.loadInt(_idCounterKey) ?? 0;
-    final next = current + 1;
-    await CoachStorageService.saveInt(_idCounterKey, next);
-    return next;
+  /// Číselná část ID klienta ("C0006" i "C0006-7f3a" → 6), jinak null.
+  static int? clientIdNumber(String id) {
+    final m = RegExp(r'^C(\d+)').firstMatch(id);
+    return m == null ? null : int.tryParse(m.group(1)!);
   }
 
   Future<String> _reserveNextClientId(List<CoachClient> allClients) async {
-    int next = await _getNextClientNumber();
+    // Číslo pokračuje od nejvyššího známého (lokální počítadlo i klienti
+    // stažení z cloudu), aby čísla rostla i napříč zařízeními.
+    var maxKnown = await CoachStorageService.loadInt(_idCounterKey) ?? 0;
+    for (final c in allClients) {
+      final n = clientIdNumber(c.clientId);
+      if (n != null && n > maxKnown) maxKnown = n;
+    }
 
+    final next = maxKnown + 1;
+    await CoachStorageService.saveInt(_idCounterKey, next);
+
+    // Náhodná přípona brání kolizi, když dvě zařízení (např. telefon
+    // a tablet) přidají klienta se stejným číslem před synchronizací.
     while (true) {
-      final newId = 'C${next.toString().padLeft(4, '0')}';
-      final exists = allClients.any((c) => c.clientId == newId);
-
-      if (!exists) {
-        await CoachStorageService.saveInt(_idCounterKey, next);
+      final suffix = _uuid.v4().substring(0, 4);
+      final newId = 'C${next.toString().padLeft(4, '0')}-$suffix';
+      if (!allClients.any((c) => c.clientId == newId)) {
         return newId;
       }
-
-      next++;
-      await CoachStorageService.saveInt(_idCounterKey, next);
     }
   }
 

@@ -3,10 +3,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum AppRole { user, coach }
 
+/// true, jakmile je uložená role načtená z disku.
+/// Do té doby RoleGate ukazuje loader (aby neproblikl výběr role).
+final appRoleReadyProvider = StateProvider<bool>((ref) => false);
+
 class AppRoleNotifier extends StateNotifier<AppRole?> {
-  AppRoleNotifier() : super(null) {
+  AppRoleNotifier(this._ref) : super(null) {
     _init();
   }
+
+  final Ref _ref;
 
   static const _key = 'selected_role';
   bool _initialized = false;
@@ -15,11 +21,22 @@ class AppRoleNotifier extends StateNotifier<AppRole?> {
     if (_initialized) return;
     _initialized = true;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_key);
 
-    if (state != null) {
-      state = null;
+      AppRole? restored;
+      for (final r in AppRole.values) {
+        if (r.name == saved) restored = r;
+      }
+
+      if (mounted && restored != null) {
+        state = restored;
+      }
+    } finally {
+      if (mounted) {
+        _ref.read(appRoleReadyProvider.notifier).state = true;
+      }
     }
   }
 
@@ -41,5 +58,5 @@ class AppRoleNotifier extends StateNotifier<AppRole?> {
 
 final appRoleProvider =
     StateNotifierProvider<AppRoleNotifier, AppRole?>((ref) {
-  return AppRoleNotifier();
+  return AppRoleNotifier(ref);
 });

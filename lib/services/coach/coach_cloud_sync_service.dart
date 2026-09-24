@@ -32,7 +32,7 @@ class CoachCloudSyncService {
     CoachStorageService.goalsKey: ['goalId', 'id'],
     CoachStorageService.diagnosticsKey: ['entryId', 'id'],
     CoachStorageService.trainingSessionsKey: ['sessionId', 'date', 'id'],
-    CoachStorageService.dailyHistoryKey: ['dateKey', 'id'],
+    CoachStorageService.dailyHistoryKey: ['entryKey', 'dateKey', 'id'],
 
     // NOVÉ SYNC ENTITY
     CoachStorageService.customTrainingPlansKey: ['id'],
@@ -285,58 +285,21 @@ class CoachCloudSyncService {
     required List<Map<String, dynamic>> items,
   }) async {
     final deviceId = await CoachStorageService.loadDeviceId() ?? 'unknown_device';
-    final now = DateTime.now();
-    final payloadJson = jsonEncode(items);
 
-    await FirebaseFirestore.instance
-        .collection(CoachStorageService.cloudCoachesCollection)
-        .doc(uid)
-        .collection(CoachStorageService.cloudSnapshotsCollection)
-        .doc(key)
-        .set({
-      'storageKey': key,
-      'coachUid': uid,
-      'deviceId': deviceId,
-      'updatedAt': Timestamp.fromDate(now),
-      'itemCount': items.length,
-      'payloadJson': payloadJson,
-    }, SetOptions(merge: true));
+    await CoachStorageService.writeCloudSnapshot(
+      uid: uid,
+      key: key,
+      items: items,
+      deviceId: deviceId,
+      now: DateTime.now(),
+    );
   }
 
   static Future<List<Map<String, dynamic>>?> _loadCloudSnapshotItems(
     String uid,
     String key,
-  ) async {
-    final doc = await FirebaseFirestore.instance
-        .collection(CoachStorageService.cloudCoachesCollection)
-        .doc(uid)
-        .collection(CoachStorageService.cloudSnapshotsCollection)
-        .doc(key)
-        .get();
-
-    if (!doc.exists) {
-      return null;
-    }
-
-    final data = doc.data();
-    if (data == null) {
-      return null;
-    }
-
-    final payloadJson = data['payloadJson'];
-    if (payloadJson is! String || payloadJson.trim().isEmpty) {
-      return <Map<String, dynamic>>[];
-    }
-
-    final decoded = jsonDecode(payloadJson);
-    if (decoded is! List) {
-      return <Map<String, dynamic>>[];
-    }
-
-    return decoded
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+  ) {
+    return CoachStorageService.readCloudSnapshot(uid: uid, key: key);
   }
 
   static List<Map<String, dynamic>> _mergeLists({

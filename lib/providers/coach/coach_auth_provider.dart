@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../services/coach/coach_cloud_sync_service.dart';
+import '../../services/coach/coach_storage_service.dart';
 import '../daily_history_provider.dart';
 import '../daily_intake_provider.dart';
 import '../training_session_provider.dart';
@@ -38,10 +38,8 @@ class CoachAuthController extends AsyncNotifier<void> {
 
       debugPrint('AUTH SIGN IN OK -> uid=${cred.user?.uid}');
 
-      final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
-      debugPrint(
-        'AUTH SIGN IN SYNC -> success=${report.success} processed=${report.processedKeys} warnings=${report.warnings}',
-      );
+      // Synchronizaci s cloudem spouští CoachSessionBootstrap (app.dart),
+      // jakmile authStateChanges ohlásí přihlášeného uživatele.
 
       _invalidateCoachProviders();
 
@@ -69,10 +67,8 @@ class CoachAuthController extends AsyncNotifier<void> {
 
       debugPrint('AUTH REGISTER OK -> uid=${cred.user?.uid}');
 
-      final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
-      debugPrint(
-        'AUTH REGISTER SYNC -> success=${report.success} processed=${report.processedKeys} warnings=${report.warnings}',
-      );
+      // Synchronizaci s cloudem spouští CoachSessionBootstrap (app.dart),
+      // jakmile authStateChanges ohlásí přihlášeného uživatele.
 
       _invalidateCoachProviders();
 
@@ -80,6 +76,55 @@ class CoachAuthController extends AsyncNotifier<void> {
     } on FirebaseAuthException catch (e, st) {
       state = AsyncError(_mapFirebaseAuthError(e), st);
       rethrow;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  /// Pošle e-mail s odkazem pro obnovení hesla.
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      throw _mapFirebaseAuthError(e);
+    }
+  }
+
+  /// Trvale smaže účet trenéra: ověří heslo, smaže data v cloudu,
+  /// lokální trenérská data a nakonec samotný účet ve Firebase Auth.
+  Future<void> deleteAccount({required String password}) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw 'Nikdo není přihlášený.';
+    }
+
+    state = const AsyncLoading();
+
+    try {
+      // Firebase vyžaduje čerstvé přihlášení před smazáním účtu.
+      final email = user.email;
+      if (email != null && email.isNotEmpty) {
+        await user.reauthenticateWithCredential(
+          EmailAuthProvider.credential(email: email, password: password),
+        );
+      }
+
+      final uid = user.uid;
+
+      await CoachStorageService.deleteCloudDataForCoach(uid);
+      await CoachStorageService.clearLocalDataForCoach(uid);
+      await user.delete();
+
+      debugPrint('AUTH DELETE ACCOUNT OK -> uid=$uid');
+
+      _invalidateCoachProviders();
+
+      state = const AsyncData(null);
+    } on FirebaseAuthException catch (e, st) {
+      final message = _mapFirebaseAuthError(e);
+      state = AsyncError(message, st);
+      throw message;
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
@@ -132,6 +177,8 @@ class CoachAuthController extends AsyncNotifier<void> {
         return 'Heslo je příliš slabé.';
       case 'network-request-failed':
         return 'Síťová chyba. Zkontroluj internetové připojení.';
+      case 'requires-recent-login':
+        return 'Pro tuto akci se musíš znovu přihlásit.';
       case 'too-many-requests':
         return 'Příliš mnoho pokusů. Zkus to znovu později.';
       default:

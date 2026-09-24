@@ -170,23 +170,16 @@ class CoachStorageService {
 
       final deviceId = await _ensureDeviceId();
       final now = DateTime.now();
-      final payloadJson = jsonEncode(items);
 
       debugPrint('UPLOAD -> coaches/$uid/snapshots/$key count=${items.length}');
 
-      await FirebaseFirestore.instance
-          .collection(cloudCoachesCollection)
-          .doc(uid)
-          .collection(cloudSnapshotsCollection)
-          .doc(key)
-          .set({
-        'storageKey': key,
-        'coachUid': uid,
-        'deviceId': deviceId,
-        'updatedAt': Timestamp.fromDate(now),
-        'itemCount': items.length,
-        'payloadJson': payloadJson,
-      }, SetOptions(merge: true));
+      await writeCloudSnapshot(
+        uid: uid,
+        key: key,
+        items: items,
+        deviceId: deviceId,
+        now: now,
+      );
 
       await saveLastCloudSyncAt(now);
 
@@ -196,6 +189,175 @@ class CoachStorageService {
     } catch (e, st) {
       debugPrint('CLOUD SNAPSHOT ERROR -> key=$key error=$e');
       debugPrint('$st');
+    }
+  }
+
+  // ==========================================================
+  // Cloud snapshot I/O (s dělením na části kvůli limitu 1 MiB)
+  // ==========================================================
+
+  /// Max. počet znaků v jednom dokumentu. Firestore má limit 1 MiB
+  /// na dokument; znak v UTF-8 má až 3 bajty → 300k znaků ≈ max 900 KB.
+  static const int _snapshotChunkChars = 300000;
+
+  static String _chunkDocId(String key, int index) => '${key}__part_$index';
+
+  static CollectionReference<Map<String, dynamic>> _snapshotsRef(String uid) {
+    return FirebaseFirestore.instance
+        .collection(cloudCoachesCollection)
+        .doc(uid)
+        .collection(cloudSnapshotsCollection);
+  }
+
+  /// Zapíše snapshot. Malý payload zůstává v `payloadJson` (kompatibilní se
+  /// starší verzí aplikace), velký se rozdělí do dokumentů `<key>__part_N`
+  /// ve stejné kolekci a hlavní dokument nese `chunkCount`.
+  static Future<void> writeCloudSnapshot({
+    required String uid,
+    required String key,
+    required List<Map<String, dynamic>> items,
+    required String deviceId,
+    required DateTime now,
+  }) async {
+    final payloadJson = jsonEncode(items);
+    final ref = _snapshotsRef(uid);
+
+    final meta = <String, dynamic>{
+      'storageKey': key,
+      'coachUid': uid,
+      'deviceId': deviceId,
+      'updatedAt': Timestamp.fromDate(now),
+      'itemCount': items.length,
+    };
+
+    if (payloadJson.length <= _snapshotChunkChars) {
+      await ref.doc(key).set({
+        ...meta,
+        'payloadJson': payloadJson,
+        'chunkCount': FieldValue.delete(),
+      }, SetOptions(merge: true));
+      return;
+    }
+
+    final chunks = <String>[];
+    for (var i = 0; i < payloadJson.length; i += _snapshotChunkChars) {
+      final end = (i + _snapshotChunkChars < payloadJson.length)
+          ? i + _snapshotChunkChars
+          : payloadJson.length;
+      chunks.add(payloadJson.substring(i, end));
+    }
+
+    // Části i hlavní dokument v jedné dávce → buď se zapíše vše, nebo nic.
+    final batch = FirebaseFirestore.instance.batch();
+    for (var i = 0; i < chunks.length; i++) {
+      batch.set(ref.doc(_chunkDocId(key, i)), {
+        'storageKey': key,
+        'coachUid': uid,
+        'index': i,
+        'updatedAt': Timestamp.fromDate(now),
+        'payloadPart': chunks[i],
+      });
+    }
+    batch.set(ref.doc(key), {
+      ...meta,
+      'payloadJson': FieldValue.delete(),
+      'chunkCount': chunks.length,
+    }, SetOptions(merge: true));
+
+    await batch.commit();
+
+    debugPrint(
+      'CLOUD SNAPSHOT CHUNKED -> key=$key chunks=${chunks.length} chars=${payloadJson.length}',
+    );
+  }
+
+  /// Načte snapshot z cloudu. `null` = snapshot neexistuje.
+  static Future<List<Map<String, dynamic>>?> readCloudSnapshot({
+    required String uid,
+    required String key,
+  }) async {
+    final ref = _snapshotsRef(uid);
+    final doc = await ref.doc(key).get();
+
+    if (!doc.exists) return null;
+
+    final data = doc.data();
+    if (data == null) return null;
+
+    String? payloadJson;
+
+    final chunkCount = data['chunkCount'];
+    if (chunkCount is int && chunkCount > 0) {
+      final parts = await Future.wait(
+        List.generate(chunkCount, (i) => ref.doc(_chunkDocId(key, i)).get()),
+      );
+
+      final buffer = StringBuffer();
+      for (final part in parts) {
+        final text = part.data()?['payloadPart'];
+        if (text is! String) {
+          throw StateError('Chybí část snapshotu ${part.id}');
+        }
+        buffer.write(text);
+      }
+      payloadJson = buffer.toString();
+    } else {
+      final raw = data['payloadJson'];
+      payloadJson = raw is String ? raw : null;
+    }
+
+    if (payloadJson == null || payloadJson.trim().isEmpty) {
+      return <Map<String, dynamic>>[];
+    }
+
+    final decoded = jsonDecode(payloadJson);
+    if (decoded is! List) {
+      return <Map<String, dynamic>>[];
+    }
+
+    return decoded
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+  }
+
+  // ==========================================================
+  // Smazání účtu trenéra
+  // ==========================================================
+
+  /// Smaže všechna data trenéra v cloudu (coaches/{uid}/snapshots/* i
+  /// dokument coaches/{uid}).
+  static Future<void> deleteCloudDataForCoach(String uid) async {
+    final coachRef = FirebaseFirestore.instance
+        .collection(cloudCoachesCollection)
+        .doc(uid);
+
+    final snapshots = await coachRef.collection(cloudSnapshotsCollection).get();
+
+    // Dávka má limit 500 operací.
+    var batch = FirebaseFirestore.instance.batch();
+    var ops = 0;
+    for (final doc in snapshots.docs) {
+      batch.delete(doc.reference);
+      ops++;
+      if (ops == 450) {
+        await batch.commit();
+        batch = FirebaseFirestore.instance.batch();
+        ops = 0;
+      }
+    }
+    batch.delete(coachRef);
+    await batch.commit();
+  }
+
+  /// Smaže lokální data trenéra (klíče s prefixem coach_<uid>_).
+  static Future<void> clearLocalDataForCoach(String uid) async {
+    final prefs = await _prefs();
+    final prefix = 'coach_${uid}_';
+    for (final key in prefs.getKeys().toList()) {
+      if (key.startsWith(prefix)) {
+        await prefs.remove(key);
+      }
     }
   }
 
@@ -391,13 +553,19 @@ class CoachStorageService {
 
   static Future<List<CustomTrainingPlan>> loadCustomTrainingPlans() async {
     final raw = await _loadRawList(_customTrainingPlansKey);
-    return raw.map(CustomTrainingPlan.fromJson).toList();
+    return raw
+        .where((e) => !_isTombstone(e))
+        .map(CustomTrainingPlan.fromJson)
+        .toList();
   }
 
   static Future<void> saveCustomTrainingPlans(
     List<CustomTrainingPlan> plans,
   ) async {
-    final raw = plans.map((p) => p.toJson()).toList();
+    final raw = await _withTombstones(
+      key: _customTrainingPlansKey,
+      visible: plans.map((p) => p.toJson()).toList(),
+    );
 
     await _saveRawList(_customTrainingPlansKey, raw);
 
@@ -410,13 +578,19 @@ class CoachStorageService {
   static Future<List<SharedTrainingTemplate>>
       loadSharedTrainingTemplates() async {
     final raw = await _loadRawList(_sharedTrainingTemplatesKey);
-    return raw.map(SharedTrainingTemplate.fromJson).toList();
+    return raw
+        .where((e) => !_isTombstone(e))
+        .map(SharedTrainingTemplate.fromJson)
+        .toList();
   }
 
   static Future<void> saveSharedTrainingTemplates(
     List<SharedTrainingTemplate> templates,
   ) async {
-    final raw = templates.map((t) => t.toJson()).toList();
+    final raw = await _withTombstones(
+      key: _sharedTrainingTemplatesKey,
+      visible: templates.map((t) => t.toJson()).toList(),
+    );
 
     await _saveRawList(_sharedTrainingTemplatesKey, raw);
 
@@ -543,9 +717,64 @@ class CoachStorageService {
   }
 
   static Future<void> _hardDeleteOverridesForClient(String clientId) async {
+    // Měkké mazání (deletedAt), aby se smazaný záznam při synchronizaci
+    // z jiného zařízení nevrátil.
+    final deviceId = await _requireDeviceId();
+    final now = DateTime.now();
+
     final items = await loadOverrides();
-    final updated = items.where((x) => x.clientId != clientId).toList();
+    final updated = items.map((x) {
+      if (x.clientId != clientId || x.isDeleted) return x;
+
+      return x.copyWith(
+        updatedAt: now,
+        deletedAt: now,
+        version: x.version + 1,
+        updatedByDeviceId: deviceId,
+      );
+    }).toList();
+
     await saveOverrides(updated);
+  }
+
+  // ==========================================================
+  // Tombstones (pro modely bez vlastního deletedAt)
+  // ==========================================================
+
+  static bool _isTombstone(Map<String, dynamic> item) {
+    final d = item['deletedAt'];
+    return d != null && d.toString().trim().isNotEmpty;
+  }
+
+  /// Položky, které byly dřív uložené a v novém seznamu chybí, se neodstraní,
+  /// ale uloží se jako "tombstone" (id + deletedAt + novější updatedAt).
+  /// Díky tomu smazání při slučování s cloudem vyhraje nad starou kopií.
+  static Future<List<Map<String, dynamic>>> _withTombstones({
+    required String key,
+    required List<Map<String, dynamic>> visible,
+    String idField = 'id',
+  }) async {
+    final previous = await _loadRawList(key);
+    final visibleIds = visible.map((e) => e[idField]?.toString()).toSet();
+    final nowIso = DateTime.now().toIso8601String();
+
+    final tombstones = <Map<String, dynamic>>[];
+    for (final item in previous) {
+      final id = item[idField]?.toString();
+      if (id == null || visibleIds.contains(id)) continue;
+
+      if (_isTombstone(item)) {
+        tombstones.add(item);
+      } else {
+        tombstones.add({
+          idField: id,
+          'deletedAt': nowIso,
+          'updatedAt': nowIso,
+        });
+      }
+    }
+
+    return [...visible, ...tombstones];
   }
 
   static Future<void> deleteNotesForClient(String clientId) async {
@@ -613,4 +842,4 @@ class CoachStorageService {
     final prefs = await _prefs();
     await prefs.remove(_scopedKey(_lastCloudSyncAtKey));
   }
-}
+}

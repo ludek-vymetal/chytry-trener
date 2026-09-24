@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/custom_training_plan.dart';
@@ -13,17 +14,17 @@ class CustomTrainingPlanNotifier
     try {
       state = await CoachStorageService.loadCustomTrainingPlans();
     } catch (e) {
-      print('Chyba při načítání custom plánů: $e');
+      debugPrint('Chyba při načítání custom plánů: $e');
       state = [];
     }
   }
 
   Future<void> _save() async {
     try {
+      // saveCustomTrainingPlans už nahrává svůj snapshot do cloudu.
       await CoachStorageService.saveCustomTrainingPlans(state);
-      await CoachStorageService.pushAllLocalSnapshotsToCloud();
     } catch (e) {
-      print('Chyba při ukládání custom plánů: $e');
+      debugPrint('Chyba při ukládání custom plánů: $e');
     }
   }
 
@@ -502,4 +503,4 @@ class CustomTrainingPlanNotifier
 final customTrainingPlanProvider =
     StateNotifierProvider<CustomTrainingPlanNotifier, List<CustomTrainingPlan>>(
   (ref) => CustomTrainingPlanNotifier(),
-);
+);

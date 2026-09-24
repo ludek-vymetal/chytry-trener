@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/daily_intake.dart';
 import '../services/local_storage_service.dart';
+import 'coach/active_client_provider.dart';
 
 String _key(DateTime d) {
   final x = DateTime(d.year, d.month, d.day);
@@ -16,13 +17,17 @@ final selectedFoodDateProvider = StateProvider<DateTime>((ref) {
 });
 
 class DailyHistoryNotifier extends StateNotifier<Map<String, DailyIntake>> {
-  DailyHistoryNotifier() : super({}) {
+  /// [clientId] = aktivní klient; historie se načítá a ukládá jen pro něj.
+  DailyHistoryNotifier({this.clientId}) : super({}) {
     _load();
   }
 
+  final String? clientId;
+
   Future<void> _load() async {
     try {
-      final raw = await LocalStorageService.loadDailyHistory();
+      final raw = await LocalStorageService.loadDailyHistory(clientId: clientId);
+      if (!mounted) return;
       if (raw == null || raw.isEmpty) {
         state = {};
         return;
@@ -39,7 +44,7 @@ class DailyHistoryNotifier extends StateNotifier<Map<String, DailyIntake>> {
 
       state = loaded;
     } catch (_) {
-      state = {};
+      if (mounted) state = {};
     }
   }
 
@@ -48,7 +53,7 @@ class DailyHistoryNotifier extends StateNotifier<Map<String, DailyIntake>> {
       for (final entry in state.entries) entry.key: entry.value.toJson(),
     };
 
-    await LocalStorageService.saveDailyHistory(jsonMap);
+    await LocalStorageService.saveDailyHistory(jsonMap, clientId: clientId);
   }
 
   Future<void> reload() async {
@@ -111,7 +116,11 @@ class DailyHistoryNotifier extends StateNotifier<Map<String, DailyIntake>> {
 
 final dailyHistoryProvider =
     StateNotifierProvider<DailyHistoryNotifier, Map<String, DailyIntake>>(
-  (ref) => DailyHistoryNotifier(),
+  (ref) {
+    // Při změně aktivního klienta se historie načte znovu jen pro něj.
+    final clientId = ref.watch(activeClientIdProvider).valueOrNull;
+    return DailyHistoryNotifier(clientId: clientId);
+  },
 );
 
 extension DailyHistoryMapX on Map<String, DailyIntake> {

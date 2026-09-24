@@ -40,42 +40,130 @@ class LocalStorageService {
         .toList();
   }
 
-  static Future<void> saveDailyHistory(Map<String, dynamic> historyJson) async {
-    final items = historyJson.entries.map((entry) {
-      final intakeJson = entry.value is Map<String, dynamic>
-          ? Map<String, dynamic>.from(entry.value as Map<String, dynamic>)
-          : <String, dynamic>{};
+  // ==========================================================
+  // Historie jídla (zvlášť pro každého klienta)
+  // ==========================================================
+  //
+  // Každý uložený den nese `clientId` (null = starší záznam z doby před
+  // rozdělením podle klientů) a `entryKey` = "<clientId>|<datum>", podle
+  // kterého se záznamy slučují s cloudem. Starší záznamy mají entryKey
+  // rovný datu, takže se v cloudu nic nezdvojí.
 
-      return <String, dynamic>{
-        'dateKey': entry.key,
-        'updatedAt': DateTime.now().toIso8601String(),
-        'version': 1,
-        ...intakeJson,
-      };
-    }).toList();
+  static const _metaKeys = {'dateKey', 'updatedAt', 'version', 'clientId', 'entryKey'};
 
-    await CoachStorageService.saveDailyHistoryRaw(items);
+  static String _entryKey(String? clientId, String dateKey) {
+    return clientId == null ? dateKey : '$clientId|$dateKey';
   }
 
-  static Future<Map<String, dynamic>?> loadDailyHistory() async {
-    final items = await CoachStorageService.loadDailyHistoryRaw();
-    if (items.isEmpty) {
-      return null;
-    }
+  static String? _itemClientId(Map<String, dynamic> item) {
+    final raw = item['clientId'];
+    if (raw is String && raw.trim().isNotEmpty) return raw.trim();
+    return null;
+  }
 
-    final result = <String, dynamic>{};
+  static Map<String, dynamic> _content(Map<String, dynamic> item) {
+    return Map<String, dynamic>.from(item)
+      ..removeWhere((k, _) => _metaKeys.contains(k));
+  }
+
+  /// Záznam, který se pro daného klienta a den zobrazuje: vlastní záznam
+  /// klienta, jinak starší neoznačený záznam.
+  static Map<String, Map<String, dynamic>> _visibleByDate(
+    List<Map<String, dynamic>> items,
+    String? clientId,
+  ) {
+    final result = <String, Map<String, dynamic>>{};
 
     for (final item in items) {
       final dateKey = (item['dateKey'] ?? '').toString().trim();
       if (dateKey.isEmpty) continue;
 
-      final map = Map<String, dynamic>.from(item)
-        ..remove('dateKey')
-        ..remove('updatedAt')
-        ..remove('version');
-
-      result[dateKey] = map;
+      final owner = _itemClientId(item);
+      if (owner == null) {
+        result.putIfAbsent(dateKey, () => item);
+      } else if (owner == clientId) {
+        result[dateKey] = item; // vlastní záznam má přednost
+      }
     }
+
+    return result;
+  }
+
+  static Future<void> saveDailyHistory(
+    Map<String, dynamic> historyJson, {
+    String? clientId,
+  }) async {
+    final previousItems = await CoachStorageService.loadDailyHistoryRaw();
+    final visible = _visibleByDate(previousItems, clientId);
+    final nowIso = DateTime.now().toIso8601String();
+
+    // Záznamy, které tímto uložením nahrazujeme (podle entryKey).
+    final replaced = <String, Map<String, dynamic>>{};
+
+    for (final entry in historyJson.entries) {
+      final intakeJson = entry.value is Map<String, dynamic>
+          ? Map<String, dynamic>.from(entry.value as Map<String, dynamic>)
+          : <String, dynamic>{};
+
+      final previous = visible[entry.key];
+
+      // Beze změny → ponechat původní záznam (i s updatedAt/version),
+      // jinak by při synchronizaci vždy vyhrálo zařízení, které ukládalo
+      // naposledy.
+      if (previous != null &&
+          jsonEncode(_content(previous)) == jsonEncode(intakeJson)) {
+        continue;
+      }
+
+      final ownPrevious =
+          previous != null && _itemClientId(previous) == clientId
+              ? previous
+              : null;
+      final previousVersion =
+          (ownPrevious?['version'] as num?)?.toInt() ?? 0;
+
+      final key = _entryKey(clientId, entry.key);
+      replaced[key] = <String, dynamic>{
+        // Bez klienta zůstává starý formát (bez entryKey), aby se záznam
+        // v cloudu dál pároval podle dateKey a nevznikly duplicity.
+        if (clientId != null) 'entryKey': key,
+        'dateKey': entry.key,
+        if (clientId != null) 'clientId': clientId,
+        'updatedAt': nowIso,
+        'version': previousVersion + 1,
+        ...intakeJson,
+      };
+    }
+
+    if (replaced.isEmpty) return;
+
+    final items = <Map<String, dynamic>>[
+      for (final item in previousItems)
+        if (!replaced.containsKey(
+          _entryKey(
+            _itemClientId(item),
+            (item['dateKey'] ?? '').toString().trim(),
+          ),
+        ))
+          item,
+      ...replaced.values,
+    ];
+
+    await CoachStorageService.saveDailyHistoryRaw(items);
+  }
+
+  static Future<Map<String, dynamic>?> loadDailyHistory({
+    String? clientId,
+  }) async {
+    final items = await CoachStorageService.loadDailyHistoryRaw();
+    if (items.isEmpty) {
+      return null;
+    }
+
+    final result = <String, dynamic>{
+      for (final entry in _visibleByDate(items, clientId).entries)
+        entry.key: _content(entry.value),
+    };
 
     return result.isEmpty ? null : result;
   }

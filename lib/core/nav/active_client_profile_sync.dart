@@ -37,7 +37,7 @@ class _ActiveClientProfileSyncState
         final notifier = ref.read(userProfileProvider.notifier);
         final currentProfile = ref.read(userProfileProvider);
 
-        print(
+        debugPrint(
           'ACTIVE CLIENT SYNC -> incomingClientId=${c.clientId} '
           'currentProfileClientId=${currentProfile?.clientId} '
           'currentGoal=${currentProfile?.goal?.type.name}/${currentProfile?.goal?.reason.name}',
@@ -49,7 +49,7 @@ class _ActiveClientProfileSyncState
         if (_lastSyncedClientId != c.clientId) {
           _lastSyncedClientId = c.clientId;
 
-          print('ACTIVE CLIENT SYNC -> switching client, loading full profile');
+          debugPrint('ACTIVE CLIENT SYNC -> switching client, loading full profile');
 
           await notifier.switchToClient(c.clientId);
         }
@@ -68,7 +68,7 @@ class _ActiveClientProfileSyncState
             currentProfile.weight == 0;
 
         if (shouldUpdateBasics) {
-          print('ACTIVE CLIENT SYNC -> applying profile basics');
+          debugPrint('ACTIVE CLIENT SYNC -> applying profile basics');
 
           await notifier.setProfileBasics(
             clientId: c.clientId,
@@ -80,7 +80,7 @@ class _ActiveClientProfileSyncState
             weightKg: c.weightKg,
           );
         } else {
-          print(
+          debugPrint(
             'ACTIVE CLIENT SYNC -> SKIPPED basics update (prevent overwrite)',
           );
         }
@@ -98,4 +98,4 @@ class _ActiveClientProfileSyncState
   Widget build(BuildContext context) {
     return widget.child;
   }
-}
+}

@@ -568,9 +568,11 @@ class ClientDetailScreen extends ConsumerWidget {
     final liveClient = liveStats?.client ?? client;
     final isSensitive = liveClient.isEatingDisorderSupport;
 
-    final List<TrainingSession> sessions = ref.watch(trainingSessionProvider);
-    final List<TrainingSession> history =
-        liveClient.clientId == 'local_user' ? sessions : <TrainingSession>[];
+    // watch kvůli překreslení při změně; data bereme pro konkrétního klienta.
+    ref.watch(trainingSessionProvider);
+    final List<TrainingSession> history = ref
+        .read(trainingSessionProvider.notifier)
+        .sessionsForClient(liveClient.clientId);
 
     final customPlans = ref.watch(customTrainingPlanProvider);
     final clientPlans =

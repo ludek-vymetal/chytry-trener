@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
@@ -190,7 +191,7 @@ class _DashboardScreenState
 
     final tdee = MetabolismService.calculateTDEE(
       profile,
-      ActivityLevel.moderate,
+      MetabolismService.activityFor(profile),
     );
 
     final macro =
@@ -581,6 +582,7 @@ class _DashboardScreenState
               },
             ),
 
+            if (kDebugMode)
             _fullWidthButton(
               label:
                   l10n.phaseLogicTest,
@@ -1125,4 +1127,4 @@ class _MacroDebugCard extends StatelessWidget {
       ),
     );
   }
-}
+}

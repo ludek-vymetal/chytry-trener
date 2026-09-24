@@ -9,6 +9,10 @@ class TrainingSession {
   final DateTime updatedAt;
   final int version;
 
+  /// Klient, ke kterému trénink patří. `null` = starší záznam
+  /// (před zavedením klientů v tréninkové historii).
+  final String? clientId;
+
   const TrainingSession({
     required this.date,
     required this.dayPlan,
@@ -16,6 +20,7 @@ class TrainingSession {
     this.completed = false,
     DateTime? updatedAt,
     this.version = 1,
+    this.clientId,
   }) : updatedAt = updatedAt ?? date;
 
   TrainingSession copyWith({
@@ -25,6 +30,7 @@ class TrainingSession {
     bool? completed,
     DateTime? updatedAt,
     int? version,
+    String? clientId,
   }) {
     return TrainingSession(
       date: date ?? this.date,
@@ -33,6 +39,7 @@ class TrainingSession {
       completed: completed ?? this.completed,
       updatedAt: updatedAt ?? this.updatedAt,
       version: version ?? this.version,
+      clientId: clientId ?? this.clientId,
     );
   }
 }

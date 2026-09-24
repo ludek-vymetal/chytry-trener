@@ -40,7 +40,7 @@ class PaywallScreen extends ConsumerWidget {
                     child: Text(
                       target == PaywallTarget.coach
                           ? 'Coach Mode je zamčený. Po aktivaci budeš mít přístup ke správě klientů.'
-                          : 'Client Mode je zamčený. Po aktivaci budeš mít přístup k AI plánu.',
+                          : 'Client Mode je zamčený. Po aktivaci budeš mít přístup k osobnímu plánu tréninku a stravy.',
                     ),
                   ),
                 ),
@@ -53,7 +53,7 @@ class PaywallScreen extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         await ref.read(subscriptionProvider.notifier).activateClientFor30Days();
-                        if (context.mounted) Navigator.pop(context);
+                        if (context.mounted) Navigator.maybePop(context);
                       },
                       child: const Text('Aktivovat Client na 30 dní (TEST)'),
                     ),
@@ -64,7 +64,7 @@ class PaywallScreen extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         await ref.read(subscriptionProvider.notifier).activateCoachFor30Days();
-                        if (context.mounted) Navigator.pop(context);
+                        if (context.mounted) Navigator.maybePop(context);
                       },
                       child: const Text('Aktivovat Coach na 30 dní (TEST)'),
                     ),
@@ -77,7 +77,7 @@ class PaywallScreen extends ConsumerWidget {
                   child: OutlinedButton(
                     onPressed: () async {
                       await ref.read(subscriptionProvider.notifier).clear();
-                      if (context.mounted) Navigator.pop(context);
+                      if (context.mounted) Navigator.maybePop(context);
                     },
                     child: const Text('Smazat předplatné (TEST)'),
                   ),

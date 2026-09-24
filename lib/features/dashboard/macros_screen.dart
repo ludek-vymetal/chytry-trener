@@ -24,7 +24,7 @@ class MacrosScreen extends ConsumerWidget {
 
     final tdee = MetabolismService.calculateTDEE(
       profile,
-      ActivityLevel.moderate,
+      MetabolismService.activityFor(profile),
     );
 
     final target = MacroService.calculate(profile, tdee);
@@ -153,4 +153,4 @@ class MacrosScreen extends ConsumerWidget {
       ),
     );
   }
-}
+}

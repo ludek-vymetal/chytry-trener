@@ -224,7 +224,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeDescription.
   ///
   /// In en, this message translates to:
-  /// **'Regular user = onboarding + AI plan.\nCoach mode = client management.'**
+  /// **'Regular user = onboarding + personal plan.\nCoach mode = client management.'**
   String get modeDescription;
 
   /// No description provided for @userModeLocked.
@@ -5861,11 +5861,83 @@ abstract class AppLocalizations {
   /// **'Water percentage: {value}%'**
   String waterPercentageInfo(Object value);
 
+  /// No description provided for @confirmDeleteTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete template \"{name}\"?'**
+  String confirmDeleteTemplate(Object name);
+
   /// No description provided for @failedToSaveMeasurements.
   ///
   /// In en, this message translates to:
   /// **'Failed to save measurements: {error}'**
   String failedToSaveMeasurements(Object error);
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @passwordResetEnterEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email above first.'**
+  String get passwordResetEnterEmail;
+
+  /// No description provided for @passwordResetSent.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a password reset link to {email}.'**
+  String passwordResetSent(Object email);
+
+  /// No description provided for @passwordResetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the reset email: {error}'**
+  String passwordResetFailed(Object error);
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete coach account?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account and all client data stored in the cloud. Coach data on this device will be removed too. This cannot be undone.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @deleteAccountPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm with your password'**
+  String get deleteAccountPasswordLabel;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete permanently'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted.'**
+  String get accountDeleted;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete the account: {error}'**
+  String deleteAccountFailed(Object error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

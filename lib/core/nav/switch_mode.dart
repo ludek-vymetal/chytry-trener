@@ -9,7 +9,7 @@ Future<void> switchToRoleSelect(BuildContext context, WidgetRef ref) async {
   final profileNotifier = ref.read(userProfileProvider.notifier);
   final currentProfile = ref.read(userProfileProvider);
 
-  print(
+  debugPrint(
     'SWITCH TO ROLE SELECT START -> '
     'currentClientId=${currentProfile?.clientId} '
     'currentGoal=${currentProfile?.goal?.type.name}/${currentProfile?.goal?.reason.name}',
@@ -24,7 +24,7 @@ Future<void> switchToRoleSelect(BuildContext context, WidgetRef ref) async {
 
   final detachedProfile = ref.read(userProfileProvider);
 
-  print(
+  debugPrint(
     'SWITCH TO ROLE SELECT DONE -> '
     'stateClientId=${detachedProfile?.clientId} '
     'stateGoal=${detachedProfile?.goal?.type.name}/${detachedProfile?.goal?.reason.name}',
@@ -36,4 +36,4 @@ Future<void> switchToRoleSelect(BuildContext context, WidgetRef ref) async {
     MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
     (_) => false,
   );
-}
+}

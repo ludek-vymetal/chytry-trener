@@ -569,7 +569,7 @@ class FoodSummaryScreen extends ConsumerWidget {
 
     final tdee = MetabolismService.calculateTDEE(
       profile,
-      ActivityLevel.moderate,
+      MetabolismService.activityFor(profile),
     );
     final macro = MacroService.calculate(profile, tdee);
 
@@ -1158,7 +1158,7 @@ class FoodSummaryScreen extends ConsumerWidget {
 
         final tdee = MetabolismService.calculateTDEE(
           profile,
-          ActivityLevel.moderate,
+          MetabolismService.activityFor(profile),
         );
 
         final macro = MacroService.calculate(profile, tdee);
@@ -1246,7 +1246,7 @@ Widget build(BuildContext context, WidgetRef ref) {
 
   final tdee = MetabolismService.calculateTDEE(
     profile,
-    ActivityLevel.moderate,
+    MetabolismService.activityFor(profile),
   );
 
   final macro = MacroService.calculate(profile, tdee);
@@ -1628,4 +1628,4 @@ class _ItemsCard extends StatelessWidget {
       ),
     );
   }
-}
+}

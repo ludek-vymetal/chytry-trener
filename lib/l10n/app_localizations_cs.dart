@@ -72,7 +72,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get selectMode => 'Vyber režim';
 
   @override
-  String get modeDescription => 'Běžný uživatel = onboarding + AI plán.\nTrenérský mód = správa klientů.';
+  String get modeDescription => 'Běžný uživatel = onboarding + osobní plán.\nTrenérský mód = správa klientů.';
 
   @override
   String get userModeLocked => 'Běžný uživatel (zamčeno)';
@@ -2962,7 +2962,51 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
+  String confirmDeleteTemplate(Object name) {
+    return 'Opravdu chceš smazat šablonu „$name“?';
+  }
+
+  @override
   String failedToSaveMeasurements(Object error) {
     return 'Nepodařilo se uložit míry: $error';
+  }
+
+  @override
+  String get forgotPassword => 'Zapomenuté heslo?';
+
+  @override
+  String get passwordResetEnterEmail => 'Nejdřív zadej výše svůj e-mail.';
+
+  @override
+  String passwordResetSent(Object email) {
+    return 'Na $email jsme poslali odkaz pro obnovení hesla.';
+  }
+
+  @override
+  String passwordResetFailed(Object error) {
+    return 'Odkaz pro obnovení hesla se nepodařilo odeslat: $error';
+  }
+
+  @override
+  String get deleteAccount => 'Smazat účet';
+
+  @override
+  String get deleteAccountTitle => 'Smazat trenérský účet?';
+
+  @override
+  String get deleteAccountWarning => 'Tímto trvale smažeš svůj účet a všechna data klientů uložená v cloudu. Smažou se i trenérská data v tomto zařízení. Tuto akci nejde vrátit.';
+
+  @override
+  String get deleteAccountPasswordLabel => 'Potvrď svým heslem';
+
+  @override
+  String get deleteAccountConfirm => 'Trvale smazat';
+
+  @override
+  String get accountDeleted => 'Účet byl smazán.';
+
+  @override
+  String deleteAccountFailed(Object error) {
+    return 'Účet se nepodařilo smazat: $error';
   }
 }

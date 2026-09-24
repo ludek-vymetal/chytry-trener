@@ -6,11 +6,19 @@ import '../core/training/sessions/training_session.dart';
 import '../core/training/training_plan_models.dart';
 import '../core/training/training_set.dart';
 import '../services/coach/coach_storage_service.dart';
+import 'coach/active_client_provider.dart';
 
 class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
-  TrainingSessionNotifier() : super([]) {
+  /// [clientId] = aktivní klient. `state` obsahuje jen jeho tréninky
+  /// (plus starší záznamy bez clientId, aby nezmizela dřívější historie).
+  TrainingSessionNotifier({this.clientId}) : super([]) {
     _load();
   }
+
+  final String? clientId;
+
+  /// Všechny uložené tréninky všech klientů.
+  List<TrainingSession> _all = [];
 
   Future<void> _load() async {
     try {
@@ -23,7 +31,7 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
       final merged = <String, TrainingSession>{};
 
       for (final session in loaded) {
-        final id = _sessionId(session.date);
+        final id = _sessionKey(session);
         final existing = merged[id];
 
         if (existing == null) {
@@ -34,33 +42,87 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
         merged[id] = _pickNewerSession(existing, session);
       }
 
-      final sessions = merged.values.toList()
-        ..sort((a, b) => b.date.compareTo(a.date));
-
-      state = sessions;
+      _all = merged.values.toList();
+      _publish();
     } catch (_) {
-      state = [];
+      _all = [];
+      if (mounted) state = [];
     }
   }
 
+  /// Přepočítá viditelný seznam pro aktivního klienta.
+  void _publish() {
+    if (!mounted) return;
+    state = _visibleFor(clientId);
+  }
+
+  List<TrainingSession> _visibleFor(String? id) {
+    final visible = _all
+        .where((s) => s.clientId == null || s.clientId == id)
+        .toList();
+
+    // Pokud je v jednom dni starší (neoznačený) i nový záznam klienta,
+    // zobrazíme jen ten klientský.
+    final taggedDays = visible
+        .where((s) => s.clientId != null)
+        .map((s) => _dateKey(s.date))
+        .toSet();
+
+    return visible
+        .where(
+          (s) => s.clientId != null || !taggedDays.contains(_dateKey(s.date)),
+        )
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
+  /// Tréninky konkrétního klienta (např. pro detail klienta v coach módu).
+  /// Pro `local_user` zahrnuje i starší záznamy bez clientId.
+  List<TrainingSession> sessionsForClient(String id) {
+    return _all
+        .where(
+          (s) => s.clientId == id || (s.clientId == null && id == 'local_user'),
+        )
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+  }
+
   Future<void> _save() async {
-    final raw = state.map(_toJson).toList();
+    final raw = _all.map(_toJson).toList();
     await CoachStorageService.saveTrainingSessionsRaw(raw);
+  }
+
+  /// Nahradí záznam v `_all` (podle klíče) a publikuje.
+  Future<void> _put(TrainingSession session) async {
+    final key = _sessionKey(session);
+    _all = [
+      for (final s in _all)
+        if (_sessionKey(s) != key) s,
+      session,
+    ];
+    _publish();
+    await _save();
   }
 
   Future<void> reload() async {
     await _load();
   }
 
-  Future<void> importSessions(List<TrainingSession> sessions) async {
+  Future<void> importSessions(
+    List<TrainingSession> sessions, {
+    String? forClientId,
+  }) async {
     if (sessions.isEmpty) return;
 
     final merged = <String, TrainingSession>{
-      for (final session in state) _sessionId(session.date): session,
+      for (final session in _all) _sessionKey(session): session,
     };
 
-    for (final session in sessions) {
-      final id = _sessionId(session.date);
+    for (final incoming in sessions) {
+      final session = forClientId == null
+          ? incoming
+          : incoming.copyWith(clientId: forClientId);
+      final id = _sessionKey(session);
       final existing = merged[id];
 
       if (existing == null) {
@@ -71,7 +133,8 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
       merged[id] = _pickNewerSession(existing, session);
     }
 
-    state = merged.values.toList()..sort((a, b) => b.date.compareTo(a.date));
+    _all = merged.values.toList();
+    _publish();
     await _save();
   }
 
@@ -86,20 +149,18 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
     required DateTime date,
     required TrainingSession baseSession,
   }) async {
-    final idx = state.indexWhere((s) => _sameDay(s.date, date));
+    final existing = getByDate(date);
 
-    if (idx == -1) {
-      final newSession = baseSession.copyWith(
-        version: 1,
-        updatedAt: DateTime.now(),
+    if (existing == null) {
+      await _put(
+        baseSession.copyWith(
+          version: 1,
+          updatedAt: DateTime.now(),
+          clientId: clientId,
+        ),
       );
-
-      state = [...state, newSession]..sort((a, b) => b.date.compareTo(a.date));
-      await _save();
       return;
     }
-
-    final existing = state[idx];
 
     final plannedKeys = baseSession.dayPlan.exercises
         .map((e) => e.exerciseId ?? e.name)
@@ -111,17 +172,13 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
         ? false
         : plannedKeys.every((k) => loggedKeys.contains(k));
 
-    final updated = existing.copyWith(
-      completed: allLogged,
-      updatedAt: DateTime.now(),
-      version: existing.version + 1,
+    await _put(
+      existing.copyWith(
+        completed: allLogged,
+        updatedAt: DateTime.now(),
+        version: existing.version + 1,
+      ),
     );
-
-    final newState = [...state];
-    newState[idx] = updated;
-    newState.sort((a, b) => b.date.compareTo(a.date));
-    state = newState;
-    await _save();
   }
 
   Future<void> upsertEntry({
@@ -129,38 +186,33 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
     required TrainingSession baseSession,
     required ExerciseLogEntry entry,
   }) async {
-    final idx = state.indexWhere((s) => _sameDay(s.date, date));
+    final existing = getByDate(date);
 
-    if (idx == -1) {
-      final created = baseSession.copyWith(
-        entries: [entry],
-        updatedAt: DateTime.now(),
-        version: 1,
+    if (existing == null) {
+      await _put(
+        baseSession.copyWith(
+          entries: [entry],
+          updatedAt: DateTime.now(),
+          version: 1,
+          clientId: clientId,
+        ),
       );
-
-      state = [...state, created]..sort((a, b) => b.date.compareTo(a.date));
-      await _save();
       return;
     }
 
-    final existing = state[idx];
     final updatedEntries = [
       for (final e in existing.entries)
         if (e.exerciseKey != entry.exerciseKey) e,
       entry,
     ];
 
-    final updated = existing.copyWith(
-      entries: updatedEntries,
-      updatedAt: DateTime.now(),
-      version: existing.version + 1,
+    await _put(
+      existing.copyWith(
+        entries: updatedEntries,
+        updatedAt: DateTime.now(),
+        version: existing.version + 1,
+      ),
     );
-
-    final newState = [...state];
-    newState[idx] = updated;
-    newState.sort((a, b) => b.date.compareTo(a.date));
-    state = newState;
-    await _save();
   }
 
   TrainingSession _pickNewerSession(
@@ -177,16 +229,25 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  String _sessionId(DateTime date) {
+  String _dateKey(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
     return '$y-$m-$d';
   }
 
+  /// Unikátní klíč záznamu. Starší záznamy (bez clientId) si drží původní
+  /// tvar "YYYY-MM-DD", aby sedělo slučování s daty v cloudu.
+  String _sessionKey(TrainingSession s) {
+    final day = _dateKey(s.date);
+    final cid = s.clientId;
+    return cid == null ? day : '$cid|$day';
+  }
+
   Map<String, dynamic> _toJson(TrainingSession s) {
     return {
-      'sessionId': _sessionId(s.date),
+      'sessionId': _sessionKey(s),
+      'clientId': s.clientId,
       'date': s.date.toIso8601String(),
       'completed': s.completed,
       'updatedAt': s.updatedAt.toIso8601String(),
@@ -303,11 +364,17 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
             (json['date'] as String?) ?? DateTime.now().toIso8601String(),
           ),
       version: (json['version'] as num?)?.toInt() ?? 1,
+      clientId: json['clientId'] as String?,
     );
   }
 }
 
 final trainingSessionProvider =
     StateNotifierProvider<TrainingSessionNotifier, List<TrainingSession>>(
-  (ref) => TrainingSessionNotifier(),
+  (ref) {
+    // Při změně aktivního klienta se notifier vytvoří znovu a načte
+    // jen tréninky daného klienta.
+    final clientId = ref.watch(activeClientIdProvider).valueOrNull;
+    return TrainingSessionNotifier(clientId: clientId);
+  },
 );

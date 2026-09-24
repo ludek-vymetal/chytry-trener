@@ -21,7 +21,7 @@
 "activeClientCoachLocked": "Aktivní: Client ✅ (Coach zamčený)",
 "noAccess": "Bez přístupu",
 "selectMode": "Vyber režim",
-"modeDescription": "Běžný uživatel = onboarding + AI plán.\nTrenérský mód = správa klientů.",
+"modeDescription": "Běžný uživatel = onboarding + osobní plán.\nTrenérský mód = správa klientů.",
 "userModeLocked": "Běžný uživatel (zamčeno)",
 "coachModeLocked": "Trenérský mód (zamčeno)",
 "unlockClient": "Odemknout Client (Paywall)",
@@ -1197,6 +1197,12 @@
     "error": {}
   }
 },
+"confirmDeleteTemplate": "Opravdu chceš smazat šablonu „{name}“?",
+"@confirmDeleteTemplate": {
+  "placeholders": {
+    "name": {}
+  }
+},
 "@clientMovedToArchive": {
   "placeholders": {
     "name": {}
@@ -1256,6 +1262,32 @@
   }
 },
 "@failedToSaveMeasurements": {
+  "placeholders": {
+    "error": {}
+  }
+},
+"forgotPassword": "Zapomenuté heslo?",
+"passwordResetEnterEmail": "Nejdřív zadej výše svůj e-mail.",
+"passwordResetSent": "Na {email} jsme poslali odkaz pro obnovení hesla.",
+"@passwordResetSent": {
+  "placeholders": {
+    "email": {}
+  }
+},
+"passwordResetFailed": "Odkaz pro obnovení hesla se nepodařilo odeslat: {error}",
+"@passwordResetFailed": {
+  "placeholders": {
+    "error": {}
+  }
+},
+"deleteAccount": "Smazat účet",
+"deleteAccountTitle": "Smazat trenérský účet?",
+"deleteAccountWarning": "Tímto trvale smažeš svůj účet a všechna data klientů uložená v cloudu. Smažou se i trenérská data v tomto zařízení. Tuto akci nejde vrátit.",
+"deleteAccountPasswordLabel": "Potvrď svým heslem",
+"deleteAccountConfirm": "Trvale smazat",
+"accountDeleted": "Účet byl smazán.",
+"deleteAccountFailed": "Účet se nepodařilo smazat: {error}",
+"@deleteAccountFailed": {
   "placeholders": {
     "error": {}
   }
