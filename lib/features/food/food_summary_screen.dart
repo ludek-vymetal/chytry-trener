@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/daily_intake.dart';
+import '../../models/diet_preference.dart';
 import '../../models/food_combo.dart';
 import '../../providers/daily_history_provider.dart';
 import '../../providers/daily_intake_provider.dart';
@@ -89,8 +90,13 @@ class _PerGram {
 class _ComboFilter {
   final ComboMealTime time;
   final ComboTaste taste;
+  final DietPreference diet;
 
-  _ComboFilter({required this.time, required this.taste});
+  _ComboFilter({
+    required this.time,
+    required this.taste,
+    this.diet = DietPreference.none,
+  });
 }
 
 class _ChosenCombo {
@@ -269,6 +275,7 @@ class FoodSummaryScreen extends ConsumerWidget {
   Future<_ComboFilter?> _pickComboFilterForSlot(
     BuildContext context, {
     required _MealSlot slot,
+    DietPreference initialDiet = DietPreference.none,
   }) async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -277,7 +284,7 @@ class FoodSummaryScreen extends ConsumerWidget {
     final hasTaste =
         baseTime == ComboMealTime.breakfast || baseTime == ComboMealTime.snack;
 
-    bool vegan = false;
+    var diet = initialDiet;
     ComboTaste taste = ComboTaste.any;
 
     return showModalBottomSheet<_ComboFilter>(
@@ -300,16 +307,31 @@ class FoodSummaryScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    SwitchListTile(
-                      title: Text(l10n.vegan),
-                      subtitle: Text(
-                        l10n.veganCategoryOnly,
-                      ),
-                      value: vegan,
-                      onChanged: (v) => setLocal(() => vegan = v),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: Text(l10n.dietNone),
+                          selected: diet == DietPreference.none,
+                          onSelected: (_) =>
+                              setLocal(() => diet = DietPreference.none),
+                        ),
+                        ChoiceChip(
+                          label: Text(l10n.dietVegetarian),
+                          selected: diet == DietPreference.vegetarian,
+                          onSelected: (_) =>
+                              setLocal(() => diet = DietPreference.vegetarian),
+                        ),
+                        ChoiceChip(
+                          label: Text(l10n.dietVegan),
+                          selected: diet == DietPreference.vegan,
+                          onSelected: (_) =>
+                              setLocal(() => diet = DietPreference.vegan),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
-                    if (hasTaste && !vegan)
+                    if (hasTaste)
                       Wrap(
                         spacing: 8,
                         children: [
@@ -338,19 +360,13 @@ class FoodSummaryScreen extends ConsumerWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          if (vegan) {
-                            Navigator.pop(
-                              ctx,
-                              _ComboFilter(
-                                time: ComboMealTime.vegan,
-                                taste: ComboTaste.any,
-                              ),
-                            );
-                            return;
-                          }
                           Navigator.pop(
                             ctx,
-                            _ComboFilter(time: baseTime, taste: taste),
+                            _ComboFilter(
+                              time: baseTime,
+                              taste: taste,
+                              diet: diet,
+                            ),
                           );
                         },
                         child: Text(l10n.continueText),
@@ -430,7 +446,8 @@ class FoodSummaryScreen extends ConsumerWidget {
     double baseFat = 0;
 
     for (final it in combo.items) {
-      final meal = bankByName[it.mealName];
+      final meal = bankByName[it.mealName] ??
+          bankByName[it.mealName.trim().toLowerCase()];
       if (meal == null) {
         continue;
       }
@@ -593,6 +610,8 @@ class FoodSummaryScreen extends ConsumerWidget {
     );
   }
 
+  /// Gramáž jídla, při které nejlépe sedí VŠECHNY tři makroživiny
+  /// (nejmenší čtverce v kcal: B a S × 4, T × 9), ne jen bílkoviny.
   int _suggestGramsForCombo({
     required FoodLogItem baseItem,
     required int baseGrams,
@@ -601,12 +620,34 @@ class FoodSummaryScreen extends ConsumerWidget {
     if (baseItem.calories <= 0 || baseGrams <= 0) {
       return baseGrams;
     }
-    final p = baseItem.protein;
-    if (p <= 0) {
-      return baseGrams;
-    }
-    final desired = (slotTarget.p / p) * baseGrams;
-    return desired.round().clamp(60, 900);
+
+    final scale = _bestScale(baseItem, slotTarget);
+    if (scale <= 0) return baseGrams;
+
+    final grams = (baseGrams * scale / 10).round() * 10;
+    return grams.clamp(60, 900);
+  }
+
+  /// Optimální násobek porce pro cíl (vážené nejmenší čtverce).
+  double _bestScale(FoodLogItem item, _Macros target) {
+    const wP = 16.0, wC = 16.0, wF = 81.0;
+    final numerator = wP * item.protein * target.p +
+        wC * item.carbs * target.c +
+        wF * item.fat * target.f;
+    final denominator = wP * item.protein * item.protein +
+        wC * item.carbs * item.carbs +
+        wF * item.fat * item.fat;
+    if (denominator <= 0) return 0;
+    return numerator / denominator;
+  }
+
+  /// Chyba jídla po optimálním naškálování (v kcal).
+  double _scaledError(FoodLogItem item, _Macros target) {
+    final k = _bestScale(item, target).clamp(0.2, 3.0).toDouble();
+    final dp = (target.p - item.protein * k) * 4;
+    final dc = (target.c - item.carbs * k) * 4;
+    final df = (target.f - item.fat * k) * 9;
+    return dp.abs() + dc.abs() + df.abs();
   }
 
   double _loss({
@@ -904,7 +945,12 @@ class FoodSummaryScreen extends ConsumerWidget {
       missingFat: missingF,
       bank: bank,
       mealsCount: mealsCount,
+      preference: ref.read(userProfileProvider)?.diet ?? DietPreference.none,
     );
+
+    final totalP = suggestions.fold<int>(0, (a, s) => a + s.protein);
+    final totalC = suggestions.fold<int>(0, (a, s) => a + s.carbs);
+    final totalF = suggestions.fold<int>(0, (a, s) => a + s.fat);
 
     if (!context.mounted) return;
 
@@ -912,7 +958,24 @@ class FoodSummaryScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: Text(l10n.mealSuggestions(mealsCount)),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.mealSuggestions(mealsCount)),
+              const SizedBox(height: 6),
+              Text(
+                l10n.remainderCoverage(
+                  missingP,
+                  missingC,
+                  missingF,
+                  totalP,
+                  totalC,
+                  totalF,
+                ),
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
           content: SizedBox(
             width: double.maxFinite,
             child: suggestions.isEmpty
@@ -952,6 +1015,29 @@ class FoodSummaryScreen extends ConsumerWidget {
                               ),
                               style: TextStyle(color: Colors.grey[700]),
                             ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                icon: const Icon(Icons.add),
+                                label: Text(l10n.addToDay),
+                                onPressed: () {
+                                  for (final portion in s.portions) {
+                                    _addLogToSelectedDay(
+                                      ref,
+                                      FoodLogItem(
+                                        name: portion.meal.name,
+                                        grams: portion.grams,
+                                        calories: portion.calories,
+                                        protein: portion.protein,
+                                        carbs: portion.carbs,
+                                        fat: portion.fat,
+                                      ),
+                                    );
+                                  }
+                                  Navigator.pop(ctx);
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       );
@@ -969,16 +1055,16 @@ class FoodSummaryScreen extends ConsumerWidget {
     );
   }
 
+  /// Počet jídel podle zbývající energie (kcal).
   int _autoMealsCountFromMissing(_Macros m) {
-    final sum = m.p + m.c + m.f;
-
-    if (sum <= 35) {
+    final kcal = m.p * 4 + m.c * 4 + m.f * 9;
+    if (kcal <= 350) {
       return 1;
     }
-    if (sum <= 80) {
+    if (kcal <= 800) {
       return 2;
     }
-    if (sum <= 140) {
+    if (kcal <= 1300) {
       return 3;
     }
     return 4;
@@ -986,8 +1072,9 @@ class FoodSummaryScreen extends ConsumerWidget {
 
   Future<void> _recalculateRemainderAuto(
     BuildContext context,
-    WidgetRef ref,
-  ) async {
+    WidgetRef ref, {
+    int? mealsCount,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
 
     final profile = ref.read(userProfileProvider);
@@ -1005,12 +1092,17 @@ class FoodSummaryScreen extends ConsumerWidget {
       return;
     }
 
-    final mealsCount = _autoMealsCountFromMissing(missing);
-    final pickedSlots = _defaultSlotsForMealCount(mealsCount);
+    final count = mealsCount ?? _autoMealsCountFromMissing(missing);
+    final pickedSlots = _defaultSlotsForMealCount(count);
 
     final allCombos = ref.read(foodComboProvider);
     final bankList = ref.read(foodBankProvider);
-    final bankByName = {for (final m in bankList) m.name: m};
+    final bankByName = <String, Meal>{
+      for (final m in bankList) m.name: m,
+      for (final m in bankList) m.name.trim().toLowerCase(): m,
+    };
+
+    var diet = profile.diet;
 
     for (int i = 0; i < pickedSlots.length; i++) {
       final slot = pickedSlots[i];
@@ -1031,17 +1123,25 @@ class FoodSummaryScreen extends ConsumerWidget {
         remainingSlotsIncludingCurrent: remaining,
       );
 
-      final filter = await _pickComboFilterForSlot(context, slot: slot);
+      final filter = await _pickComboFilterForSlot(
+        context,
+        slot: slot,
+        initialDiet: diet,
+      );
       if (!context.mounted) return;
       if (filter == null) {
         return;
       }
+      diet = filter.diet;
 
+      // Jen jídla odpovídající stravovacímu omezení a jen ta, jejichž
+      // všechny suroviny jsou v databance (jinak by makra nebyla úplná).
       final filtered = FoodComboService.filter(
         allCombos,
         time: filter.time,
         taste: filter.taste,
-      );
+        diet: filter.diet,
+      ).where((c) => c.missingItemsForBank(bankList).isEmpty).toList();
 
       if (filtered.isEmpty) {
         messenger.showSnackBar(
@@ -1056,18 +1156,15 @@ class FoodSummaryScreen extends ConsumerWidget {
         return;
       }
 
+      // Řazení podle toho, jak dobře jde jídlo naškálovat na cíl slotu
+      // (poměr B/S/T), ne podle výchozí porce.
       double dist(FoodCombo c) {
         final item = _buildLogItemFromComboUsingBank(
           combo: c,
           grams: c.defaultGrams,
           bankByName: bankByName,
         );
-
-        final dp = (slotTarget.p - item.protein).abs();
-        final dc = (slotTarget.c - item.carbs).abs();
-        final df = (slotTarget.f - item.fat).abs();
-
-        return (dp * 2 + dc + df).toDouble();
+        return _scaledError(item, slotTarget);
       }
 
       final sorted = filtered.toList()
@@ -1124,21 +1221,18 @@ class FoodSummaryScreen extends ConsumerWidget {
             );
           }
         }
-        Future<void> _helpFlowCombos(
-          BuildContext context,
-          WidgetRef ref, {
-          required int mealsCount,
-        }) async {
-         
+  Future<void> _helpFlowCombos(
+    BuildContext context,
+    WidgetRef ref, {
+    required int mealsCount,
+  }) async {
+    await _recalculateRemainderAuto(
+      context,
+      ref,
+      mealsCount: mealsCount,
+    );
+  }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Coming soon',
-              ),
-            ),
-          );
-        }
       Future<void> _handleHelpMe(
         BuildContext context,
         WidgetRef ref,

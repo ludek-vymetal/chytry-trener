@@ -5938,6 +5938,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not delete the account: {error}'**
   String deleteAccountFailed(Object error);
+
+  /// No description provided for @restrictiveDietsHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Keto and intermittent fasting are hidden for eating disorder support. Restrictive diets are not suitable here – use the linear plan or consult a professional.'**
+  String get restrictiveDietsHidden;
+
+  /// No description provided for @dietPreferenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dietary restriction'**
+  String get dietPreferenceTitle;
+
+  /// No description provided for @dietPreferenceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal plans, suggestions and meals will only offer foods that match.'**
+  String get dietPreferenceHint;
+
+  /// No description provided for @dietNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No restriction'**
+  String get dietNone;
+
+  /// No description provided for @dietVegetarian.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetarian'**
+  String get dietVegetarian;
+
+  /// No description provided for @dietVegan.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegan'**
+  String get dietVegan;
+
+  /// No description provided for @addToDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to day'**
+  String get addToDay;
+
+  /// No description provided for @remainderCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining: P {p} | C {c} | F {f} g · suggestions cover: P {sp} | C {sc} | F {sf} g'**
+  String remainderCoverage(Object p, Object c, Object f, Object sp, Object sc, Object sf);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

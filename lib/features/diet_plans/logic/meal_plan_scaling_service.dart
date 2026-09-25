@@ -1,8 +1,8 @@
 import '../../../l10n/app_localizations.dart';
-import '../../../models/goal.dart';
 import '../../../models/user_profile.dart';
 import '../models/carb_cycling_plan.dart';
 import '../models/saved_meal_plan.dart';
+import 'diet_target_service.dart';
 
 class MealPlanScalingService {
   static DietMealPlan scaleByWeight({
@@ -39,15 +39,19 @@ class MealPlanScalingService {
     required AppLocalizations l10n,
     bool preferCalories = true,
   }) {
-    if (preferCalories &&
-        template.baseCalories > 0 &&
-        profile.tdee > 0 &&
-        profile.goal != null) {
-      final targetCalories = _resolveTargetCalories(profile);
+    // Kalorie šablony bereme přímo z jejích makroživin (spolehlivé),
+    // uložené baseCalories jen jako zálohu.
+    final planCalories = planAverageCalories(template.plan);
+    final fromCalories =
+        planCalories > 0 ? planCalories : template.baseCalories;
+
+    if (preferCalories && fromCalories > 0 && profile.goal != null) {
+      final targetCalories =
+          DietTargetService.resolve(profile, l10n).targetCalories;
 
       return scaleByCalories(
         original: template.plan,
-        fromCalories: template.baseCalories,
+        fromCalories: fromCalories,
         toCalories: targetCalories,
       ).copyWith(
         note: _appendScaleNote(
@@ -188,43 +192,18 @@ class MealPlanScalingService {
         .join(' + ');
   }
 
-  static double _resolveTargetCalories(
-    UserProfile profile,
-  ) {
-    final goal = profile.goal;
-    final base = profile.tdee;
-
-    if (goal == null) {
-      return base;
+  /// Průměrné denní kalorie jídelníčku spočítané z jeho makroživin.
+  /// Používá se jako "výchozí kalorie" šablony (nezávisle na profilu).
+  static double planAverageCalories(DietMealPlan plan) {
+    if (plan.days.isEmpty) {
+      return plan.protein * 4 + plan.carbs * 4 + plan.fats * 9;
     }
 
-    double target;
-
-    switch (goal.phase) {
-      case GoalPhase.cut:
-        target = base - 400;
-        break;
-
-      case GoalPhase.build:
-        target = base + 200;
-        break;
-
-      case GoalPhase.maintain:
-        target = base;
-        break;
-
-      case GoalPhase.strength:
-        target = base + 100;
-        break;
-
-      case null:
-        target = base;
-        break;
+    var sum = 0.0;
+    for (final day in plan.days) {
+      sum += day.protein * 4 + day.carbs * 4 + day.fats * 9;
     }
-
-    return target < 1200
-        ? 1200
-        : target;
+    return sum / plan.days.length;
   }
 
   static String _appendScaleNote(

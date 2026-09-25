@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../logic/meal_plan_scaling_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../providers/user_profile_provider.dart';
@@ -79,7 +80,8 @@ class _MonthlyTemplateBuilderScreenState
           name: title,
           plan: monthlyPlan,
           baseWeight: profile?.weight ?? 0,
-          baseCalories: profile?.tdee ?? 0,
+          baseCalories:
+              MealPlanScalingService.planAverageCalories(monthlyPlan),
           durationDays: monthlyPlan.days.length,
           trainerNote: _noteCtrl.text.trim(),
         );

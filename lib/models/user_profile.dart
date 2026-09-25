@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/training/training_split.dart';
 import 'coach/coach_client.dart';
+import 'diet_preference.dart';
 import 'goal.dart';
 import 'measurement.dart';
 import 'body_circumference.dart';
@@ -31,6 +32,12 @@ class UserProfile {
   final TimeOfDay? fastingStartTime;
   final int fastingDuration;
 
+  /// Stravovací omezení (vegetarián / vegan). `null` = nenastaveno.
+  final DietPreference? dietPreference;
+
+  /// Stravovací omezení pro výpočty (nenastaveno = bez omezení).
+  DietPreference get diet => dietPreference ?? DietPreference.none;
+
   const UserProfile({
     this.clientId,
     this.firstName = '',
@@ -50,6 +57,7 @@ class UserProfile {
     this.isFasting = false,
     this.fastingStartTime,
     this.fastingDuration = 16,
+    this.dietPreference,
   });
 
   String get displayName {
@@ -94,6 +102,7 @@ class UserProfile {
     TimeOfDay? fastingStartTime,
     bool clearFastingStartTime = false,
     int? fastingDuration,
+    DietPreference? dietPreference,
   }) {
     return UserProfile(
       clientId: clientId ?? this.clientId,
@@ -120,6 +129,7 @@ class UserProfile {
           ? null
           : (fastingStartTime ?? this.fastingStartTime),
       fastingDuration: fastingDuration ?? this.fastingDuration,
+      dietPreference: dietPreference ?? this.dietPreference,
     );
   }
 
@@ -185,6 +195,7 @@ class UserProfile {
                 'minute': fastingStartTime!.minute,
               },
         'fastingDuration': fastingDuration,
+        'dietPreference': dietPreference?.name,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -305,6 +316,9 @@ class UserProfile {
             )
           : null,
       fastingDuration: (json['fastingDuration'] as num?)?.toInt() ?? 16,
+      dietPreference: json['dietPreference'] is String
+          ? DietPreferenceX.parse(json['dietPreference'] as String)
+          : null,
     );
   }
 }

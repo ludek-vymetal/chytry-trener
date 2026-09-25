@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../logic/meal_plan_scaling_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
@@ -66,23 +67,20 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
           fallback.protein,
           fallback.fats,
           l10n: l10n,
-        );
+          dayIndex: index,
+        )
+            .map((raw) => PlannedMeal.fromJson(raw))
+            .toList();
+
+        double sum(double? Function(PlannedMeal m) pick) =>
+            meals.fold<double>(0, (a, m) => a + (pick(m) ?? 0.0));
 
         return PlannedDay(
           dayName: days[index],
-          protein: fallback.protein,
-          carbs: carbs,
-          fats: fallback.fats,
-          meals: meals
-              .map(
-                (raw) => PlannedMeal(
-                  label: (raw['name'] ?? 'Jídlo').toString(),
-                  name: (raw['name'] ?? 'Jídlo').toString(),
-                  description: (raw['description'] ?? '').toString(),
-                  ingredients: const [],
-                ),
-              )
-              .toList(),
+          protein: sum((m) => m.protein),
+          carbs: sum((m) => m.carbs),
+          fats: sum((m) => m.fats),
+          meals: meals,
         );
       }),
     );
@@ -385,7 +383,7 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
             baseWeight:
                 (profile?.weight as double?) ?? 0,
             baseCalories:
-                (profile?.tdee as double?) ?? 0,
+                MealPlanScalingService.planAverageCalories(plan),
             durationDays:
                 int.tryParse(durationController.text.trim()) ??
                     plan.days.length,

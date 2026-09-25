@@ -3009,4 +3009,30 @@ class AppLocalizationsCs extends AppLocalizations {
   String deleteAccountFailed(Object error) {
     return 'Účet se nepodařilo smazat: $error';
   }
+
+  @override
+  String get restrictiveDietsHidden => 'Keto a přerušovaný půst jsou v režimu podpory při poruše příjmu potravy skryté. Restriktivní diety zde nejsou vhodné – použij lineární plán nebo konzultuj s odborníkem.';
+
+  @override
+  String get dietPreferenceTitle => 'Stravovací omezení';
+
+  @override
+  String get dietPreferenceHint => 'Jídelníčky, návrhy i hotová jídla nabídnou jen vyhovující potraviny.';
+
+  @override
+  String get dietNone => 'Bez omezení';
+
+  @override
+  String get dietVegetarian => 'Vegetarián';
+
+  @override
+  String get dietVegan => 'Vegan';
+
+  @override
+  String get addToDay => 'Přidat do dne';
+
+  @override
+  String remainderCoverage(Object p, Object c, Object f, Object sp, Object sc, Object sf) {
+    return 'Zbývá: B $p | S $c | T $f g · návrhy pokryjí: B $sp | S $sc | T $sf g';
+  }
 }

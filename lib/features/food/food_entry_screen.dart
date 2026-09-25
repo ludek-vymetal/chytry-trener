@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/daily_intake.dart';
+import '../../models/diet_preference.dart';
 import '../../models/food_combo.dart';
 import '../../models/meal.dart';
 import '../../providers/daily_intake_provider.dart';
 import '../../providers/food_bank_provider.dart';
 import '../../providers/food_combo_provider.dart';
+import '../../providers/user_profile_provider.dart';
 import '../../services/food_combo_service.dart';
 
 class FoodEntryScreen extends ConsumerStatefulWidget {
@@ -399,6 +401,7 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
   Future<void> _openComboPicker() async {
     final combos = ref.read(foodComboProvider);
     final bank = ref.read(foodBankProvider);
+    final diet = ref.read(userProfileProvider)?.diet ?? DietPreference.none;
 
     ComboMealTime time = ComboMealTime.lunch;
     ComboTaste taste = ComboTaste.any;
@@ -414,6 +417,7 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
               combos,
               time: time,
               taste: taste,
+              diet: diet,
             );
 
             return SafeArea(

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/diet_preference.dart';
+import '../../models/goal.dart';
 import '../../providers/diet_settings_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import 'logic/keto_calculator.dart';
@@ -231,6 +233,7 @@ class DietStrategyScreen extends ConsumerWidget {
                       excludedIngredientsProvider,
                     ),
                     l10n: l10n,
+                    preference: profile.diet,
                   );
 
                   ref
@@ -244,6 +247,7 @@ class DietStrategyScreen extends ConsumerWidget {
                     MaterialPageRoute(
                       builder: (_) => KetoResultScreen(
                         macros: ketoMacros,
+                        plan: ketoPlan,
                       ),
                     ),
                   );
@@ -316,6 +320,11 @@ class DietStrategyScreen extends ConsumerWidget {
     final isFastingSelected =
         profile?.selectedPlan == 'Fasting';
 
+    // Podpora při poruše příjmu potravy: žádné restriktivní diety
+    // (keto, přerušovaný půst).
+    final restrictiveBlocked =
+        profile?.goal?.reason == GoalReason.eatingDisorderSupport;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.dietPlanSelection),
@@ -324,6 +333,50 @@ class DietStrategyScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (profile != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.dietPreferenceTitle,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(l10n.dietPreferenceHint),
+                    const SizedBox(height: 12),
+                    SegmentedButton<DietPreference>(
+                      segments: [
+                        ButtonSegment(
+                          value: DietPreference.none,
+                          label: Text(l10n.dietNone),
+                        ),
+                        ButtonSegment(
+                          value: DietPreference.vegetarian,
+                          label: Text(l10n.dietVegetarian),
+                        ),
+                        ButtonSegment(
+                          value: DietPreference.vegan,
+                          label: Text(l10n.dietVegan),
+                        ),
+                      ],
+                      selected: {profile.diet},
+                      onSelectionChanged: (selection) {
+                        ref.read(userProfileProvider.notifier).updateProfile(
+                              profile.copyWith(
+                                dietPreference: selection.first,
+                              ),
+                            );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           _StrategyCard(
             title: l10n.linearPlanTitle,
             description:
@@ -394,6 +447,14 @@ class DietStrategyScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
+          if (restrictiveBlocked)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(l10n.restrictiveDietsHidden),
+              ),
+            )
+          else ...[
           _StrategyCard(
             title: l10n.ketoDietTitle,
             description:
@@ -501,6 +562,7 @@ class DietStrategyScreen extends ConsumerWidget {
               ],
             ],
           ),
+          ],
         ],
       ),
     );

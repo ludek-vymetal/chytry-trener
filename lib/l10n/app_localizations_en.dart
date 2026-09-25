@@ -3009,4 +3009,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteAccountFailed(Object error) {
     return 'Could not delete the account: $error';
   }
+
+  @override
+  String get restrictiveDietsHidden => 'Keto and intermittent fasting are hidden for eating disorder support. Restrictive diets are not suitable here – use the linear plan or consult a professional.';
+
+  @override
+  String get dietPreferenceTitle => 'Dietary restriction';
+
+  @override
+  String get dietPreferenceHint => 'Meal plans, suggestions and meals will only offer foods that match.';
+
+  @override
+  String get dietNone => 'No restriction';
+
+  @override
+  String get dietVegetarian => 'Vegetarian';
+
+  @override
+  String get dietVegan => 'Vegan';
+
+  @override
+  String get addToDay => 'Add to day';
+
+  @override
+  String remainderCoverage(Object p, Object c, Object f, Object sp, Object sc, Object sf) {
+    return 'Remaining: P $p | C $c | F $f g · suggestions cover: P $sp | C $sc | F $sf g';
+  }
 }

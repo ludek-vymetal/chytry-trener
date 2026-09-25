@@ -15,7 +15,18 @@ class FoodBankNotifier extends StateNotifier<List<Meal>> {
     final loaded = raw.map((e) => Meal.fromJson(e)).toList();
 
     if (loaded.isNotEmpty) {
-      state = loaded;
+      // Doplnění nových položek ze startovní databáze (např. rostlinné
+      // zdroje bílkovin), které v uložené bance ještě nejsou.
+      // Uživatelské úpravy existujících položek se nepřepisují.
+      final known = loaded.map((m) => m.name.trim().toLowerCase()).toSet();
+      final missing = FoodBankSeed.items
+          .where((m) => !known.contains(m.name.trim().toLowerCase()))
+          .toList();
+
+      state = [...loaded, ...missing];
+      if (missing.isNotEmpty) {
+        await _persist();
+      }
     } else {
       await _persist();
     }

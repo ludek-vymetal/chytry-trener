@@ -11,9 +11,14 @@ import 'weekly_meal_plan_screen.dart';
 class KetoResultScreen extends StatefulWidget {
   final Map<String, double> macros;
 
+  /// Už vygenerovaný plán (s vyloučenými potravinami a stravovacím
+  /// omezením). Když chybí, vygeneruje se znovu bez omezení.
+  final DietMealPlan? plan;
+
   const KetoResultScreen({
     super.key,
     required this.macros,
+    this.plan,
   });
 
   @override
@@ -36,7 +41,7 @@ class _KetoResultScreenState
 
     final l10n = AppLocalizations.of(context)!;
 
-    weeklyPlan =
+    weeklyPlan = widget.plan ??
         KetoCalculator.generateWeeklyKetoMealPlan(
       protein: widget.macros['protein'] ?? 0,
       fats: widget.macros['fats'] ?? 0,

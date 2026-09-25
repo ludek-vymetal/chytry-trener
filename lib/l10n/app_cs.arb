@@ -1291,5 +1291,23 @@
   "placeholders": {
     "error": {}
   }
+},
+"restrictiveDietsHidden": "Keto a přerušovaný půst jsou v režimu podpory při poruše příjmu potravy skryté. Restriktivní diety zde nejsou vhodné – použij lineární plán nebo konzultuj s odborníkem.",
+"dietPreferenceTitle": "Stravovací omezení",
+"dietPreferenceHint": "Jídelníčky, návrhy i hotová jídla nabídnou jen vyhovující potraviny.",
+"dietNone": "Bez omezení",
+"dietVegetarian": "Vegetarián",
+"dietVegan": "Vegan",
+"addToDay": "Přidat do dne",
+"remainderCoverage": "Zbývá: B {p} | S {c} | T {f} g · návrhy pokryjí: B {sp} | S {sc} | T {sf} g",
+"@remainderCoverage": {
+  "placeholders": {
+    "p": {},
+    "c": {},
+    "f": {},
+    "sp": {},
+    "sc": {},
+    "sf": {}
+  }
 }
 }

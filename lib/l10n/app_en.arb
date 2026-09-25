@@ -1338,5 +1338,23 @@
   "placeholders": {
     "error": {}
   }
+},
+"restrictiveDietsHidden": "Keto and intermittent fasting are hidden for eating disorder support. Restrictive diets are not suitable here – use the linear plan or consult a professional.",
+"dietPreferenceTitle": "Dietary restriction",
+"dietPreferenceHint": "Meal plans, suggestions and meals will only offer foods that match.",
+"dietNone": "No restriction",
+"dietVegetarian": "Vegetarian",
+"dietVegan": "Vegan",
+"addToDay": "Add to day",
+"remainderCoverage": "Remaining: P {p} | C {c} | F {f} g · suggestions cover: P {sp} | C {sc} | F {sf} g",
+"@remainderCoverage": {
+  "placeholders": {
+    "p": {},
+    "c": {},
+    "f": {},
+    "sp": {},
+    "sc": {},
+    "sf": {}
+  }
 }
 }

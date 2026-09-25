@@ -1,13 +1,30 @@
+import '../core/nutrition/diet_classifier.dart';
+import '../models/diet_preference.dart';
 import '../models/food_combo.dart';
 
 class FoodComboService {
+  /// Výběr kompletních jídel pro daný slot.
+  ///
+  /// - [time]: snídaně / svačina / oběd / večeře. Jídla ze starší kategorie
+  ///   "Veganské" jsou hlavní jídla, nabízí se proto u oběda a večeře.
+  /// - [diet]: stravovací omezení – rozhoduje SLOŽENÍ jídla (suroviny),
+  ///   ne kategorie. Jídla, u kterých nejde původ surovin spolehlivě určit,
+  ///   se vegetariánům a veganům nenabízí.
   static List<FoodCombo> filter(
     List<FoodCombo> all, {
     required ComboMealTime time,
     required ComboTaste taste,
+    DietPreference diet = DietPreference.none,
   }) {
+    final isMainMeal =
+        time == ComboMealTime.lunch || time == ComboMealTime.dinner;
+
     return all.where((c) {
-      if (c.time != time) return false;
+      if (!DietClassifier.allowsCombo(diet, c)) return false;
+
+      final timeMatches =
+          c.time == time || (isMainMeal && c.time == ComboMealTime.vegan);
+      if (!timeMatches) return false;
 
       // u snídaní a svačin respektuj sladké/slané
       if (time == ComboMealTime.breakfast || time == ComboMealTime.snack) {
@@ -15,7 +32,6 @@ class FoodComboService {
         return c.taste == taste;
       }
 
-      // u oběd/večeře/vegan ignorujeme taste
       return true;
     }).toList();
   }
