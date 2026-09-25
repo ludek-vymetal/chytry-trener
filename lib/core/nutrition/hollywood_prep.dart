@@ -1,7 +1,8 @@
 // Jídelníčky k tréninkovým programům:
 //  - Hollywood training (příprava postavy na natáčení / focení),
 //  - Bikini fitness (příprava na závody),
-//  - Kulatý zadek (růst hýždí).
+//  - Kulatý zadek (růst hýždí),
+//  - Silová příprava (bench press / trojboj).
 //
 // Přípravy k datu (Hollywood, Bikini) počítají týdny ZPĚTNĚ od data
 // natáčení / závodu – stejně jako tréninkové plány, takže jídelníček
@@ -209,6 +210,26 @@ class GlutePlan {
   );
 }
 
+/// Silová příprava (bench press / trojboj) – jídlo na výkon.
+///
+/// Příjem na údržbě (síla roste i bez přebytku a váha zůstane ve váhové
+/// kategorii), bílkoviny 2,0 g/kg, tuky 1,0 g/kg, zbytek sacharidy –
+/// palivo na těžké série a regeneraci nervového systému.
+class StrengthPlan {
+  /// Hodnota `UserProfile.selectedPlan` pro jídelníček Silová příprava.
+  static const String planKey = 'Strength';
+
+  static const String name = 'Silová příprava';
+
+  static const PrepPhase phase = PrepPhase(
+    week: 1,
+    label: 'Výkon – údržba',
+    weeklyLossPct: null,
+    proteinGPerKg: 2.0,
+    fatGPerKg: 1.0,
+  );
+}
+
 /// Název programu podle typu jídelníčku, `null` = nejde o program.
 class ProgramDiets {
   static String? nameFor(String? planType) {
@@ -219,6 +240,8 @@ class ProgramDiets {
         return BikiniPrep.name;
       case GlutePlan.planKey:
         return GlutePlan.name;
+      case StrengthPlan.planKey:
+        return StrengthPlan.name;
     }
     return null;
   }

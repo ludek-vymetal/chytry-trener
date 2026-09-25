@@ -436,6 +436,26 @@ class DietStrategyScreen extends ConsumerWidget {
     );
   }
 
+  /// Silová příprava: údržba s vysokými sacharidy (bench / trojboj).
+  void _activateStrengthPlan(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    final current = ref.read(userProfileProvider);
+
+    if (current == null) return;
+
+    final updated = current.copyWith(selectedPlan: StrengthPlan.planKey);
+
+    _openProgramPlan(
+      context,
+      ref,
+      updated,
+      CarbCyclingCalculator.createStrengthPlan(profile: updated, l10n: l10n),
+    );
+  }
+
   /// Kulatý zadek: mírný přebytek pro růst hýždí.
   void _activateGlutePlan(
     BuildContext context,
@@ -638,6 +658,29 @@ class DietStrategyScreen extends ConsumerWidget {
                   ),
                   icon: const Icon(Icons.restaurant_menu),
                   label: Text(l10n.gluteActivate),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: StrengthPlan.name,
+            description: l10n.strengthDietDescription,
+            icon: Icons.fitness_center,
+            isActive: profile?.selectedPlan == StrengthPlan.planKey,
+            isNew: true,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.icon(
+                  onPressed: () => _activateStrengthPlan(
+                    context,
+                    ref,
+                    l10n,
+                  ),
+                  icon: const Icon(Icons.restaurant_menu),
+                  label: Text(l10n.strengthActivate),
                 ),
               ),
             ],

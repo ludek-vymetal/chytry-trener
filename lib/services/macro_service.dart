@@ -188,6 +188,12 @@ class MacroService {
         weekText = 'růst hýždí';
         weeksLeft = 0;
         break;
+      case StrengthPlan.planKey:
+        name = StrengthPlan.name;
+        phase = StrengthPlan.phase;
+        weekText = 'bench press / trojboj';
+        weeksLeft = 0;
+        break;
       default:
         return null;
     }

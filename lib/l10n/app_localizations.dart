@@ -5981,6 +5981,24 @@ abstract class AppLocalizations {
   /// **'Budget'**
   String get budgetShort;
 
+  /// No description provided for @benchInsertPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'🏋️ INSERT RUSSIAN CYCLE – BENCH PRESS (MEET)'**
+  String get benchInsertPlan;
+
+  /// No description provided for @strengthDietDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal plan for strength prep (Russian bench cycle, powerlifting). Maintenance calories – strength grows without a surplus and body weight stays in the weight class. Protein 2.0 g/kg, fat 1.0 g/kg, the rest carbs to fuel heavy sets and recovery.'**
+  String get strengthDietDescription;
+
+  /// No description provided for @strengthActivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Strength prep meal plan'**
+  String get strengthActivate;
+
   /// No description provided for @bikiniDietDescription.
   ///
   /// In en, this message translates to:

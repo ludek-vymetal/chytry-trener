@@ -3032,6 +3032,15 @@ class AppLocalizationsCs extends AppLocalizations {
   String get budgetShort => 'Levnější';
 
   @override
+  String get benchInsertPlan => '🏋️ VLOŽIT RUSKÝ CYKLUS – BENCH PRESS (ZÁVODY)';
+
+  @override
+  String get strengthDietDescription => 'Jídelníček k silové přípravě (ruský cyklus na bench, trojboj). Příjem na údržbě – síla roste i bez přebytku a váha zůstane ve váhové kategorii. Bílkoviny 2,0 g/kg, tuky 1,0 g/kg, zbytek sacharidy jako palivo na těžké série a regeneraci.';
+
+  @override
+  String get strengthActivate => 'Vytvořit jídelníček Silová příprava';
+
+  @override
   String get bikiniDietDescription => 'Přísný 16týdenní jídelníček na závody v bikini fitness – stejné fáze jako tréninkový plán. Úbytek 0,5 % (stavba tvaru) → 0,75 % (rýsování) → 1 % hmotnosti týdně (finální rýsování), bílkoviny 2,2–2,4 g/kg, tuky min. 0,7 g/kg, peak week na údržbě s vyššími sacharidy pro plné, kulaté svaly na pódiu. Počítá se zpětně od data závodu.';
 
   @override

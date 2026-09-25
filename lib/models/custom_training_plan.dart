@@ -11,6 +11,9 @@ enum CustomTrainingPlanType {
 
   /// Kulatý zadek – 12týdenní program na růst hýždí.
   gluteBuilder,
+
+  /// Ruský cyklus – 12týdenní příprava na závody v bench pressu.
+  benchMeetPrep,
 }
 
 enum CustomTrainingCategory {
@@ -255,6 +258,8 @@ class CustomTrainingPlan {
   bool get isBikiniMeetPrep => type == CustomTrainingPlanType.bikiniMeetPrep;
 
   bool get isGluteBuilder => type == CustomTrainingPlanType.gluteBuilder;
+
+  bool get isBenchMeetPrep => type == CustomTrainingPlanType.benchMeetPrep;
 
   Map<String, dynamic> toJson() => {
         'id': id,

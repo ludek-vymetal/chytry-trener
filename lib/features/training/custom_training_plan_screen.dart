@@ -145,6 +145,19 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
                 label: Text(l10n.gluteInsertPlan),
               ),
 
+              const SizedBox(height: 12),
+
+              FilledButton.tonalIcon(
+                onPressed: () =>
+                    _insertBenchRussianPlan(
+                  context,
+                  ref,
+                  clientId,
+                ),
+                icon: const Icon(Icons.fitness_center),
+                label: Text(l10n.benchInsertPlan),
+              ),
+
               const SizedBox(height: 24),
 
               Text(
@@ -1741,6 +1754,452 @@ const int _gluteWeeks = 12;
     return days;
   }
 
+const int _benchWeeks = 12;
+
+  Future<void> _insertBenchRussianPlan(
+    BuildContext context,
+    WidgetRef ref,
+    String clientId,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final input = await showDialog<_BenchMeetInput>(
+      context: context,
+      builder: (_) => const _BenchMeetDialog(),
+    );
+
+    if (input == null) return;
+    if (!context.mounted) return;
+
+    final plans = ref.read(customTrainingPlanProvider);
+    final newName = _buildUniquePlanName(
+      '🏋️ Ruský cyklus – bench press (závody)',
+      plans.where((p) => p.clientId == clientId).toList(),
+    );
+
+    await ref.read(customTrainingPlanProvider.notifier).createPlan(
+          clientId: clientId,
+          name: newName,
+          description:
+              '${_benchWeeks}týdenní příprava na závody v bench pressu – ruský '
+              'cyklus, 1RM ${input.bench1rm.toStringAsFixed(1)} kg, závod '
+              '${_fmtDate(input.meetDate)}.',
+          category: CustomTrainingCategory.powerlifting,
+          type: CustomTrainingPlanType.benchMeetPrep,
+          meetDate: input.meetDate,
+          maxes: CustomTrainingMaxes(bench1rm: input.bench1rm),
+        );
+
+    final updatedPlans = ref.read(customTrainingPlanProvider);
+    CustomTrainingPlan? createdPlan;
+
+    for (final plan in updatedPlans.reversed) {
+      if (plan.clientId == clientId && plan.name == newName) {
+        createdPlan = plan;
+        break;
+      }
+    }
+
+    if (createdPlan == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.planCreationFailed)),
+      );
+      return;
+    }
+
+    final notifier = ref.read(customTrainingPlanProvider.notifier);
+    final templateDays = _benchRussianDays(input);
+
+    for (final day in templateDays) {
+      await notifier.addDay(
+        planId: createdPlan.id,
+        dayName: day.name,
+      );
+    }
+
+    for (int dayIndex = 0; dayIndex < templateDays.length; dayIndex++) {
+      final day = templateDays[dayIndex];
+      for (final exercise in day.exercises) {
+        await notifier.addExerciseToDay(
+          planId: createdPlan.id,
+          dayIndex: dayIndex,
+          exercise: exercise,
+        );
+      }
+    }
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Plán "$newName" byl vložen mezi vlastní tréninky.'),
+      ),
+    );
+  }
+
+  /// Ruský cyklus na bench press – 12 týdnů zpětně od data závodu,
+  /// 3 tréninky benche týdně. Všechny váhy se počítají z aktuálního 1RM
+  /// (zaokrouhlené na 2,5 kg) a v průběhu cyklu rostou.
+  ///
+  ///  - Týdny 1–4: základ – objem a technika (bench s pauzou), 4. týden
+  ///    odlehčení.
+  ///  - Týdny 5–10: ruský cyklus – nejdřív objem na 80 % (6×2 až 6×6),
+  ///    potom intenzita (5×5 @ 85 %, 4×4 @ 90 %, 3×3 @ 95 %) a těžký single.
+  ///  - Týden 11: peak / CNS – těžké singly, nadmaximální výdrž, lockouty
+  ///    a rychlostní bench – nervový systém se učí zvednout víc než 1RM.
+  ///  - Týden 12: taper – zkouška úvodního pokusu, pak jen rychlost a závod.
+  List<CustomTrainingDay> _benchRussianDays(_BenchMeetInput input) {
+    final max = input.bench1rm;
+    final meet = input.meetDate;
+
+    const weeks = [
+      _BenchWeek(1, 'Základ – objem', [
+        _BenchSession('Objem', '5', '6', 0.70),
+        _BenchSession('Technika – pauza 2 s na hrudníku', '5', '5', 0.625),
+        _BenchSession('Objem', '5', '6', 0.725),
+      ]),
+      _BenchWeek(2, 'Základ – objem', [
+        _BenchSession('Objem', '5', '5', 0.75),
+        _BenchSession('Technika – pauza 2 s na hrudníku', '5', '4', 0.65),
+        _BenchSession('Objem', '5', '5', 0.775),
+      ]),
+      _BenchWeek(3, 'Základ – síla', [
+        _BenchSession('Síla', '5', '4', 0.80),
+        _BenchSession('Technika – pauza 2 s na hrudníku', '5', '3', 0.675),
+        _BenchSession('Síla', '4', '4', 0.825),
+      ]),
+      _BenchWeek(4, 'Odlehčení', [
+        _BenchSession('Odlehčení', '3', '5', 0.70),
+        _BenchSession('Technika – pauza 2 s na hrudníku', '3', '3', 0.625),
+        _BenchSession('Odlehčení', '3', '3', 0.75),
+      ]),
+      _BenchWeek(5, 'Ruský cyklus – objem', [
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+        _BenchSession('Ruský cyklus', '6', '3', 0.80),
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+      ]),
+      _BenchWeek(6, 'Ruský cyklus – objem', [
+        _BenchSession('Ruský cyklus', '6', '4', 0.80),
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+        _BenchSession('Ruský cyklus', '6', '5', 0.80),
+      ]),
+      _BenchWeek(7, 'Ruský cyklus – objem', [
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+        _BenchSession('Ruský cyklus', '6', '6', 0.80),
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+      ]),
+      _BenchWeek(8, 'Ruský cyklus – intenzita', [
+        _BenchSession('Ruský cyklus', '5', '5', 0.85),
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+        _BenchSession('Ruský cyklus', '4', '4', 0.90),
+      ]),
+      _BenchWeek(9, 'Ruský cyklus – intenzita', [
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+        _BenchSession('Ruský cyklus', '3', '3', 0.95),
+        _BenchSession('Ruský cyklus', '6', '2', 0.80),
+      ]),
+      _BenchWeek(10, 'Ruský cyklus – intenzita', [
+        _BenchSession('Ruský cyklus', '2', '2', 0.95),
+        _BenchSession('Ruský cyklus – lehčí', '6', '2', 0.75),
+        _BenchSession('Těžký single – jistota', '1', '1', 0.975),
+      ]),
+      _BenchWeek(11, 'Peak / nervový systém', [
+        _BenchSession('Těžké singly (CNS)', '3', '1', 0.925),
+        _BenchSession('Rychlostní bench – maximální rychlost', '8', '2', 0.55),
+        _BenchSession('Top single (CNS)', '1', '1', 0.95),
+      ]),
+      _BenchWeek(12, 'Taper / závod', [
+        _BenchSession('Zkouška úvodního pokusu', '1', '1', 0.925),
+        _BenchSession('Rychlostní bench – jen prokrvení', '5', '2', 0.60),
+      ]),
+    ];
+
+    // Když je závod dřív než za 12 týdnů, začneme rovnou správným týdnem,
+    // aby peak a taper vyšly přesně na datum závodu.
+    final currentWeek = _prepWeekFor(meet, _benchWeeks) ?? 1;
+    final startWeek = currentWeek > _benchWeeks - 1 ? _benchWeeks - 1 : currentWeek;
+
+    String kg(double pct) =>
+        _formatWeightAndPercent(_weightFromMax(max, pct), pct);
+
+    const dayNames = ['Trénink A (Po)', 'Trénink B (St)', 'Trénink C (Pá)'];
+
+    final opener = _weightFromMax(max, 0.925);
+    final second = _weightFromMax(max, 0.975);
+    final third = _weightFromMax(max, 1.025);
+
+    final days = <CustomTrainingDay>[];
+
+    for (final w in weeks.where((w) => w.week >= startWeek)) {
+      final weekEnd = meet.subtract(
+        Duration(days: (_benchWeeks - w.week) * 7),
+      );
+      final weekStart = weekEnd.subtract(const Duration(days: 6));
+      final weekLabel =
+          'Týden ${w.week} (${_fmtDate(weekStart)} – ${_fmtDate(weekEnd)})';
+
+      final isBase = w.week <= 4;
+      final isRussian = w.week >= 5 && w.week <= 10;
+      final isPeak = w.week == 11;
+      final isTaper = w.week == 12;
+
+      // Doplňky podle fáze: v základu objem, v ruském cyklu síla,
+      // v peaku jen to nejdůležitější, v taperu nic.
+      final accSets = isBase ? '4' : (isRussian ? '3' : '2');
+      final accReps = isBase ? '8–10' : (isRussian ? '6–8' : '5');
+
+      CustomTrainingExercise acc(String name, {String? reps, String? note}) =>
+          CustomTrainingExercise(
+            customName: name,
+            sets: accSets,
+            reps: reps ?? accReps,
+            rir: isPeak ? '2–3' : '1–2',
+            note: note,
+          );
+
+      CustomTrainingExercise computed(
+        String name,
+        String sets,
+        String reps,
+        double pct, {
+        String? note,
+      }) =>
+          CustomTrainingExercise(
+            customName: name,
+            sets: sets,
+            reps: reps,
+            rir: '1–2',
+            weightKg: _weightFromMax(max, pct),
+            note: 'Pracovní váha: ${kg(pct)}${note == null ? '' : '\n$note'}',
+          );
+
+      for (var i = 0; i < w.sessions.length; i++) {
+        final s = w.sessions[i];
+
+        final mainSet = CustomTrainingExercise(
+          customName: 'Bench press – ${s.title}',
+          sets: s.sets,
+          reps: s.reps,
+          rir: s.pct >= 0.95 ? '0–1' : (s.pct >= 0.85 ? '1' : '2'),
+          weightKg: _weightFromMax(max, s.pct),
+          note: 'Fáze: ${w.phase}\n'
+              'Závod: ${_fmtDate(meet)}\n'
+              'Výchozí 1RM: ${max.toStringAsFixed(1)} kg\n'
+              'Pracovní váha: ${kg(s.pct)}\n'
+              'Rozcvičení: 40 % × 8, 55 % × 5, 65 % × 3, 75 % × 1 '
+              '(${_weightFromMax(max, 0.40).toStringAsFixed(1)} / '
+              '${_weightFromMax(max, 0.55).toStringAsFixed(1)} / '
+              '${_weightFromMax(max, 0.65).toStringAsFixed(1)} / '
+              '${_weightFromMax(max, 0.75).toStringAsFixed(1)} kg)\n'
+              'Závodní technika: pauza na hrudníku, nohy na zemi, hýždě na '
+              'lavici.',
+        );
+
+        final List<CustomTrainingExercise> extras;
+        final String dayTitle;
+
+        if (isTaper) {
+          dayTitle = i == 0
+              ? 'Den 1 (5 dní před závodem) – zkouška úvodního pokusu'
+              : 'Den 2 (3 dny před závodem) – jen rychlost';
+          extras = i == 0
+              ? [
+                  computed('Bench press – rychlé trojky', '3', '3', 0.70,
+                      note: 'Co nejrychleji, bez únavy.'),
+                ]
+              : const [];
+        } else if (i == 0) {
+          dayTitle = '${dayNames[0]} – bench + tricepsy + záda';
+          extras = [
+            if (isPeak)
+              computed(
+                'Nadmaximální výdrž – sundání činky ze stojanu (10 s)',
+                '3',
+                '10 s',
+                1.10,
+                note: 'Jen sundat, zamknout a držet s dopomocí jistících. '
+                    'Nervový systém si zvyká na váhu nad 1RM.',
+              )
+            else
+              computed(
+                'Úzký bench press (úchop na šířku ramen)',
+                '4',
+                isBase ? '8' : '6',
+                isBase ? 0.625 : 0.70,
+              ),
+            acc('Veslování s velkou činkou v předklonu'),
+            if (!isPeak) acc('Francouzský tlak s EZ činkou', reps: '8–12'),
+            if (!isPeak) acc('Face pull na kladce', reps: '15'),
+          ];
+        } else if (i == 1) {
+          dayTitle = '${dayNames[1]} – bench + ramena + široký sval zádový';
+          extras = isPeak
+              ? [acc('Shyby / stahování horní kladky')]
+              : [
+                  acc('Tlaky s jednoručkami na šikmé lavici', reps: '8–10'),
+                  acc('Shyby / stahování horní kladky'),
+                  acc('Zadní ramena – reverse fly', reps: '15'),
+                  acc('Rotátory ramen s gumou', reps: '15–20'),
+                ];
+        } else {
+          dayTitle = '${dayNames[2]} – bench + lockout + tricepsy';
+          extras = [
+            if (isPeak)
+              computed(
+                'Lockouty z bezpečnostních zarážek (posledních 10 cm)',
+                '3',
+                '2',
+                1.05,
+                note: 'Nadmaximální váha jen v horní části pohybu – '
+                    'síla zamknutí a nervový systém.',
+              )
+            else
+              computed(
+                'Bench press na prknech (2 prkna)',
+                isBase ? '4' : '3',
+                isBase ? '5' : '3',
+                isBase ? 0.80 : 0.90,
+                note: 'Přetížení horní části pohybu (lockout).',
+              ),
+            if (!isPeak)
+              acc('Kliky na bradlech se zátěží', reps: '6–10'),
+            acc('Přítahy jednoručky v předklonu'),
+            if (!isPeak) acc('JM press / triceps na kladce', reps: '10–12'),
+          ];
+        }
+
+        days.add(
+          CustomTrainingDay(
+            name: '$weekLabel – $dayTitle',
+            exercises: [mainSet, ...extras],
+          ),
+        );
+      }
+
+      if (isTaper) {
+        days.add(
+          CustomTrainingDay(
+            name: '$weekLabel – DEN ZÁVODU ${_fmtDate(meet)}',
+            exercises: [
+              CustomTrainingExercise(
+                customName: '1. pokus (úvodní)',
+                sets: '1',
+                reps: '1',
+                rir: '2',
+                weightKg: opener,
+                note: '${_formatWeightAndPercent(opener, 0.925)} – musí '
+                    'projít vždy, i ve špatný den.\n'
+                    'Rozcvička v zákulisí: 40 % × 5, 60 % × 3, 75 % × 1, '
+                    '85 % × 1 (${_weightFromMax(max, 0.40).toStringAsFixed(1)} / '
+                    '${_weightFromMax(max, 0.60).toStringAsFixed(1)} / '
+                    '${_weightFromMax(max, 0.75).toStringAsFixed(1)} / '
+                    '${_weightFromMax(max, 0.85).toStringAsFixed(1)} kg), '
+                    'poslední asi 10 min před pokusem.',
+              ),
+              CustomTrainingExercise(
+                customName: '2. pokus',
+                sets: '1',
+                reps: '1',
+                rir: '1',
+                weightKg: second,
+                note: '${_formatWeightAndPercent(second, 0.975)} – jistý '
+                    'výkon kolem starého maxima.',
+              ),
+              CustomTrainingExercise(
+                customName: '3. pokus (nový osobní rekord)',
+                sets: '1',
+                reps: '1',
+                rir: '0',
+                weightKg: third,
+                note: '${_formatWeightAndPercent(third, 1.025)}.\n'
+                    'Když 2. pokus šel rychle, klidně '
+                    '${_weightFromMax(max, 1.05).toStringAsFixed(1)} kg (105 %). '
+                    'Když šel ztěžka, jen '
+                    '${_weightFromMax(max, 1.0).toStringAsFixed(1)} kg (100 %).',
+              ),
+            ],
+          ),
+        );
+      }
+    }
+
+    days.add(
+      CustomTrainingDay(
+        name: 'Instrukce – ruský cyklus na bench press',
+        exercises: [
+          CustomTrainingExercise(
+            customName: 'Datum závodu a výchozí maximum',
+            sets: '1',
+            reps: _fmtDate(meet),
+            rir: '—',
+            weightKg: max,
+            note: 'Všechny váhy jsou spočítané z 1RM '
+                '${max.toStringAsFixed(1)} kg a zaokrouhlené na 2,5 kg. '
+                'Týdny jsou rozpočítané zpětně od data závodu.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Týdny 1–4',
+            sets: '1',
+            reps: 'Základ',
+            rir: '—',
+            note:
+                'Objem, technika (bench s pauzou) a síla doplňků. 4. týden '
+                'odlehčení před ruským cyklem.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Týdny 5–7',
+            sets: '1',
+            reps: 'Ruský cyklus – objem',
+            rir: '—',
+            note:
+                'Stále 80 % 1RM, ale přibývají opakování v sérii (6×2 → 6×6). '
+                'Lehké dny 6×2 mezi těžkými slouží k regeneraci – nepřidávej.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Týdny 8–10',
+            sets: '1',
+            reps: 'Ruský cyklus – intenzita',
+            rir: '—',
+            note:
+                'Váha roste, opakování klesají: 5×5 @ 85 %, 4×4 @ 90 %, '
+                '3×3 @ 95 %, 2×2 @ 95 % a těžký single 97,5 %.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Týden 11',
+            sets: '1',
+            reps: 'Peak / nervový systém',
+            rir: '—',
+            note:
+                'Nízký objem, vysoká intenzita: těžké singly, nadmaximální '
+                'výdrž 110 % ze stojanu, lockouty 105 % a rychlostní bench. '
+                'Cílem je nabudit nervový systém, ne unavit svaly.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Týden 12',
+            sets: '1',
+            reps: 'Taper / závod',
+            rir: '—',
+            note:
+                'Zkouška úvodního pokusu 5 dní před závodem, 3 dny před jen '
+                'rychlé dvojky, poslední 2 dny volno. Spánek, jídlo, klid.',
+          ),
+          const CustomTrainingExercise(
+            customName: 'Jídelníček',
+            sets: '1',
+            reps: 'Silová příprava',
+            rir: '—',
+            note:
+                'Jídelníček Silová příprava (Jídelníčky): údržba, bílkoviny '
+                '2,0 g/kg, dost sacharidů na trénink. Když musí klient do '
+                'váhové kategorie, nastav cíl a použij lineární jídelníček.',
+          ),
+        ],
+      ),
+    );
+
+    return days;
+  }
+
   List<CustomTrainingDay> _constantinPlanDays() {
     return [
       CustomTrainingDay(
@@ -2539,6 +2998,33 @@ class _PrepWeekConfig {
   });
 }
 
+class _BenchSession {
+  final String title;
+  final String sets;
+  final String reps;
+  final double pct;
+
+  const _BenchSession(this.title, this.sets, this.reps, this.pct);
+}
+
+class _BenchWeek {
+  final int week;
+  final String phase;
+  final List<_BenchSession> sessions;
+
+  const _BenchWeek(this.week, this.phase, this.sessions);
+}
+
+class _BenchMeetInput {
+  final double bench1rm;
+  final DateTime meetDate;
+
+  const _BenchMeetInput({
+    required this.bench1rm,
+    required this.meetDate,
+  });
+}
+
 class _PowerliftingMaxes {
   final double squat1rm;
   final double bench1rm;
@@ -2717,6 +3203,96 @@ class _PowerliftingMaxesDialogState
 }
 
 
+
+class _BenchMeetDialog extends StatefulWidget {
+  const _BenchMeetDialog();
+
+  @override
+  State<_BenchMeetDialog> createState() => _BenchMeetDialogState();
+}
+
+class _BenchMeetDialogState extends State<_BenchMeetDialog> {
+  final benchCtrl = TextEditingController();
+
+  // Výchozí: závod za 12 týdnů (dnes = 1. týden).
+  DateTime meetDate = DateTime.now().add(
+    const Duration(days: _benchWeeks * 7 - 1),
+  );
+
+  @override
+  void dispose() {
+    benchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(l10n.enterMaxes),
+      content: SingleChildScrollView(
+        child: Column(
+          children: [
+            TextField(
+              controller: benchCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: l10n.bench1rm,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: meetDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(
+                    const Duration(days: 730),
+                  ),
+                );
+
+                if (!context.mounted) return;
+
+                if (picked != null) {
+                  setState(() {
+                    meetDate = picked;
+                  });
+                }
+              },
+              child: Text(
+                '${l10n.meetDate}: '
+                '${meetDate.day}.${meetDate.month}.${meetDate.year}',
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final bench = double.tryParse(
+              benchCtrl.text.trim().replaceAll(',', '.'),
+            );
+
+            if (bench == null || bench <= 0) return;
+
+            Navigator.pop(
+              context,
+              _BenchMeetInput(bench1rm: bench, meetDate: meetDate),
+            );
+          },
+          child: Text(l10n.createPlan),
+        ),
+      ],
+    );
+  }
+}
 
 class _TemplateCategorySection extends StatelessWidget {
   final CustomTrainingCategory category;

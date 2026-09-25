@@ -150,6 +150,21 @@ class CarbCyclingCalculator {
     );
   }
 
+  /// Silová příprava – údržba s vysokými sacharidy (viz [StrengthPlan]).
+  /// Profil musí mít `selectedPlan == StrengthPlan.planKey`.
+  static CarbCyclingPlan createStrengthPlan({
+    required UserProfile profile,
+    required AppLocalizations l10n,
+  }) {
+    return _programPlan(
+      profile: profile,
+      l10n: l10n,
+      planKey: StrengthPlan.planKey,
+      note:
+          '${StrengthPlan.name}\n${DietMacroService.base(profile).rationale}',
+    );
+  }
+
   /// Jídelníček programu: stejná makra každý den (z hlavního výpočtu, který
   /// podle `selectedPlan` použije fázi programu).
   static CarbCyclingPlan _programPlan({

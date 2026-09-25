@@ -3032,6 +3032,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get budgetShort => 'Budget';
 
   @override
+  String get benchInsertPlan => '🏋️ INSERT RUSSIAN CYCLE – BENCH PRESS (MEET)';
+
+  @override
+  String get strengthDietDescription => 'Meal plan for strength prep (Russian bench cycle, powerlifting). Maintenance calories – strength grows without a surplus and body weight stays in the weight class. Protein 2.0 g/kg, fat 1.0 g/kg, the rest carbs to fuel heavy sets and recovery.';
+
+  @override
+  String get strengthActivate => 'Create Strength prep meal plan';
+
+  @override
   String get bikiniDietDescription => 'Strict 16-week bikini fitness contest diet – same phases as the workout plan. Weight loss 0.5% (shape building) → 0.75% (cutting) → 1% of body weight per week (final cut), protein 2.2–2.4 g/kg, fat at least 0.7 g/kg, peak week at maintenance with higher carbs for full, round muscles on stage. Counted backwards from the contest date.';
 
   @override
