@@ -3029,6 +3029,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get dietVegan => 'Vegan';
 
   @override
+  String get budgetShort => 'Levnější';
+
+  @override
   String get budgetMealsTitle => 'Levnější varianta jídelníčku';
 
   @override

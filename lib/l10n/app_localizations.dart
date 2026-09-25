@@ -5975,6 +5975,12 @@ abstract class AppLocalizations {
   /// **'Vegan'**
   String get dietVegan;
 
+  /// No description provided for @budgetShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget'**
+  String get budgetShort;
+
   /// No description provided for @budgetMealsTitle.
   ///
   /// In en, this message translates to:

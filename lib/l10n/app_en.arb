@@ -1345,6 +1345,7 @@
 "dietNone": "No restriction",
 "dietVegetarian": "Vegetarian",
 "dietVegan": "Vegan",
+"budgetShort": "Budget",
 "budgetMealsTitle": "Budget meal plan",
 "budgetMealsHint": "Cheap everyday ingredients (eggs, quark, chicken thighs, legumes, potatoes, rice…). Dinner is cooked together with lunch, only the portion differs.",
 "addToDay": "Add to day",

@@ -1,3 +1,4 @@
+import '../core/nutrition/budget_classifier.dart';
 import '../core/nutrition/diet_classifier.dart';
 import '../features/diet_plans/logic/food_catalog.dart';
 import '../features/diet_plans/logic/portion_solver.dart';
@@ -52,7 +53,10 @@ class MealSuggestion {
 ///  - gramáže se počítají se VŠEMI makry potravin (PortionSolver),
 ///  - respektuje se stravovací omezení (vegetarián / vegan) – potraviny,
 ///    u kterých nejde spolehlivě určit původ, se nenabízí,
-///  - hotová jídla ("HOTOVKA") se jako složky nepoužívají.
+///  - hotová jídla ("HOTOVKA") se jako složky nepoužívají,
+///  - úsporná varianta: přednost mají levné potraviny (viz
+///    [BudgetClassifier]); dražší se použijí jen tam, kde levná náhrada
+///    v databance chybí.
 class MealSuggestionService {
   // --- kategorizace (aby se nevybíral olej jako "jídlo") ---
   static bool _isOilOrPureFat(Meal m) {
@@ -140,6 +144,7 @@ class MealSuggestionService {
     required List<Meal> bank,
     required int mealsCount,
     DietPreference preference = DietPreference.none,
+    bool budget = false,
   }) {
     if (bank.isEmpty || mealsCount <= 0) return [];
 
@@ -154,15 +159,29 @@ class MealSuggestionService {
 
     if (usable.isEmpty) return [];
 
-    final proteinMeals = _top(
-      usable,
+    // Úsporná varianta: každý druh zdroje (bílkoviny / sacharidy / tuky)
+    // se bere z levných potravin; když žádná levná není, z celé databanky.
+    final cheap = budget
+        ? usable.where((m) => BudgetClassifier.isCheapName(m.name)).toList()
+        : usable;
+
+    List<Meal> topOf(
+      double Function(Meal) score, {
+      required bool Function(Meal) where,
+      required int take,
+    }) {
+      final preferred = _top(cheap, score, where: where, take: take);
+      if (preferred.isNotEmpty || !budget) return preferred;
+      return _top(usable, score, where: where, take: take);
+    }
+
+    final proteinMeals = topOf(
       _scoreProtein,
       where: (m) => m.proteinPer100g >= 10 && !_isOilOrPureFat(m),
       take: 12,
     );
 
-    final carbMeals = _top(
-      usable,
+    final carbMeals = topOf(
       _scoreCarbs,
       where: (m) => m.carbsPer100g >= 15 && !_isOilOrPureFat(m),
       take: 12,
@@ -170,12 +189,30 @@ class MealSuggestionService {
 
     // Tukové zdroje: ořechy, semínka, avokádo, sýry – čistý olej/máslo
     // se jako samostatná "potravina" do jídla nenabízí.
-    final fatMeals = _top(
-      usable,
+    final fatMeals = topOf(
       _scoreFats,
       where: (m) => m.fatsPer100g >= 15 && !_isOilOrPureFat(m),
       take: 10,
     );
+
+    // Úsporná varianta: záložní výběr z celé databanky pro jídla, která
+    // z levných potravin nejde přesně trefit (např. hodně bílkovin
+    // a málo sacharidů u veganské stravy).
+    final allProtein = budget
+        ? _top(usable, _scoreProtein,
+            where: (m) => m.proteinPer100g >= 10 && !_isOilOrPureFat(m),
+            take: 12)
+        : proteinMeals;
+    final allCarbs = budget
+        ? _top(usable, _scoreCarbs,
+            where: (m) => m.carbsPer100g >= 15 && !_isOilOrPureFat(m),
+            take: 12)
+        : carbMeals;
+    final allFats = budget
+        ? _top(usable, _scoreFats,
+            where: (m) => m.fatsPer100g >= 15 && !_isOilOrPureFat(m),
+            take: 10)
+        : fatMeals;
 
     final out = <MealSuggestion>[];
 
@@ -192,53 +229,86 @@ class MealSuggestionService {
       // Dva bílkovinné zdroje (u rostlinné stravy mají zdroje bílkovin
       // hodně sacharidů/tuků, dva různé dávají víc volnosti), sacharidový
       // a tukový zdroj. Výpočet porcí rozhodne, co se opravdu použije.
-      final pMeal = _pick(proteinMeals, i);
-      // Druhý zdroj bílkovin – ne dva proteinové prášky v jednom jídle.
-      final p2Meal = _pick(
-        proteinMeals,
-        i + 1,
-        avoid: {
-          if (pMeal != null) pMeal.name,
-          if (pMeal != null && _isPowder(pMeal))
-            for (final m in proteinMeals)
-              if (_isPowder(m)) m.name,
-        },
-      );
-      final cMeal = _pick(
-        carbMeals,
-        i,
-        avoid: {
-          if (pMeal != null) pMeal.name,
-          if (p2Meal != null) p2Meal.name,
-        },
-      );
-      final fMeal = _pick(
-        fatMeals,
-        i,
-        avoid: {
-          if (pMeal != null) pMeal.name,
-          if (p2Meal != null) p2Meal.name,
-          if (cMeal != null) cMeal.name,
-        },
-      );
+      ({List<Meal> components, List<FoodPortion> solved}) build(
+        List<Meal> proteins,
+        List<Meal> carbSources,
+        List<Meal> fatSources,
+      ) {
+        final pMeal = _pick(proteins, i);
+        // Druhý zdroj bílkovin – ne dva proteinové prášky v jednom jídle.
+        final p2Meal = _pick(
+          proteins,
+          i + 1,
+          avoid: {
+            if (pMeal != null) pMeal.name,
+            if (pMeal != null && _isPowder(pMeal))
+              for (final m in proteins)
+                if (_isPowder(m)) m.name,
+          },
+        );
+        final cMeal = _pick(
+          carbSources,
+          i,
+          avoid: {
+            if (pMeal != null) pMeal.name,
+            if (p2Meal != null) p2Meal.name,
+          },
+        );
+        final fMeal = _pick(
+          fatSources,
+          i,
+          avoid: {
+            if (pMeal != null) pMeal.name,
+            if (p2Meal != null) p2Meal.name,
+            if (cMeal != null) cMeal.name,
+          },
+        );
 
-      final components = <Meal>[
-        if (pMeal != null) pMeal,
-        if (p2Meal != null) p2Meal,
-        if (cMeal != null && tC >= 5) cMeal,
-        if (fMeal != null && tF >= 3) fMeal,
-      ];
+        final components = <Meal>[
+          if (pMeal != null) pMeal,
+          if (p2Meal != null) p2Meal,
+          if (cMeal != null && tC >= 5) cMeal,
+          if (fMeal != null && tF >= 3) fMeal,
+        ];
 
+        final solved = components.isEmpty
+            ? const <FoodPortion>[]
+            : PortionSolver.solve(
+                variable: components.map(_asFood).toList(),
+                targetProtein: tP,
+                targetCarbs: tC,
+                targetFat: tF,
+              );
+        return (components: components, solved: solved);
+      }
+
+      // Odchylka jídla v kcal.
+      double errorOf(List<FoodPortion> solved) {
+        var p = 0.0, c = 0.0, f = 0.0;
+        for (final x in solved) {
+          p += x.protein;
+          c += x.carbs;
+          f += x.fat;
+        }
+        return (p - tP).abs() * 4 + (c - tC).abs() * 4 + (f - tF).abs() * 9;
+      }
+
+      var result = build(proteinMeals, carbMeals, fatMeals);
+
+      // Úsporná varianta: když levné potraviny cíl netrefí (odchylka nad
+      // 8 % energie jídla), zkusí se výběr z celé databanky a použije se
+      // přesnější řešení.
+      final mealKcal = tP * 4 + tC * 4 + tF * 9;
+      if (budget && errorOf(result.solved) > 0.08 * mealKcal) {
+        final alt = build(allProtein, allCarbs, allFats);
+        if (errorOf(alt.solved) < errorOf(result.solved)) result = alt;
+      }
+
+      final components = result.components;
       if (components.isEmpty) continue;
 
       final byName = {for (final m in components) m.name: m};
-
-      final solved = PortionSolver.solve(
-        variable: components.map(_asFood).toList(),
-        targetProtein: tP,
-        targetCarbs: tC,
-        targetFat: tF,
-      );
+      final solved = result.solved;
 
       final portions = <MealPortion>[
         for (final s in solved)

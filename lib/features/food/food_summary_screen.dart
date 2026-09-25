@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/nutrition/budget_classifier.dart';
 import '../../models/daily_intake.dart';
 import '../../models/diet_preference.dart';
 import '../../models/food_combo.dart';
@@ -92,10 +93,14 @@ class _ComboFilter {
   final ComboTaste taste;
   final DietPreference diet;
 
+  /// Úsporná varianta – jen jídla z levných surovin.
+  final bool budget;
+
   _ComboFilter({
     required this.time,
     required this.taste,
     this.diet = DietPreference.none,
+    this.budget = false,
   });
 }
 
@@ -276,6 +281,7 @@ class FoodSummaryScreen extends ConsumerWidget {
     BuildContext context, {
     required _MealSlot slot,
     DietPreference initialDiet = DietPreference.none,
+    bool initialBudget = false,
   }) async {
     final l10n = AppLocalizations.of(context)!;
 
@@ -285,6 +291,7 @@ class FoodSummaryScreen extends ConsumerWidget {
         baseTime == ComboMealTime.breakfast || baseTime == ComboMealTime.snack;
 
     var diet = initialDiet;
+    var budget = initialBudget;
     ComboTaste taste = ComboTaste.any;
 
     return showModalBottomSheet<_ComboFilter>(
@@ -328,6 +335,13 @@ class FoodSummaryScreen extends ConsumerWidget {
                           onSelected: (_) =>
                               setLocal(() => diet = DietPreference.vegan),
                         ),
+                        FilterChip(
+                          avatar: const Icon(Icons.savings_outlined, size: 18),
+                          label: Text(l10n.budgetShort),
+                          selected: budget,
+                          onSelected: (value) =>
+                              setLocal(() => budget = value),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -366,6 +380,7 @@ class FoodSummaryScreen extends ConsumerWidget {
                               time: baseTime,
                               taste: taste,
                               diet: diet,
+                              budget: budget,
                             ),
                           );
                         },
@@ -946,6 +961,7 @@ class FoodSummaryScreen extends ConsumerWidget {
       bank: bank,
       mealsCount: mealsCount,
       preference: ref.read(userProfileProvider)?.diet ?? DietPreference.none,
+      budget: ref.read(userProfileProvider)?.budget ?? false,
     );
 
     final totalP = suggestions.fold<int>(0, (a, s) => a + s.protein);
@@ -1103,6 +1119,7 @@ class FoodSummaryScreen extends ConsumerWidget {
     };
 
     var diet = profile.diet;
+    var budget = profile.budget;
 
     for (int i = 0; i < pickedSlots.length; i++) {
       final slot = pickedSlots[i];
@@ -1127,12 +1144,14 @@ class FoodSummaryScreen extends ConsumerWidget {
         context,
         slot: slot,
         initialDiet: diet,
+        initialBudget: budget,
       );
       if (!context.mounted) return;
       if (filter == null) {
         return;
       }
       diet = filter.diet;
+      budget = filter.budget;
 
       // Jen jídla odpovídající stravovacímu omezení a jen ta, jejichž
       // všechny suroviny jsou v databance (jinak by makra nebyla úplná).
@@ -1141,7 +1160,10 @@ class FoodSummaryScreen extends ConsumerWidget {
         time: filter.time,
         taste: filter.taste,
         diet: filter.diet,
-      ).where((c) => c.missingItemsForBank(bankList).isEmpty).toList();
+      )
+          .where((c) => c.missingItemsForBank(bankList).isEmpty)
+          .where((c) => !filter.budget || BudgetClassifier.isCheapCombo(c))
+          .toList();
 
       if (filtered.isEmpty) {
         messenger.showSnackBar(
