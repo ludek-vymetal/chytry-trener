@@ -3029,6 +3029,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dietVegan => 'Vegan';
 
   @override
+  String get budgetMealsTitle => 'Budget meal plan';
+
+  @override
+  String get budgetMealsHint => 'Cheap everyday ingredients (eggs, quark, chicken thighs, legumes, potatoes, rice…). Dinner is cooked together with lunch, only the portion differs.';
+
+  @override
   String get addToDay => 'Add to day';
 
   @override

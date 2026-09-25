@@ -43,6 +43,7 @@ class KetoCalculator {
     List<String> excludedFoods = const [],
     String? noteOverride,
     DietPreference preference = DietPreference.none,
+    bool budget = false,
   }) {
     final localizedDays = days(l10n);
 
@@ -57,6 +58,7 @@ class KetoCalculator {
         excludedFoods: excludedFoods,
         dayIndex: dayIndex,
         preference: preference,
+        budget: budget,
       ),
     );
 
@@ -153,6 +155,7 @@ class KetoCalculator {
     required List<String> excludedFoods,
     required int dayIndex,
     DietPreference preference = DietPreference.none,
+    bool budget = false,
   }) {
     return MealComposer.composeDay(
       dayName: dayName,
@@ -169,6 +172,7 @@ class KetoCalculator {
       excluded: excludedFoods,
       dayIndex: dayIndex,
       preference: preference,
+      budget: budget,
     );
   }
 

@@ -38,6 +38,12 @@ class UserProfile {
   /// Stravovací omezení pro výpočty (nenastaveno = bez omezení).
   DietPreference get diet => dietPreference ?? DietPreference.none;
 
+  /// Úsporná (levnější) varianta jídelníčku. `null` = nenastaveno.
+  final bool? budgetMeals;
+
+  /// Úsporná varianta pro výpočty (nenastaveno = vypnuto).
+  bool get budget => budgetMeals ?? false;
+
   const UserProfile({
     this.clientId,
     this.firstName = '',
@@ -58,6 +64,7 @@ class UserProfile {
     this.fastingStartTime,
     this.fastingDuration = 16,
     this.dietPreference,
+    this.budgetMeals,
   });
 
   String get displayName {
@@ -103,6 +110,7 @@ class UserProfile {
     bool clearFastingStartTime = false,
     int? fastingDuration,
     DietPreference? dietPreference,
+    bool? budgetMeals,
   }) {
     return UserProfile(
       clientId: clientId ?? this.clientId,
@@ -130,6 +138,7 @@ class UserProfile {
           : (fastingStartTime ?? this.fastingStartTime),
       fastingDuration: fastingDuration ?? this.fastingDuration,
       dietPreference: dietPreference ?? this.dietPreference,
+      budgetMeals: budgetMeals ?? this.budgetMeals,
     );
   }
 
@@ -196,6 +205,7 @@ class UserProfile {
               },
         'fastingDuration': fastingDuration,
         'dietPreference': dietPreference?.name,
+        'budgetMeals': budgetMeals,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -319,6 +329,7 @@ class UserProfile {
       dietPreference: json['dietPreference'] is String
           ? DietPreferenceX.parse(json['dietPreference'] as String)
           : null,
+      budgetMeals: json['budgetMeals'] is bool ? json['budgetMeals'] as bool : null,
     );
   }
 }

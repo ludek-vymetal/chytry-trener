@@ -1298,6 +1298,8 @@
 "dietNone": "Bez omezení",
 "dietVegetarian": "Vegetarián",
 "dietVegan": "Vegan",
+"budgetMealsTitle": "Levnější varianta jídelníčku",
+"budgetMealsHint": "Levné běžné suroviny (vejce, tvaroh, kuřecí stehna, luštěniny, brambory, rýže…). Večeře je ze stejného vaření jako oběd, jen s jinou gramáží.",
 "addToDay": "Přidat do dne",
 "remainderCoverage": "Zbývá: B {p} | S {c} | T {f} g · návrhy pokryjí: B {sp} | S {sc} | T {sf} g",
 "@remainderCoverage": {

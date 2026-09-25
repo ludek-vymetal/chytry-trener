@@ -43,6 +43,7 @@ class CarbCyclingCalculator {
         l10n: l10n,
         planType: 'Vlny',
         preference: profile.diet,
+        budget: profile.budget,
         noteOverride:
             '${l10n.carbCyclingDescriptionShort}\n${l10n.calculation}: ${target.sourceLabel}',
       ),
@@ -70,6 +71,7 @@ class CarbCyclingCalculator {
         l10n: l10n,
         planType: 'Linear',
         preference: profile.diet,
+        budget: profile.budget,
         noteOverride: '${l10n.calculation}: ${target.sourceLabel}',
       ),
     );
@@ -82,6 +84,7 @@ class CarbCyclingCalculator {
     List<String> excluded = const [],
     String? noteOverride,
     DietPreference preference = DietPreference.none,
+    bool budget = false,
   }) {
     final localizedDays = days(l10n);
 
@@ -96,6 +99,7 @@ class CarbCyclingCalculator {
         excluded: excluded,
         dayIndex: index,
         preference: preference,
+        budget: budget,
       ),
     );
 
@@ -145,6 +149,7 @@ class CarbCyclingCalculator {
         excluded: excluded,
         dayIndex: index,
         preference: profile.diet,
+        budget: profile.budget,
       ),
     );
 
@@ -167,6 +172,7 @@ class CarbCyclingCalculator {
     List<String> excluded = const [],
     int dayIndex = 0,
     DietPreference preference = DietPreference.none,
+    bool budget = false,
   }) {
     return MealComposer.composeDay(
       dayName: dayName,
@@ -183,6 +189,7 @@ class CarbCyclingCalculator {
       excluded: excluded,
       dayIndex: dayIndex,
       preference: preference,
+      budget: budget,
     );
   }
 
@@ -197,6 +204,7 @@ class CarbCyclingCalculator {
     List<String> excluded = const [],
     int dayIndex = 0,
     DietPreference preference = DietPreference.none,
+    bool budget = false,
   }) {
     final mealTimes = _buildMealTimes(
       startTime: startTime,
@@ -219,6 +227,7 @@ class CarbCyclingCalculator {
       excluded: excluded,
       dayIndex: dayIndex,
       preference: preference,
+      budget: budget,
     );
   }
 

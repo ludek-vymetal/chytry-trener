@@ -134,7 +134,7 @@ class FoodBankSeed {
     ),
     Meal(
       name: 'Tvaroh (nízkotučný)',
-      caloriesPer100g: 80,
+      caloriesPer100g: 92,
       proteinPer100g: 18.0,
       carbsPer100g: 4.0,
       fatsPer100g: 0.5,
@@ -753,6 +753,273 @@ class FoodBankSeed {
       carbsPer100g: 16.0,
       fatsPer100g: 5.0,
       defaultGrams: 450,
+    ),
+
+    // =========================
+    // ČESKÁ HOTOVÁ JÍDLA (celá porce včetně přílohy)
+    // Hodnoty na 100 g hotového jídla podle KalorickéTabulky.cz
+    // (ověřeno: 4×B + 4×S + 9×T odpovídá kcal); defaultGrams = běžná porce.
+    // =========================
+    // kaloricketabulky.cz/potraviny/svickova-na-smetane-knedlik
+    Meal(
+      name: 'HOTOVKA: Svíčková na smetaně s knedlíkem',
+      caloriesPer100g: 133,
+      proteinPer100g: 7.2,
+      carbsPer100g: 11.3,
+      fatsPer100g: 6.5,
+      defaultGrams: 450,
+    ),
+    // kaloricketabulky.cz/potraviny/hovezi-gulas-s-houskovymi-knedliky
+    Meal(
+      name: 'HOTOVKA: Hovězí guláš s knedlíkem',
+      caloriesPer100g: 154,
+      proteinPer100g: 6.0,
+      carbsPer100g: 18.0,
+      fatsPer100g: 7.0,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/vepro-knedlo-zelo
+    Meal(
+      name: 'HOTOVKA: Vepřo knedlo zelo',
+      caloriesPer100g: 198,
+      proteinPer100g: 16.8,
+      carbsPer100g: 19.2,
+      fatsPer100g: 5.2,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/segedinsky-gulas-knedlik
+    Meal(
+      name: 'HOTOVKA: Segedínský guláš s knedlíkem',
+      caloriesPer100g: 179,
+      proteinPer100g: 7.8,
+      carbsPer100g: 22.1,
+      fatsPer100g: 6.5,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/hovezi-maso-rajska-omacka-houskovy-knedlik-apetit
+    Meal(
+      name: 'HOTOVKA: Hovězí v rajské omáčce s knedlíkem',
+      caloriesPer100g: 135,
+      proteinPer100g: 6.9,
+      carbsPer100g: 21.8,
+      fatsPer100g: 1.9,
+      defaultGrams: 450,
+    ),
+    // kaloricketabulky.cz/potraviny/kure-na-paprice-s-testovinami-albert
+    Meal(
+      name: 'HOTOVKA: Kuře na paprice s těstovinami',
+      caloriesPer100g: 156,
+      proteinPer100g: 8.8,
+      carbsPer100g: 17.0,
+      fatsPer100g: 5.7,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/albert-quality-kure-na-paprice-s-knedlikem
+    Meal(
+      name: 'HOTOVKA: Kuře na paprice s knedlíkem',
+      caloriesPer100g: 113,
+      proteinPer100g: 6.0,
+      carbsPer100g: 13.0,
+      fatsPer100g: 4.0,
+      defaultGrams: 450,
+    ),
+    // kaloricketabulky.cz/potraviny/smazeny-kureci-rizek-s-bramborovou-kasi
+    Meal(
+      name: 'HOTOVKA: Kuřecí řízek s bramborovou kaší',
+      caloriesPer100g: 117,
+      proteinPer100g: 7.2,
+      carbsPer100g: 14.0,
+      fatsPer100g: 3.3,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/kure-pecene-se-zeleninovou-nadivkou-a-brambory
+    Meal(
+      name: 'HOTOVKA: Pečené kuře s brambory',
+      caloriesPer100g: 190,
+      proteinPer100g: 17.0,
+      carbsPer100g: 24.0,
+      fatsPer100g: 4.0,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/pecena-kureci-prsa-v-masove-stave-s-pecenymi-bramborami-mrkvi-a-hraskem
+    Meal(
+      name: 'HOTOVKA: Pečená kuřecí prsa s brambory a zeleninou',
+      caloriesPer100g: 88,
+      proteinPer100g: 9.6,
+      carbsPer100g: 8.2,
+      fatsPer100g: 1.4,
+      defaultGrams: 450,
+    ),
+    // kaloricketabulky.cz/potraviny/rizoto-s-kurecim-masem
+    Meal(
+      name: 'HOTOVKA: Kuřecí rizoto',
+      caloriesPer100g: 138,
+      proteinPer100g: 8.0,
+      carbsPer100g: 18.0,
+      fatsPer100g: 3.7,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/kung-pao-kureci-s-ryzi
+    Meal(
+      name: 'HOTOVKA: Kuřecí kung pao s rýží',
+      caloriesPer100g: 124,
+      proteinPer100g: 6.2,
+      carbsPer100g: 20.0,
+      fatsPer100g: 1.9,
+      defaultGrams: 450,
+    ),
+    // kaloricketabulky.cz/potraviny/bolonske-spagety
+    Meal(
+      name: 'HOTOVKA: Špagety boloňské (mleté maso)',
+      caloriesPer100g: 157,
+      proteinPer100g: 8.1,
+      carbsPer100g: 20.0,
+      fatsPer100g: 5.0,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/bolonske-lasagne
+    Meal(
+      name: 'HOTOVKA: Lasagne boloňské (mleté maso)',
+      caloriesPer100g: 155,
+      proteinPer100g: 8.0,
+      carbsPer100g: 9.0,
+      fatsPer100g: 9.0,
+      defaultGrams: 350,
+    ),
+    // kaloricketabulky.cz/potraviny/chilli-con-carne-s-ryzi-hame-menu-1
+    Meal(
+      name: 'HOTOVKA: Chilli con carne (hovězí) s rýží',
+      caloriesPer100g: 134,
+      proteinPer100g: 4.8,
+      carbsPer100g: 22.2,
+      fatsPer100g: 2.3,
+      defaultGrams: 450,
+    ),
+    // kaloricketabulky.cz/potraviny/papriky-plnene-v-rajske-omacce
+    Meal(
+      name: 'HOTOVKA: Plněné papriky (mleté maso) v rajské omáčce, bez přílohy',
+      caloriesPer100g: 112,
+      proteinPer100g: 4.5,
+      carbsPer100g: 10.5,
+      fatsPer100g: 5.5,
+      defaultGrams: 350,
+    ),
+    // kaloricketabulky.cz/potraviny/zapecene-testoviny-se-sunkou
+    Meal(
+      name: 'HOTOVKA: Zapečené těstoviny se šunkou',
+      caloriesPer100g: 148,
+      proteinPer100g: 9.3,
+      carbsPer100g: 16.9,
+      fatsPer100g: 4.5,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/bramborovy-gulas-burtgulas
+    Meal(
+      name: 'HOTOVKA: Bramborový guláš (buřtguláš)',
+      caloriesPer100g: 173,
+      proteinPer100g: 2.7,
+      carbsPer100g: 13.7,
+      fatsPer100g: 11.7,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/kureci-vyvar-se-zeleninou-a-nudlemi
+    Meal(
+      name: 'HOTOVKA: Kuřecí vývar s nudlemi',
+      caloriesPer100g: 50,
+      proteinPer100g: 3.5,
+      carbsPer100g: 3.9,
+      fatsPer100g: 2.3,
+      defaultGrams: 350,
+    ),
+    // kaloricketabulky.cz/potraviny/cocka-na-kyselo-varene-vejce
+    Meal(
+      name: 'HOTOVKA: Čočka na kyselo s vejcem',
+      caloriesPer100g: 90,
+      proteinPer100g: 4.7,
+      carbsPer100g: 12.5,
+      fatsPer100g: 2.2,
+      defaultGrams: 450,
+    ),
+    // kaloricketabulky.cz/potraviny/smazeny-syr-hranolky-tatarska-omacka
+    Meal(
+      name: 'HOTOVKA: Smažený sýr s hranolky a tatarkou',
+      caloriesPer100g: 319,
+      proteinPer100g: 12.0,
+      carbsPer100g: 32.8,
+      fatsPer100g: 15.6,
+      defaultGrams: 350,
+    ),
+    // kaloricketabulky.cz/potraviny/rizoto-zeleninove
+    Meal(
+      name: 'HOTOVKA: Zeleninové rizoto (s parmazánem)',
+      caloriesPer100g: 111,
+      proteinPer100g: 2.4,
+      carbsPer100g: 22.7,
+      fatsPer100g: 0.8,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/knedlik-ovocny
+    Meal(
+      name: 'HOTOVKA: Ovocné knedlíky (tvarohové)',
+      caloriesPer100g: 168,
+      proteinPer100g: 5.7,
+      carbsPer100g: 26.3,
+      fatsPer100g: 4.7,
+      defaultGrams: 300,
+    ),
+    // kaloricketabulky.cz/potraviny/buchticky-se-sodo-cukrarna-mysak
+    Meal(
+      name: 'HOTOVKA: Buchtičky se šodó',
+      caloriesPer100g: 199,
+      proteinPer100g: 5.1,
+      carbsPer100g: 24.0,
+      fatsPer100g: 8.6,
+      defaultGrams: 250,
+    ),
+    // kaloricketabulky.cz/potraviny/bramborovy-salat-s-majonezou
+    Meal(
+      name: 'HOTOVKA: Bramborový salát s majonézou',
+      caloriesPer100g: 216,
+      proteinPer100g: 2.0,
+      carbsPer100g: 12.0,
+      fatsPer100g: 17.5,
+      defaultGrams: 200,
+    ),
+    // kaloricketabulky.cz/potraviny/testovinovy-salat-se-zeleninou-a-majonezou
+    Meal(
+      name: 'HOTOVKA: Těstovinový salát se zeleninou a majonézou',
+      caloriesPer100g: 140,
+      proteinPer100g: 3.9,
+      carbsPer100g: 17.4,
+      fatsPer100g: 6.0,
+      defaultGrams: 250,
+    ),
+    // kaloricketabulky.cz/potraviny/dhal
+    Meal(
+      name: 'HOTOVKA: Čočkový dhal',
+      caloriesPer100g: 101,
+      proteinPer100g: 4.5,
+      carbsPer100g: 11.5,
+      fatsPer100g: 4.0,
+      defaultGrams: 400,
+    ),
+    // kaloricketabulky.cz/potraviny/falafel
+    Meal(
+      name: 'HOTOVKA: Falafel (cizrnový)',
+      caloriesPer100g: 192,
+      proteinPer100g: 6.2,
+      carbsPer100g: 19.0,
+      fatsPer100g: 9.9,
+      defaultGrams: 150,
+    ),
+    // kaloricketabulky.cz/potraviny/cockova-polevka-domaci
+    Meal(
+      name: 'HOTOVKA: Čočková polévka (postní)',
+      caloriesPer100g: 110,
+      proteinPer100g: 5.0,
+      carbsPer100g: 17.0,
+      fatsPer100g: 2.0,
+      defaultGrams: 350,
     ),
   ];
 

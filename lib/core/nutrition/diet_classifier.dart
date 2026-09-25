@@ -59,6 +59,8 @@ class DietClassifier {
     'protein tyčink', 'proteinová tyčink', 'wafle', 'palačink', 'lívan',
     'granola', 'müsli', 'kaše', 'nákyp', 'pudink', 'gnocchi', 'egg', 'milk',
     'cheese', 'yogurt', 'butter', 'honey',
+    // Majonéza a tatarka obsahují vejce, knedlíky a buchtičky vejce/mléko.
+    'majonéz', 'tatarsk', 'knedl', 'buchtič', 'parmaz',
   ];
 
   /// Krátká slova, která se hledají jen jako celé slovo (jinak by "med"

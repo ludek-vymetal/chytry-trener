@@ -175,6 +175,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
           ? incoming.fastingDuration
           : base.fastingDuration,
       dietPreference: incoming.dietPreference ?? base.dietPreference,
+      budgetMeals: incoming.budgetMeals ?? base.budgetMeals,
     );
   }
 

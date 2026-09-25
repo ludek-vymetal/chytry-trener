@@ -29,6 +29,7 @@ class MealGenerator {
     List<String> excluded = const [],
     int dayIndex = 0,
     DietPreference preference = DietPreference.none,
+    bool budget = false,
   }) {
     final day = MealComposer.composeDay(
       dayName: '',
@@ -45,6 +46,7 @@ class MealGenerator {
       excluded: excluded,
       dayIndex: dayIndex,
       preference: preference,
+      budget: budget,
     );
 
     return day.meals.map((e) => e.toMap()).toList();

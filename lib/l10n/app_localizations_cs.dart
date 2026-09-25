@@ -3029,6 +3029,12 @@ class AppLocalizationsCs extends AppLocalizations {
   String get dietVegan => 'Vegan';
 
   @override
+  String get budgetMealsTitle => 'Levnější varianta jídelníčku';
+
+  @override
+  String get budgetMealsHint => 'Levné běžné suroviny (vejce, tvaroh, kuřecí stehna, luštěniny, brambory, rýže…). Večeře je ze stejného vaření jako oběd, jen s jinou gramáží.';
+
+  @override
   String get addToDay => 'Přidat do dne';
 
   @override

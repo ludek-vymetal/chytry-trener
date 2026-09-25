@@ -104,7 +104,7 @@ class FoodCatalog {
     id: 'eggs',
     name: 'Vejce',
     kcal: 143, protein: 12.6, carbs: 0.7, fat: 9.5,
-    maxGrams: 330, pieceGrams: 55, // vejce M bez skořápky
+    maxGrams: 330, minGrams: 110, pieceGrams: 55, // vejce M bez skořápky
   );
   static const skyr = NutritionFood(
     id: 'skyr',
@@ -279,6 +279,164 @@ class FoodCatalog {
     maxGrams: 400, step: 10,
   );
 
+  // ----------------------------------------------------------------
+  // Další potraviny pro pestrost jídelníčku
+  // ----------------------------------------------------------------
+  static const porkTenderloin = NutritionFood(
+    id: 'pork_tenderloin',
+    name: 'Vepřová panenka',
+    kcal: 120, protein: 21.0, carbs: 0, fat: 3.5,
+    maxGrams: 300, minGrams: 50, weightNote: 'syrová váha',
+  );
+  static const groundBeef5 = NutritionFood(
+    id: 'beef_ground_5',
+    name: 'Hovězí mleté 5 %',
+    kcal: 137, protein: 21.0, carbs: 0, fat: 5.0,
+    maxGrams: 300, minGrams: 50, weightNote: 'syrová váha',
+  );
+  static const tuna = NutritionFood(
+    id: 'tuna',
+    name: 'Tuňák ve vlastní šťávě (okapaný)',
+    kcal: 116, protein: 26.0, carbs: 0, fat: 1.0,
+    maxGrams: 250, minGrams: 50,
+  );
+  static const shrimp = NutritionFood(
+    id: 'shrimp',
+    name: 'Krevety',
+    kcal: 85, protein: 20.1, carbs: 0.2, fat: 0.5,
+    maxGrams: 300, minGrams: 50, weightNote: 'syrová váha',
+  );
+  static const greekYogurt = NutritionFood(
+    id: 'greek_yogurt',
+    name: 'Řecký jogurt 0 %',
+    kcal: 59, protein: 10.2, carbs: 3.6, fat: 0.4,
+    maxGrams: 400, minGrams: 50, step: 10,
+  );
+  static const cottage = NutritionFood(
+    id: 'cottage',
+    name: 'Cottage sýr',
+    kcal: 98, protein: 11.0, carbs: 3.4, fat: 4.3,
+    maxGrams: 300, minGrams: 50, step: 10,
+  );
+  static const mozzarellaLight = NutritionFood(
+    id: 'mozzarella_light',
+    name: 'Mozzarella light',
+    kcal: 165, protein: 19.0, carbs: 1.5, fat: 9.0,
+    maxGrams: 150, minGrams: 30,
+  );
+  static const seitan = NutritionFood(
+    id: 'seitan',
+    name: 'Seitan',
+    kcal: 140, protein: 25.0, carbs: 4.0, fat: 2.0,
+    maxGrams: 250, minGrams: 50,
+  );
+  static const redBeans = NutritionFood(
+    id: 'red_beans',
+    name: 'Fazole červené (sterilované, okapané)',
+    kcal: 110, protein: 7.5, carbs: 14.0, fat: 0.5,
+    maxGrams: 300, minGrams: 50, step: 10,
+  );
+  static const ryeBread = NutritionFood(
+    id: 'rye_bread',
+    name: 'Žitný chléb',
+    kcal: 240, protein: 7.0, carbs: 46.0, fat: 1.5,
+    maxGrams: 200, minGrams: 30,
+  );
+  static const tortilla = NutritionFood(
+    id: 'tortilla',
+    name: 'Tortilla pšeničná',
+    kcal: 300, protein: 8.0, carbs: 50.0, fat: 7.5,
+    maxGrams: 180, minGrams: 30,
+  );
+  static const couscous = NutritionFood(
+    id: 'couscous',
+    name: 'Kuskus',
+    kcal: 360, protein: 12.8, carbs: 72.0, fat: 0.6,
+    maxGrams: 160, minGrams: 30, weightNote: 'suchá váha',
+  );
+  static const bulgur = NutritionFood(
+    id: 'bulgur',
+    name: 'Bulgur',
+    kcal: 342, protein: 12.3, carbs: 63.0, fat: 1.3,
+    maxGrams: 160, minGrams: 30, weightNote: 'suchá váha',
+  );
+  static const quinoa = NutritionFood(
+    id: 'quinoa',
+    name: 'Quinoa',
+    kcal: 368, protein: 14.1, carbs: 57.0, fat: 6.1,
+    maxGrams: 160, minGrams: 30, weightNote: 'suchá váha',
+  );
+  static const buckwheat = NutritionFood(
+    id: 'buckwheat',
+    name: 'Pohanka',
+    kcal: 343, protein: 13.3, carbs: 61.5, fat: 3.4,
+    maxGrams: 160, minGrams: 30, weightNote: 'suchá váha',
+  );
+  static const apple = NutritionFood(
+    id: 'apple',
+    name: 'Jablko',
+    kcal: 52, protein: 0.3, carbs: 12.0, fat: 0.2,
+    maxGrams: 300, minGrams: 50, step: 10,
+  );
+  static const strawberries = NutritionFood(
+    id: 'strawberries',
+    name: 'Jahody',
+    kcal: 32, protein: 0.7, carbs: 5.7, fat: 0.3,
+    maxGrams: 300, minGrams: 50, step: 10,
+  );
+  static const walnuts = NutritionFood(
+    id: 'walnuts',
+    name: 'Vlašské ořechy',
+    kcal: 654, protein: 15.0, carbs: 7.0, fat: 65.0,
+    maxGrams: 40, minGrams: 10,
+  );
+  static const cashews = NutritionFood(
+    id: 'cashews',
+    name: 'Kešu',
+    kcal: 553, protein: 18.0, carbs: 27.0, fat: 44.0,
+    maxGrams: 40, minGrams: 10,
+  );
+
+  // ----------------------------------------------------------------
+  // Levné potraviny (úsporná varianta jídelníčku)
+  // ----------------------------------------------------------------
+  static const chickenThigh = NutritionFood(
+    id: 'chicken_thigh',
+    name: 'Kuřecí stehenní maso (bez kůže)',
+    kcal: 117, protein: 19.7, carbs: 0, fat: 4.2,
+    maxGrams: 300, minGrams: 50, weightNote: 'syrová váha',
+  );
+  static const porkLeg = NutritionFood(
+    id: 'pork_leg',
+    name: 'Vepřová kýta',
+    kcal: 129, protein: 21.0, carbs: 0, fat: 5.0,
+    maxGrams: 300, minGrams: 50, weightNote: 'syrová váha',
+  );
+  static const milk = NutritionFood(
+    id: 'milk',
+    name: 'Mléko polotučné 1,5 %',
+    kcal: 47, protein: 3.4, carbs: 4.9, fat: 1.5,
+    maxGrams: 400, minGrams: 100, step: 50,
+  );
+  static const whiteYogurt = NutritionFood(
+    id: 'white_yogurt',
+    name: 'Bílý jogurt 3 %',
+    kcal: 65, protein: 4.5, carbs: 5.0, fat: 3.0,
+    maxGrams: 300, minGrams: 100, step: 10,
+  );
+  static const rapeseedOil = NutritionFood(
+    id: 'rapeseed_oil',
+    name: 'Řepkový olej',
+    kcal: 884, protein: 0, carbs: 0, fat: 100.0,
+    maxGrams: 30, minGrams: 5,
+  );
+  static const vegetablesBudget = NutritionFood(
+    id: 'vegetables_budget',
+    name: 'Zelenina (mrkev, zelí, mražená směs…)',
+    kcal: 30, protein: 1.5, carbs: 5.0, fat: 0.2,
+    maxGrams: 400, step: 10,
+  );
+
   static const List<NutritionFood> all = [
     chickenBreast,
     turkeyBreast,
@@ -313,6 +471,31 @@ class FoodCatalog {
     peanutButter,
     avocado,
     vegetables,
+    porkTenderloin,
+    groundBeef5,
+    tuna,
+    shrimp,
+    greekYogurt,
+    cottage,
+    mozzarellaLight,
+    seitan,
+    redBeans,
+    ryeBread,
+    tortilla,
+    couscous,
+    bulgur,
+    quinoa,
+    buckwheat,
+    apple,
+    strawberries,
+    walnuts,
+    cashews,
+    chickenThigh,
+    porkLeg,
+    milk,
+    whiteYogurt,
+    rapeseedOil,
+    vegetablesBudget,
   ];
 
   /// Klíčová slova vyloučení (z výběru "nechci jíst") → potraviny.

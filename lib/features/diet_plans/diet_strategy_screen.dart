@@ -234,6 +234,7 @@ class DietStrategyScreen extends ConsumerWidget {
                     ),
                     l10n: l10n,
                     preference: profile.diet,
+                    budget: profile.budget,
                   );
 
                   ref
@@ -368,6 +369,19 @@ class DietStrategyScreen extends ConsumerWidget {
                               profile.copyWith(
                                 dietPreference: selection.first,
                               ),
+                            );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(Icons.savings_outlined),
+                      title: Text(l10n.budgetMealsTitle),
+                      subtitle: Text(l10n.budgetMealsHint),
+                      value: profile.budget,
+                      onChanged: (value) {
+                        ref.read(userProfileProvider.notifier).updateProfile(
+                              profile.copyWith(budgetMeals: value),
                             );
                       },
                     ),

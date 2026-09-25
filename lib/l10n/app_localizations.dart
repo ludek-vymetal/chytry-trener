@@ -5975,6 +5975,18 @@ abstract class AppLocalizations {
   /// **'Vegan'**
   String get dietVegan;
 
+  /// No description provided for @budgetMealsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget meal plan'**
+  String get budgetMealsTitle;
+
+  /// No description provided for @budgetMealsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Cheap everyday ingredients (eggs, quark, chicken thighs, legumes, potatoes, rice…). Dinner is cooked together with lunch, only the portion differs.'**
+  String get budgetMealsHint;
+
   /// No description provided for @addToDay.
   ///
   /// In en, this message translates to:
