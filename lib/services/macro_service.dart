@@ -1,6 +1,7 @@
 import '../models/user_profile.dart';
 import '../models/goal.dart';
 import '../core/nutrition/calorie_calculator.dart';
+import '../core/nutrition/hollywood_prep.dart';
 
 // Core time/phase engine
 import '../core/time/time_context.dart';
@@ -54,6 +55,12 @@ class MacroService {
   static MacroTarget calculate(UserProfile profile, double tdee) {
     final weight = profile.weight;
     final goal = profile.goal;
+
+    // Jídelníčky programů (Hollywood training, Bikini fitness, Kulatý
+    // zadek) mají vlastní výpočet – platí pro celou aplikaci (přehled,
+    // jídelníčky, dopočítání do zbytku dne).
+    final program = _programMacros(profile, tdee);
+    if (program != null) return program;
 
     // 0) Bez cíle → neutrální default
     if (goal == null) {
@@ -132,6 +139,109 @@ class MacroService {
       weeksToTarget: weeksToTarget,
       strategyLabel: strategy.labelKey,
       rationale: strategy.labelKey,
+      weightForCaloriesKg: kgForCalories,
+      weightForProteinKg: kgForProtein,
+    );
+  }
+
+  // ==========================================================
+  // Hollywood training
+  // ==========================================================
+
+  /// Makra pro jídelníčky tréninkových programů (Hollywood training,
+  /// Bikini fitness, Kulatý zadek), nebo `null`, když se nepoužijí (jiný
+  /// jídelníček, chybí datum, příprava ještě nezačala / skončila, nebo
+  /// klient má podporu při poruše příjmu potravy).
+  static MacroTarget? _programMacros(UserProfile profile, double tdee) {
+    final goal = profile.goal;
+    if (goal?.reason == GoalReason.eatingDisorderSupport) return null;
+
+    final String name;
+    final PrepPhase phase;
+    final String weekText;
+    final int weeksLeft;
+
+    switch (profile.selectedPlan) {
+      case HollywoodPrep.planKey:
+        final shootDate = profile.hollywoodShootDate;
+        final shootWeek =
+            shootDate == null ? null : HollywoodPrep.weekFor(shootDate);
+        if (shootWeek == null) return null;
+        name = HollywoodPrep.name;
+        phase = HollywoodPrep.phaseFor(shootWeek);
+        weekText = 'týden $shootWeek/${HollywoodPrep.totalWeeks}';
+        weeksLeft = HollywoodPrep.totalWeeks - shootWeek;
+        break;
+      case BikiniPrep.planKey:
+        final meetDate = profile.bikiniMeetDate;
+        final meetWeek =
+            meetDate == null ? null : BikiniPrep.weekFor(meetDate);
+        if (meetWeek == null) return null;
+        name = BikiniPrep.name;
+        phase = BikiniPrep.phaseFor(meetWeek);
+        weekText = 'týden $meetWeek/${BikiniPrep.totalWeeks}';
+        weeksLeft = BikiniPrep.totalWeeks - meetWeek;
+        break;
+      case GlutePlan.planKey:
+        name = GlutePlan.name;
+        phase = GlutePlan.phase;
+        weekText = 'růst hýždí';
+        weeksLeft = 0;
+        break;
+      default:
+        return null;
+    }
+
+    final weight = profile.weight;
+    final kgForCalories = CalorieCalculator.weightForCalories(
+      currentKg: weight,
+      targetKg: goal?.targetWeightKg,
+    );
+    final kgForProtein = CalorieCalculator.weightForProtein(
+      currentKg: weight,
+      targetKg: goal?.targetWeightKg,
+    );
+
+    final strategy = FoodStrategy(
+      calorieMultiplier: phase.calorieMultiplier,
+      proteinGPerKg: phase.proteinGPerKg,
+      fatGPerKg: phase.fatGPerKg,
+      preferHighCarbs: phase.weeklyLossPct == null,
+      labelKey: name,
+      rationaleKey: name,
+      weeklyLossPct: phase.weeklyLossPct,
+    );
+
+    final result = _calculateFromStrategy(
+      tdee: tdee,
+      minCalories: _minCaloriesFor(profile),
+      currentWeightKg: weight,
+      weightForCaloriesKg: kgForCalories,
+      weightForProteinKg: kgForProtein,
+      strategy: strategy,
+    );
+
+    final String energyText;
+    if (phase.weeklyLossPct != null) {
+      energyText =
+          'úbytek ${phase.weeklyLossPct!.toStringAsFixed(2)} % hmotnosti týdně';
+    } else if (phase.calorieMultiplier > 1.0) {
+      energyText =
+          'přebytek ${((phase.calorieMultiplier - 1) * 100).toStringAsFixed(1)} % nad TDEE';
+    } else {
+      energyText = 'příjem na údržbě, vyšší sacharidy';
+    }
+
+    return MacroTarget(
+      targetCalories: result.targetCalories,
+      protein: result.protein,
+      carbs: result.carbs,
+      fat: result.fat,
+      phaseLabel: '$name – $weekText: ${phase.label}',
+      planModeLabel: 'program',
+      weeksToTarget: weeksLeft,
+      strategyLabel: name,
+      rationale: '$name – ${phase.label}, $energyText.',
       weightForCaloriesKg: kgForCalories,
       weightForProteinKg: kgForProtein,
     );

@@ -5981,6 +5981,120 @@ abstract class AppLocalizations {
   /// **'Budget'**
   String get budgetShort;
 
+  /// No description provided for @bikiniDietDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Strict 16-week bikini fitness contest diet – same phases as the workout plan. Weight loss 0.5% (shape building) → 0.75% (cutting) → 1% of body weight per week (final cut), protein 2.2–2.4 g/kg, fat at least 0.7 g/kg, peak week at maintenance with higher carbs for full, round muscles on stage. Counted backwards from the contest date.'**
+  String get bikiniDietDescription;
+
+  /// No description provided for @bikiniSelectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set contest date and create meal plan'**
+  String get bikiniSelectDate;
+
+  /// No description provided for @bikiniNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Contest date is missing.'**
+  String get bikiniNoDate;
+
+  /// No description provided for @gluteDietDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal plan for the Round glutes program. Muscles do not grow in a deficit – a mild surplus of 7.5% above TDEE, protein 2.0 g/kg, fat 0.9 g/kg, the rest carbs to fuel heavy leg and glute training.'**
+  String get gluteDietDescription;
+
+  /// No description provided for @gluteActivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Round glutes meal plan'**
+  String get gluteActivate;
+
+  /// No description provided for @bikiniNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Prep starts on {start} (16 weeks before the contest on {meet}). Until then the regular goal-based targets apply.'**
+  String bikiniNotStarted(Object start, Object meet);
+
+  /// No description provided for @bikiniFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'The contest ({meet}) is over – the regular goal-based targets apply.'**
+  String bikiniFinished(Object meet);
+
+  /// No description provided for @gluteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Round glutes'**
+  String get gluteTitle;
+
+  /// No description provided for @gluteInsertPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'🍑 INSERT ROUND GLUTES PLAN'**
+  String get gluteInsertPlan;
+
+  /// No description provided for @bikiniTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bikini fitness'**
+  String get bikiniTitle;
+
+  /// No description provided for @bikiniInsertPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'👙 INSERT CONTEST PREP – BIKINI FITNESS'**
+  String get bikiniInsertPlan;
+
+  /// No description provided for @hollywoodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hollywood training'**
+  String get hollywoodTitle;
+
+  /// No description provided for @hollywoodDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A strict 12-week physique prep for a film or photo shoot – the way actors prepare for roles. Weight loss ramps up 0.5 → 0.75 → 1% of body weight per week, protein 2.2–2.4 g/kg, shoot week at maintenance with higher carbs (muscles look full). Counted backwards from the shoot date, same as the Hollywood training workout plan.'**
+  String get hollywoodDescription;
+
+  /// No description provided for @hollywoodSelectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set shoot date and create meal plan'**
+  String get hollywoodSelectDate;
+
+  /// No description provided for @hollywoodShootDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot date'**
+  String get hollywoodShootDate;
+
+  /// No description provided for @hollywoodNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot date is missing.'**
+  String get hollywoodNoDate;
+
+  /// No description provided for @hollywoodInsertPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'🎬 INSERT HOLLYWOOD TRAINING – SHOOT PREP'**
+  String get hollywoodInsertPlan;
+
+  /// No description provided for @hollywoodNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Prep starts on {start} (12 weeks before the shoot on {shoot}). Until then the regular goal-based targets apply.'**
+  String hollywoodNotStarted(Object start, Object shoot);
+
+  /// No description provided for @hollywoodFinished.
+  ///
+  /// In en, this message translates to:
+  /// **'The shoot ({shoot}) is over – the regular goal-based targets apply.'**
+  String hollywoodFinished(Object shoot);
+
   /// No description provided for @budgetMealsTitle.
   ///
   /// In en, this message translates to:

@@ -3032,6 +3032,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String get budgetShort => 'Budget';
 
   @override
+  String get bikiniDietDescription => 'Strict 16-week bikini fitness contest diet – same phases as the workout plan. Weight loss 0.5% (shape building) → 0.75% (cutting) → 1% of body weight per week (final cut), protein 2.2–2.4 g/kg, fat at least 0.7 g/kg, peak week at maintenance with higher carbs for full, round muscles on stage. Counted backwards from the contest date.';
+
+  @override
+  String get bikiniSelectDate => 'Set contest date and create meal plan';
+
+  @override
+  String get bikiniNoDate => 'Contest date is missing.';
+
+  @override
+  String get gluteDietDescription => 'Meal plan for the Round glutes program. Muscles do not grow in a deficit – a mild surplus of 7.5% above TDEE, protein 2.0 g/kg, fat 0.9 g/kg, the rest carbs to fuel heavy leg and glute training.';
+
+  @override
+  String get gluteActivate => 'Create Round glutes meal plan';
+
+  @override
+  String bikiniNotStarted(Object start, Object meet) {
+    return 'Prep starts on $start (16 weeks before the contest on $meet). Until then the regular goal-based targets apply.';
+  }
+
+  @override
+  String bikiniFinished(Object meet) {
+    return 'The contest ($meet) is over – the regular goal-based targets apply.';
+  }
+
+  @override
+  String get gluteTitle => 'Round glutes';
+
+  @override
+  String get gluteInsertPlan => '🍑 INSERT ROUND GLUTES PLAN';
+
+  @override
+  String get bikiniTitle => 'Bikini fitness';
+
+  @override
+  String get bikiniInsertPlan => '👙 INSERT CONTEST PREP – BIKINI FITNESS';
+
+  @override
+  String get hollywoodTitle => 'Hollywood training';
+
+  @override
+  String get hollywoodDescription => 'A strict 12-week physique prep for a film or photo shoot – the way actors prepare for roles. Weight loss ramps up 0.5 → 0.75 → 1% of body weight per week, protein 2.2–2.4 g/kg, shoot week at maintenance with higher carbs (muscles look full). Counted backwards from the shoot date, same as the Hollywood training workout plan.';
+
+  @override
+  String get hollywoodSelectDate => 'Set shoot date and create meal plan';
+
+  @override
+  String get hollywoodShootDate => 'Shoot date';
+
+  @override
+  String get hollywoodNoDate => 'Shoot date is missing.';
+
+  @override
+  String get hollywoodInsertPlan => '🎬 INSERT HOLLYWOOD TRAINING – SHOOT PREP';
+
+  @override
+  String hollywoodNotStarted(Object start, Object shoot) {
+    return 'Prep starts on $start (12 weeks before the shoot on $shoot). Until then the regular goal-based targets apply.';
+  }
+
+  @override
+  String hollywoodFinished(Object shoot) {
+    return 'The shoot ($shoot) is over – the regular goal-based targets apply.';
+  }
+
+  @override
   String get budgetMealsTitle => 'Budget meal plan';
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:dart_application_1/features/diet_plans/models/carb_cycling_plan.dart';
 import 'package:dart_application_1/models/diet_preference.dart';
 import 'package:dart_application_1/models/user_profile.dart';
+import 'package:dart_application_1/core/nutrition/hollywood_prep.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../logic/diet_macro_service.dart';
@@ -76,6 +77,109 @@ class CarbCyclingCalculator {
       ),
     );
   }
+
+  /// Hollywood training – stejná makra každý den, ale podle fáze přípravy
+  /// na natáčení (viz [HollywoodPrep]). Profil musí mít
+  /// `selectedPlan == HollywoodPrep.planKey` a datum natáčení.
+  static CarbCyclingPlan createHollywoodPlan({
+    required UserProfile profile,
+    required AppLocalizations l10n,
+  }) {
+    final shoot = profile.hollywoodShootDate;
+    final String status;
+    if (shoot == null) {
+      status = l10n.hollywoodNoDate;
+    } else if (HollywoodPrep.weekFor(shoot) == null) {
+      final start = HollywoodPrep.startDate(shoot);
+      status = DateTime.now().isBefore(start)
+          ? l10n.hollywoodNotStarted(_fmt(start), _fmt(shoot))
+          : l10n.hollywoodFinished(_fmt(shoot));
+    } else {
+      status = '${DietMacroService.base(profile).rationale}\n'
+          '${l10n.hollywoodShootDate}: ${_fmt(shoot)}';
+    }
+
+    return _programPlan(
+      profile: profile,
+      l10n: l10n,
+      planKey: HollywoodPrep.planKey,
+      note: '${HollywoodPrep.name}\n$status',
+    );
+  }
+
+  /// Bikini fitness – makra podle fáze 16týdenní přípravy na závody
+  /// (viz [BikiniPrep]). Profil musí mít `selectedPlan == BikiniPrep.planKey`
+  /// a datum závodu.
+  static CarbCyclingPlan createBikiniPlan({
+    required UserProfile profile,
+    required AppLocalizations l10n,
+  }) {
+    final meet = profile.bikiniMeetDate;
+    final String status;
+    if (meet == null) {
+      status = l10n.bikiniNoDate;
+    } else if (BikiniPrep.weekFor(meet) == null) {
+      final start = BikiniPrep.startDate(meet);
+      status = DateTime.now().isBefore(start)
+          ? l10n.bikiniNotStarted(_fmt(start), _fmt(meet))
+          : l10n.bikiniFinished(_fmt(meet));
+    } else {
+      status = '${DietMacroService.base(profile).rationale}\n'
+          '${l10n.meetDate}: ${_fmt(meet)}';
+    }
+
+    return _programPlan(
+      profile: profile,
+      l10n: l10n,
+      planKey: BikiniPrep.planKey,
+      note: '${BikiniPrep.name}\n$status',
+    );
+  }
+
+  /// Kulatý zadek – mírný přebytek pro růst hýždí (viz [GlutePlan]).
+  /// Profil musí mít `selectedPlan == GlutePlan.planKey`.
+  static CarbCyclingPlan createGlutePlan({
+    required UserProfile profile,
+    required AppLocalizations l10n,
+  }) {
+    return _programPlan(
+      profile: profile,
+      l10n: l10n,
+      planKey: GlutePlan.planKey,
+      note: '${GlutePlan.name}\n${DietMacroService.base(profile).rationale}',
+    );
+  }
+
+  /// Jídelníček programu: stejná makra každý den (z hlavního výpočtu, který
+  /// podle `selectedPlan` použije fázi programu).
+  static CarbCyclingPlan _programPlan({
+    required UserProfile profile,
+    required AppLocalizations l10n,
+    required String planKey,
+    required String note,
+  }) {
+    final base = DietMacroService.linear(profile);
+
+    final provisional = CarbCyclingPlan(
+      dailyCarbs: List.filled(7, base.carbs),
+      protein: base.protein,
+      fats: base.fats,
+      weeklyBank: base.carbs * 7,
+    );
+
+    return provisional.copyWith(
+      mealPlan: generateWeeklyMealPlan(
+        plan: provisional,
+        l10n: l10n,
+        planType: planKey,
+        preference: profile.diet,
+        budget: profile.budget,
+        noteOverride: note,
+      ),
+    );
+  }
+
+  static String _fmt(DateTime d) => '${d.day}.${d.month}.${d.year}';
 
   static DietMealPlan generateWeeklyMealPlan({
     required CarbCyclingPlan plan,

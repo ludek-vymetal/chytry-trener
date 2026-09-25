@@ -1299,6 +1299,47 @@
 "dietVegetarian": "Vegetarián",
 "dietVegan": "Vegan",
 "budgetShort": "Levnější",
+"gluteTitle": "Kulatý zadek",
+"gluteInsertPlan": "🍑 VLOŽIT PLÁN KULATÝ ZADEK",
+"bikiniDietDescription": "Přísný 16týdenní jídelníček na závody v bikini fitness – stejné fáze jako tréninkový plán. Úbytek 0,5 % (stavba tvaru) → 0,75 % (rýsování) → 1 % hmotnosti týdně (finální rýsování), bílkoviny 2,2–2,4 g/kg, tuky min. 0,7 g/kg, peak week na údržbě s vyššími sacharidy pro plné, kulaté svaly na pódiu. Počítá se zpětně od data závodu.",
+"bikiniSelectDate": "Nastavit datum závodu a vytvořit jídelníček",
+"bikiniNoDate": "Chybí datum závodu.",
+"gluteDietDescription": "Jídelníček k programu Kulatý zadek. Svaly nerostou v deficitu – mírný přebytek 7,5 % nad TDEE, bílkoviny 2,0 g/kg, tuky 0,9 g/kg, zbytek sacharidy jako palivo na těžký trénink nohou a hýždí.",
+"gluteActivate": "Vytvořit jídelníček Kulatý zadek",
+"bikiniNotStarted": "Příprava začne {start} (16 týdnů před závodem {meet}). Do té doby platí běžný výpočet podle cíle.",
+"@bikiniNotStarted": {
+  "placeholders": {
+    "start": {},
+    "meet": {}
+  }
+},
+"bikiniFinished": "Závod ({meet}) už proběhl – platí běžný výpočet podle cíle.",
+"@bikiniFinished": {
+  "placeholders": {
+    "meet": {}
+  }
+},
+"bikiniTitle": "Bikini fitness",
+"bikiniInsertPlan": "👙 VLOŽIT PŘÍPRAVU NA ZÁVODY – BIKINI FITNESS",
+"hollywoodTitle": "Hollywood training",
+"hollywoodDescription": "Přísná 12týdenní příprava postavy na natáčení nebo focení – jako herci na filmové role. Úbytek se stupňuje 0,5 → 0,75 → 1 % hmotnosti týdně, bílkoviny 2,2–2,4 g/kg, týden natáčení na údržbě s vyššími sacharidy (svaly nejsou „prázdné“). Počítá se zpětně od data natáčení, stejně jako tréninkový plán Hollywood training.",
+"hollywoodSelectDate": "Nastavit datum natáčení a vytvořit jídelníček",
+"hollywoodShootDate": "Datum natáčení / focení",
+"hollywoodNoDate": "Chybí datum natáčení.",
+"hollywoodInsertPlan": "🎬 VLOŽIT HOLLYWOOD TRAINING – PŘÍPRAVA NA NATÁČENÍ",
+"hollywoodNotStarted": "Příprava začne {start} (12 týdnů před natáčením {shoot}). Do té doby platí běžný výpočet podle cíle.",
+"@hollywoodNotStarted": {
+  "placeholders": {
+    "start": {},
+    "shoot": {}
+  }
+},
+"hollywoodFinished": "Natáčení ({shoot}) už proběhlo – platí běžný výpočet podle cíle.",
+"@hollywoodFinished": {
+  "placeholders": {
+    "shoot": {}
+  }
+},
 "budgetMealsTitle": "Levnější varianta jídelníčku",
 "budgetMealsHint": "Levné běžné suroviny (vejce, tvaroh, kuřecí stehna, luštěniny, brambory, rýže…). Večeře je ze stejného vaření jako oběd, jen s jinou gramáží.",
 "addToDay": "Přidat do dne",

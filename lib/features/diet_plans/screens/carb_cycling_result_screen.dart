@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dart_application_1/l10n/app_localizations.dart';
 
+import '../../../core/nutrition/hollywood_prep.dart';
 import '../../../services/pdf/diet_plan_pdf_service.dart';
 import '../models/carb_cycling_plan.dart';
 import 'meal_plan_view.dart';
@@ -31,6 +32,10 @@ class CarbCyclingResultScreen extends StatelessWidget {
 
     final resolvedMealPlan = plan.mealPlan;
     final bool isKeto = plan.dailyCarbs.every((grams) => grams <= 50);
+    // Jídelníček tréninkového programu (Hollywood, Bikini, Kulatý zadek).
+    final programName = ProgramDiets.nameFor(resolvedMealPlan?.planType);
+    final bool isProgram = programName != null;
+    final programNote = resolvedMealPlan?.note?.trim() ?? '';
 
     final accentColor = isKeto ? colorScheme.secondary : colorScheme.primary;
     final summaryBackground =
@@ -39,17 +44,23 @@ class CarbCyclingResultScreen extends StatelessWidget {
         ? colorScheme.onSecondaryContainer
         : colorScheme.onPrimaryContainer;
 
-    final pdfTitle =
-        isKeto ? l10n.ketoMealPlanPdfTitle : l10n.carbCyclingPdfTitle;
+    final pdfTitle = programName ??
+        (isKeto
+            ? l10n.ketoMealPlanPdfTitle
+            : l10n.carbCyclingPdfTitle);
 
-    final pdfSubtitle = isKeto
-        ? l10n.ketoMealPlanPdfSubtitle
-        : l10n.carbCyclingPdfSubtitle;
+    // Programy: popis fáze je v poznámce plánu (tiskne se zvlášť).
+    final pdfSubtitle = isProgram
+        ? ''
+        : isKeto
+            ? l10n.ketoMealPlanPdfSubtitle
+            : l10n.carbCyclingPdfSubtitle;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isKeto ? l10n.yourKetoMealPlan : l10n.yourPlan,
+          programName ??
+              (isKeto ? l10n.yourKetoMealPlan : l10n.yourPlan),
         ),
         actions: [
           if (resolvedMealPlan != null) ...[
@@ -80,6 +91,15 @@ class CarbCyclingResultScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            if (isProgram && programNote.isNotEmpty) ...[
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.movie_filter_outlined),
+                  title: Text(programNote),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Card(
               color: summaryBackground,
               child: Padding(
@@ -201,7 +221,11 @@ class CarbCyclingResultScreen extends StatelessWidget {
               itemCount: 7,
               itemBuilder: (context, index) {
                 final grams = plan.dailyCarbs[index];
-                final isRefeed = !isKeto && index == 6;
+                // Refeed (vyšší sacharidy v neděli) je jen u sacharidových vln.
+                final isCarbCycling = resolvedMealPlan == null ||
+                    resolvedMealPlan.planType == 'Vlny';
+                final isRefeed =
+                    !isKeto && !isProgram && isCarbCycling && index == 6;
                 final day = resolvedMealPlan?.days[index];
 
                 return Column(

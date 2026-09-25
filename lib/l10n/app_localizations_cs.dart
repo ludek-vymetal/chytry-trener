@@ -3032,6 +3032,71 @@ class AppLocalizationsCs extends AppLocalizations {
   String get budgetShort => 'Levnější';
 
   @override
+  String get bikiniDietDescription => 'Přísný 16týdenní jídelníček na závody v bikini fitness – stejné fáze jako tréninkový plán. Úbytek 0,5 % (stavba tvaru) → 0,75 % (rýsování) → 1 % hmotnosti týdně (finální rýsování), bílkoviny 2,2–2,4 g/kg, tuky min. 0,7 g/kg, peak week na údržbě s vyššími sacharidy pro plné, kulaté svaly na pódiu. Počítá se zpětně od data závodu.';
+
+  @override
+  String get bikiniSelectDate => 'Nastavit datum závodu a vytvořit jídelníček';
+
+  @override
+  String get bikiniNoDate => 'Chybí datum závodu.';
+
+  @override
+  String get gluteDietDescription => 'Jídelníček k programu Kulatý zadek. Svaly nerostou v deficitu – mírný přebytek 7,5 % nad TDEE, bílkoviny 2,0 g/kg, tuky 0,9 g/kg, zbytek sacharidy jako palivo na těžký trénink nohou a hýždí.';
+
+  @override
+  String get gluteActivate => 'Vytvořit jídelníček Kulatý zadek';
+
+  @override
+  String bikiniNotStarted(Object start, Object meet) {
+    return 'Příprava začne $start (16 týdnů před závodem $meet). Do té doby platí běžný výpočet podle cíle.';
+  }
+
+  @override
+  String bikiniFinished(Object meet) {
+    return 'Závod ($meet) už proběhl – platí běžný výpočet podle cíle.';
+  }
+
+  @override
+  String get gluteTitle => 'Kulatý zadek';
+
+  @override
+  String get gluteInsertPlan => '🍑 VLOŽIT PLÁN KULATÝ ZADEK';
+
+  @override
+  String get bikiniTitle => 'Bikini fitness';
+
+  @override
+  String get bikiniInsertPlan => '👙 VLOŽIT PŘÍPRAVU NA ZÁVODY – BIKINI FITNESS';
+
+  @override
+  String get hollywoodTitle => 'Hollywood training';
+
+  @override
+  String get hollywoodDescription => 'Přísná 12týdenní příprava postavy na natáčení nebo focení – jako herci na filmové role. Úbytek se stupňuje 0,5 → 0,75 → 1 % hmotnosti týdně, bílkoviny 2,2–2,4 g/kg, týden natáčení na údržbě s vyššími sacharidy (svaly nejsou „prázdné“). Počítá se zpětně od data natáčení, stejně jako tréninkový plán Hollywood training.';
+
+  @override
+  String get hollywoodSelectDate => 'Nastavit datum natáčení a vytvořit jídelníček';
+
+  @override
+  String get hollywoodShootDate => 'Datum natáčení / focení';
+
+  @override
+  String get hollywoodNoDate => 'Chybí datum natáčení.';
+
+  @override
+  String get hollywoodInsertPlan => '🎬 VLOŽIT HOLLYWOOD TRAINING – PŘÍPRAVA NA NATÁČENÍ';
+
+  @override
+  String hollywoodNotStarted(Object start, Object shoot) {
+    return 'Příprava začne $start (12 týdnů před natáčením $shoot). Do té doby platí běžný výpočet podle cíle.';
+  }
+
+  @override
+  String hollywoodFinished(Object shoot) {
+    return 'Natáčení ($shoot) už proběhlo – platí běžný výpočet podle cíle.';
+  }
+
+  @override
   String get budgetMealsTitle => 'Levnější varianta jídelníčku';
 
   @override

@@ -44,6 +44,12 @@ class UserProfile {
   /// Úsporná varianta pro výpočty (nenastaveno = vypnuto).
   bool get budget => budgetMeals ?? false;
 
+  /// Datum natáčení / focení pro jídelníček Hollywood training.
+  final DateTime? hollywoodShootDate;
+
+  /// Datum závodu pro jídelníček Bikini fitness.
+  final DateTime? bikiniMeetDate;
+
   const UserProfile({
     this.clientId,
     this.firstName = '',
@@ -65,6 +71,8 @@ class UserProfile {
     this.fastingDuration = 16,
     this.dietPreference,
     this.budgetMeals,
+    this.hollywoodShootDate,
+    this.bikiniMeetDate,
   });
 
   String get displayName {
@@ -111,6 +119,8 @@ class UserProfile {
     int? fastingDuration,
     DietPreference? dietPreference,
     bool? budgetMeals,
+    DateTime? hollywoodShootDate,
+    DateTime? bikiniMeetDate,
   }) {
     return UserProfile(
       clientId: clientId ?? this.clientId,
@@ -139,6 +149,8 @@ class UserProfile {
       fastingDuration: fastingDuration ?? this.fastingDuration,
       dietPreference: dietPreference ?? this.dietPreference,
       budgetMeals: budgetMeals ?? this.budgetMeals,
+      hollywoodShootDate: hollywoodShootDate ?? this.hollywoodShootDate,
+      bikiniMeetDate: bikiniMeetDate ?? this.bikiniMeetDate,
     );
   }
 
@@ -206,6 +218,8 @@ class UserProfile {
         'fastingDuration': fastingDuration,
         'dietPreference': dietPreference?.name,
         'budgetMeals': budgetMeals,
+        'hollywoodShootDate': hollywoodShootDate?.toIso8601String(),
+        'bikiniMeetDate': bikiniMeetDate?.toIso8601String(),
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -330,6 +344,12 @@ class UserProfile {
           ? DietPreferenceX.parse(json['dietPreference'] as String)
           : null,
       budgetMeals: json['budgetMeals'] is bool ? json['budgetMeals'] as bool : null,
+      hollywoodShootDate: json['hollywoodShootDate'] is String
+          ? DateTime.tryParse(json['hollywoodShootDate'] as String)
+          : null,
+      bikiniMeetDate: json['bikiniMeetDate'] is String
+          ? DateTime.tryParse(json['bikiniMeetDate'] as String)
+          : null,
     );
   }
 }

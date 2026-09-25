@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/nutrition/hollywood_prep.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/diet_preference.dart';
+import '../../models/custom_training_plan.dart';
 import '../../models/goal.dart';
+import '../../models/user_profile.dart';
+import '../../providers/coach/custom_training_plan_provider.dart';
 import '../../providers/diet_settings_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import 'logic/keto_calculator.dart';
 import 'providers/diet_plan_provider.dart';
+import 'models/carb_cycling_plan.dart';
 import 'screens/carb_cycling_logic.dart';
 import 'screens/carb_cycling_result_screen.dart';
 import 'screens/carb_cycling_survey_screen.dart';
@@ -295,6 +300,162 @@ class DietStrategyScreen extends ConsumerWidget {
     );
   }
 
+  /// Výběr data natáčení / závodu pro jídelníček programu.
+  ///
+  /// Předvyplní se [saved] (z profilu), jinak datum z tréninkového plánu
+  /// klienta ([fromPlan]), jinak dnešek + délka přípravy (dnes = 1. týden).
+  Future<DateTime?> _pickProgramDate(
+    BuildContext context, {
+    required DateTime? saved,
+    required DateTime? fromPlan,
+    required int totalWeeks,
+    required String helpText,
+  }) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastDate = today.add(const Duration(days: 730));
+
+    var initialDate =
+        saved ?? fromPlan ?? today.add(Duration(days: totalWeeks * 7 - 1));
+    if (initialDate.isBefore(today)) initialDate = today;
+    if (initialDate.isAfter(lastDate)) initialDate = lastDate;
+
+    return showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: lastDate,
+      helpText: helpText,
+    );
+  }
+
+  /// Datum z nejnovějšího tréninkového plánu klienta daného typu.
+  DateTime? _dateFromTrainingPlan(
+    WidgetRef ref,
+    String? clientId,
+    bool Function(CustomTrainingPlan plan) isType,
+  ) {
+    final plans = ref
+        .read(customTrainingPlanProvider)
+        .where(
+          (p) => p.clientId == clientId && isType(p) && p.meetDate != null,
+        )
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return plans.isEmpty ? null : plans.first.meetDate;
+  }
+
+  void _openProgramPlan(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile updated,
+    CarbCyclingPlan plan,
+  ) {
+    ref.read(userProfileProvider.notifier).updateProfile(updated);
+    ref.read(dietPlanProvider.notifier).state = plan.mealPlan;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CarbCyclingResultScreen(plan: plan),
+      ),
+    );
+  }
+
+  /// Hollywood training: datum natáčení → jídelníček podle fáze přípravy.
+  Future<void> _activateHollywoodPlan(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final current = ref.read(userProfileProvider);
+
+    if (current == null) return;
+
+    final picked = await _pickProgramDate(
+      context,
+      saved: current.hollywoodShootDate,
+      fromPlan: _dateFromTrainingPlan(
+        ref,
+        current.clientId,
+        (p) => p.isHollywoodPrep,
+      ),
+      totalWeeks: HollywoodPrep.totalWeeks,
+      helpText: l10n.hollywoodShootDate,
+    );
+
+    if (picked == null || !context.mounted) return;
+
+    final updated = current.copyWith(
+      selectedPlan: HollywoodPrep.planKey,
+      hollywoodShootDate: picked,
+    );
+
+    _openProgramPlan(
+      context,
+      ref,
+      updated,
+      CarbCyclingCalculator.createHollywoodPlan(profile: updated, l10n: l10n),
+    );
+  }
+
+  /// Bikini fitness: datum závodu → jídelníček podle fáze přípravy.
+  Future<void> _activateBikiniPlan(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final current = ref.read(userProfileProvider);
+
+    if (current == null) return;
+
+    final picked = await _pickProgramDate(
+      context,
+      saved: current.bikiniMeetDate,
+      fromPlan: _dateFromTrainingPlan(
+        ref,
+        current.clientId,
+        (p) => p.isBikiniMeetPrep,
+      ),
+      totalWeeks: BikiniPrep.totalWeeks,
+      helpText: l10n.meetDate,
+    );
+
+    if (picked == null || !context.mounted) return;
+
+    final updated = current.copyWith(
+      selectedPlan: BikiniPrep.planKey,
+      bikiniMeetDate: picked,
+    );
+
+    _openProgramPlan(
+      context,
+      ref,
+      updated,
+      CarbCyclingCalculator.createBikiniPlan(profile: updated, l10n: l10n),
+    );
+  }
+
+  /// Kulatý zadek: mírný přebytek pro růst hýždí.
+  void _activateGlutePlan(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) {
+    final current = ref.read(userProfileProvider);
+
+    if (current == null) return;
+
+    final updated = current.copyWith(selectedPlan: GlutePlan.planKey);
+
+    _openProgramPlan(
+      context,
+      ref,
+      updated,
+      CarbCyclingCalculator.createGlutePlan(profile: updated, l10n: l10n),
+    );
+  }
+
   void _activateKetoPlan(
     BuildContext context,
     WidgetRef ref,
@@ -461,6 +622,29 @@ class DietStrategyScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
+          _StrategyCard(
+            title: GlutePlan.name,
+            description: l10n.gluteDietDescription,
+            icon: Icons.favorite_outline,
+            isActive: profile?.selectedPlan == GlutePlan.planKey,
+            isNew: true,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.icon(
+                  onPressed: () => _activateGlutePlan(
+                    context,
+                    ref,
+                    l10n,
+                  ),
+                  icon: const Icon(Icons.restaurant_menu),
+                  label: Text(l10n.gluteActivate),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
           if (restrictiveBlocked)
             Card(
               child: Padding(
@@ -574,6 +758,53 @@ class DietStrategyScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: l10n.hollywoodTitle,
+            description: l10n.hollywoodDescription,
+            icon: Icons.movie_filter_outlined,
+            isActive:
+                profile?.selectedPlan == HollywoodPrep.planKey,
+            isNew: true,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.icon(
+                  onPressed: () => _activateHollywoodPlan(
+                    context,
+                    ref,
+                    l10n,
+                  ),
+                  icon: const Icon(Icons.event),
+                  label: Text(l10n.hollywoodSelectDate),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: BikiniPrep.name,
+            description: l10n.bikiniDietDescription,
+            icon: Icons.emoji_events_outlined,
+            isActive: profile?.selectedPlan == BikiniPrep.planKey,
+            isNew: true,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.icon(
+                  onPressed: () => _activateBikiniPlan(
+                    context,
+                    ref,
+                    l10n,
+                  ),
+                  icon: const Icon(Icons.event),
+                  label: Text(l10n.bikiniSelectDate),
+                ),
+              ),
             ],
           ),
           ],

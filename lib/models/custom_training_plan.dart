@@ -2,6 +2,15 @@ enum CustomTrainingPlanType {
   standard,
   cut90,
   powerliftingMeetPrep,
+
+  /// Hollywood training – příprava postavy na natáčení / focení.
+  hollywoodPrep,
+
+  /// Kompletní příprava na závody v bikini fitness.
+  bikiniMeetPrep,
+
+  /// Kulatý zadek – 12týdenní program na růst hýždí.
+  gluteBuilder,
 }
 
 enum CustomTrainingCategory {
@@ -12,6 +21,9 @@ enum CustomTrainingCategory {
   conditioning,
   powerlifting,
   bodybuilding,
+  hollywood,
+  bikini,
+  glutes,
   custom,
 }
 
@@ -237,6 +249,12 @@ class CustomTrainingPlan {
       type == CustomTrainingPlanType.powerliftingMeetPrep;
 
   bool get isCutPlan => type == CustomTrainingPlanType.cut90;
+
+  bool get isHollywoodPrep => type == CustomTrainingPlanType.hollywoodPrep;
+
+  bool get isBikiniMeetPrep => type == CustomTrainingPlanType.bikiniMeetPrep;
+
+  bool get isGluteBuilder => type == CustomTrainingPlanType.gluteBuilder;
 
   Map<String, dynamic> toJson() => {
         'id': id,
