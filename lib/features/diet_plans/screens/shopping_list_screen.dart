@@ -119,23 +119,14 @@ class _ShoppingListScreenState
       items = rawItems.entries.map((e) {
         final key = e.key;
 
-        if (key.contains('(') &&
-            key.contains(')')) {
-          final name =
-              key
-                  .substring(
-                    0,
-                    key.indexOf('('),
-                  )
-                  .trim();
-
-          final unit =
-              key
-                  .substring(
-                    key.indexOf('(') + 1,
-                    key.indexOf(')'),
-                  )
-                  .trim();
+        // Klíč je "název (jednotka)" a název sám může obsahovat
+        // závorky ("Rýže bílá (suchá váha)") – jednotka je v POSLEDNÍ
+        // závorce.
+        final open = key.lastIndexOf('(');
+        final close = key.lastIndexOf(')');
+        if (open > 0 && close > open) {
+          final name = key.substring(0, open).trim();
+          final unit = key.substring(open + 1, close).trim();
 
           return ShoppingListItem(
             name: name,

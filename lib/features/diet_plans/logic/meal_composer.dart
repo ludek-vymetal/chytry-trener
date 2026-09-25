@@ -316,6 +316,10 @@ class MealComposer {
     final proteinPowder =
         ok(FoodCatalog.whey) ? FoodCatalog.whey : FoodCatalog.soyProtein;
 
+    // Sójový izolát jen tam, kde nejde whey (vegan / vyloučený whey) –
+    // aby na nákupním seznamu nebyly dva různé proteinové prášky.
+    final soyOk = !ok(FoodCatalog.whey);
+
     // Hlavní bílkovinné zdroje a přílohy podle stravovacího omezení.
     final List<NutritionFood> mainProteins;
     switch (preference) {
@@ -567,8 +571,8 @@ class MealComposer {
               tpl([FoodCatalog.gouda, FoodCatalog.almonds, FoodCatalog.avocado]),
               tpl([FoodCatalog.cottage, FoodCatalog.walnuts]),
               tpl([FoodCatalog.ham, FoodCatalog.mozzarellaLight, FoodCatalog.oliveOil]),
-              tpl([FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.avocado]),
-              tpl([FoodCatalog.soyProtein, FoodCatalog.walnuts]),
+              if (soyOk) tpl([FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.avocado]),
+              if (soyOk) tpl([FoodCatalog.soyProtein, FoodCatalog.walnuts]),
             ],
             _Tpl(const [FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.avocado]),
           );
@@ -614,7 +618,8 @@ class MealComposer {
             tpl([FoodCatalog.skyr, FoodCatalog.oats, FoodCatalog.almonds],
                 [const FoodPortion(FoodCatalog.apple, 100)]),
             tpl([FoodCatalog.tofu, FoodCatalog.wholegrainBread, FoodCatalog.avocado], [veg100]),
-            tpl([FoodCatalog.soyProtein, FoodCatalog.oats, FoodCatalog.walnuts],
+            if (soyOk)
+              tpl([FoodCatalog.soyProtein, FoodCatalog.oats, FoodCatalog.walnuts],
                 [const FoodPortion(FoodCatalog.strawberries, 100)]),
           ],
           _Tpl(const [FoodCatalog.oats, FoodCatalog.soyProtein, FoodCatalog.peanutButter],
@@ -631,7 +636,8 @@ class MealComposer {
               tpl([proteinPowder, FoodCatalog.banana, FoodCatalog.peanutButter]),
               tpl([FoodCatalog.quarkLowFat, FoodCatalog.blueberries, FoodCatalog.cashews]),
               tpl([FoodCatalog.ham, FoodCatalog.wholegrainBread, FoodCatalog.avocado], [veg100]),
-              tpl([FoodCatalog.soyProtein, FoodCatalog.apple, FoodCatalog.walnuts],
+              if (soyOk)
+                tpl([FoodCatalog.soyProtein, FoodCatalog.apple, FoodCatalog.walnuts],
                   [const FoodPortion(FoodCatalog.soyYogurt, 150)]),
             ],
             _Tpl(const [FoodCatalog.soyProtein, FoodCatalog.banana, FoodCatalog.almonds],
@@ -645,7 +651,7 @@ class MealComposer {
             tpl([FoodCatalog.tuna, FoodCatalog.riceCakes, FoodCatalog.avocado]),
             tpl([FoodCatalog.eggs, FoodCatalog.mozzarellaLight], [veg100]),
             tpl([FoodCatalog.quarkLowFat, FoodCatalog.almonds, FoodCatalog.riceCakes]),
-            tpl([FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.riceCakes]),
+            if (soyOk) tpl([FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.riceCakes]),
             tpl([FoodCatalog.tofu, FoodCatalog.cashews], [veg100]),
           ],
           _Tpl(const [FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.riceCakes]),
@@ -790,10 +796,12 @@ class MealComposer {
         );
         parts.add('$pieces ks ${portion.food.name} (${portion.grams.round()} g)');
       } else {
+        // Mléko se nakupuje a odměřuje v ml (hustota ≈ 1 g/ml).
+        final unit = portion.food.id == 'milk' ? 'ml' : 'g';
         ingredients.add(
-          MealIngredient(name: portion.food.displayName, amount: portion.grams, unit: 'g'),
+          MealIngredient(name: portion.food.displayName, amount: portion.grams, unit: unit),
         );
-        parts.add('${portion.grams.round()} g ${portion.food.displayName}');
+        parts.add('${portion.grams.round()} $unit ${portion.food.displayName}');
       }
     }
 
