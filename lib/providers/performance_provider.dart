@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/exercise_performance.dart';
 import 'coach/active_client_provider.dart';
+import '../services/coach/extra_backup_service.dart';
 
 class PerformanceNotifier extends StateNotifier<List<ExercisePerformance>> {
   PerformanceNotifier() : super([]) {
@@ -36,6 +37,7 @@ class PerformanceNotifier extends StateNotifier<List<ExercisePerformance>> {
     final prefs = await SharedPreferences.getInstance();
     final raw = json.encode(state.map(_toJson).toList());
     await prefs.setString(_storageKey, raw);
+    ExtraBackupService.schedulePush();
   }
 
   Future<void> addPerformance(ExercisePerformance performance) async {

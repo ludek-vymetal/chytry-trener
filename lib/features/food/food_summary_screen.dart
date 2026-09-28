@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../help/help_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/nutrition/budget_classifier.dart';
@@ -11,6 +12,7 @@ import '../../providers/food_bank_provider.dart';
 import '../../providers/food_combo_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/food_combo_service.dart';
+import '../diet_plans/diet_strategy_screen.dart';
 import '../../services/macro_service.dart';
 import '../../services/meal_suggestion_service.dart';
 import '../../services/metabolism_service.dart';
@@ -1375,6 +1377,18 @@ Widget build(BuildContext context, WidgetRef ref) {
     appBar: AppBar(
       title: Text(l10n.todayFood),
       actions: [
+        const HelpButton(topic: 'food'),
+        // Jídelníček (celý týden, nákupní seznam, styl stravy).
+        IconButton(
+          tooltip: l10n.myMealPlan,
+          icon: const Icon(Icons.menu_book_outlined),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const DietStrategyScreen(),
+            ),
+          ),
+        ),
         IconButton(
           tooltip: l10n.selectDate,
           icon: const Icon(Icons.calendar_today),

@@ -138,7 +138,7 @@ class DailyMenuScreen extends ConsumerWidget {
                       );
                     },
                     icon: const Icon(Icons.shopping_cart_outlined),
-                    label: const Text('Nákup'),
+                    label: Text(l10n.shoppingList),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -150,13 +150,13 @@ class DailyMenuScreen extends ConsumerWidget {
                         MaterialPageRoute(
                           builder: (_) => WeeklyMealPlanScreen(
                             mealPlan: generatedPlan,
-                            titleOverride: 'Týdenní fasting plán',
+                            titleOverride: l10n.fastingMealPlan,
                           ),
                         ),
                       );
                     },
                     icon: const Icon(Icons.calendar_month),
-                    label: const Text('Celý týden'),
+                    label: Text(l10n.openMealPlan),
                   ),
                 ),
               ],

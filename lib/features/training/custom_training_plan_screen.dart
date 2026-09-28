@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/nutrition/hollywood_prep.dart';
+import '../../models/goal.dart';
+import '../../models/user_profile.dart';
+import '../../providers/user_profile_provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/training/exercises/exercise.dart';
 import '../../core/training/exercises/exercise_db.dart';
@@ -10,6 +13,15 @@ import '../../providers/coach/active_client_provider.dart';
 import '../../providers/coach/custom_training_plan_provider.dart';
 import '../../providers/shared_training_templates_provider.dart';
 import 'training_plan_screen.dart';
+import '../paywall/paywall_screen.dart';
+import '../../providers/subscription/subscription_provider.dart';
+import '../../services/pdf/training_plan_pdf_service.dart';
+import '../../core/training/library/program_library.dart';
+
+part 'custom_plan_prep_programs.dart';
+part 'custom_plan_glute_bench.dart';
+part 'custom_plan_classic_programs.dart';
+part 'custom_plan_detail_screen.dart';
 
 class CustomTrainingPlanScreen extends ConsumerWidget {
   const CustomTrainingPlanScreen({super.key});
@@ -77,85 +89,14 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               FilledButton.icon(
-                onPressed: () =>
-                    _insertConstantinCutPlan(
+                onPressed: () => Navigator.push(
                   context,
-                  ref,
-                  clientId,
+                  MaterialPageRoute(
+                    builder: (_) => _ProgramCatalogScreen(clientId: clientId),
+                  ),
                 ),
-                icon: const Icon(
-                  Icons.local_fire_department,
-                ),
-                label: const Text(
-                  '🔥 VLOŽIT 90DENNÍ VYRÝSOVÁNÍ',
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              FilledButton.tonalIcon(
-                onPressed: () =>
-                    _insertPowerliftingMeetPrepPlan(
-                  context,
-                  ref,
-                  clientId,
-                ),
-                icon: const Icon(Icons.fitness_center),
-                label: const Text(
-                  '🏋️ VLOŽIT PŘÍPRAVU NA ZÁVODY – TROJBOJ',
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              FilledButton.tonalIcon(
-                onPressed: () =>
-                    _insertHollywoodPlan(
-                  context,
-                  ref,
-                  clientId,
-                ),
-                icon: const Icon(Icons.movie_filter_outlined),
-                label: Text(l10n.hollywoodInsertPlan),
-              ),
-
-              const SizedBox(height: 12),
-
-              FilledButton.tonalIcon(
-                onPressed: () =>
-                    _insertBikiniPlan(
-                  context,
-                  ref,
-                  clientId,
-                ),
-                icon: const Icon(Icons.emoji_events_outlined),
-                label: Text(l10n.bikiniInsertPlan),
-              ),
-
-              const SizedBox(height: 12),
-
-              FilledButton.tonalIcon(
-                onPressed: () =>
-                    _insertGlutePlan(
-                  context,
-                  ref,
-                  clientId,
-                ),
-                icon: const Icon(Icons.favorite_outline),
-                label: Text(l10n.gluteInsertPlan),
-              ),
-
-              const SizedBox(height: 12),
-
-              FilledButton.tonalIcon(
-                onPressed: () =>
-                    _insertBenchRussianPlan(
-                  context,
-                  ref,
-                  clientId,
-                ),
-                icon: const Icon(Icons.fitness_center),
-                label: Text(l10n.benchInsertPlan),
+                icon: const Icon(Icons.auto_awesome),
+                label: Text(l10n.programsButton),
               ),
 
               const SizedBox(height: 24),
@@ -344,7 +285,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final plans = ref.read(customTrainingPlanProvider);
     final newName = _buildUniquePlanName(
-      '🔥 90denní vyrýsování',
+      '90denní vyrýsování',
       plans.where((p) => p.clientId == clientId).toList(),
     );
 
@@ -421,7 +362,7 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
 
     final plans = ref.read(customTrainingPlanProvider);
     final newName = _buildUniquePlanName(
-      '🏋️ Příprava na závody – silový trojboj',
+      'Příprava na závody – silový trojboj',
       plans.where((p) => p.clientId == clientId).toList(),
     );
 
@@ -486,12 +427,97 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
       }
     }
 
+    // Program = trénink i jídelníček: jídelníček se nastaví klientovi
+    // automaticky (stejné datum a stejné fáze).
+    final dietSet = await _applyProgramDiet(
+      ref,
+      clientId,
+      (p) => p.copyWith(selectedPlan: StrengthPlan.planKey),
+      restrictive: false,
+    );
+
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Plán "$newName" byl vložen mezi vlastní tréninky.'),
+        content: Text(
+          'Plán "$newName" byl vložen mezi vlastní tréninky.'
+          '${dietSet ? '\nJídelníček nastaven: ${StrengthPlan.name}.' : ''}',
+        ),
       ),
+    );
+  }
+
+  /// Nastaví klientovi jídelníček programu (Hollywood, Bikini, Kulatý
+  /// zadek, Silová příprava). Vrací `true`, když se nastavil.
+  ///
+  /// Jen když je načtený profil právě tohoto klienta. Přísné programy
+  /// ([restrictive]) se nenastaví klientům s podporou při poruše příjmu
+  /// potravy.
+  Future<bool> _applyProgramDiet(
+    WidgetRef ref,
+    String clientId,
+    UserProfile Function(UserProfile profile) update, {
+    required bool restrictive,
+  }) async {
+    final profile = ref.read(userProfileProvider);
+    if (profile == null || profile.clientId != clientId) return false;
+    if (restrictive &&
+        profile.goal?.reason == GoalReason.eatingDisorderSupport) {
+      return false;
+    }
+    await ref.read(userProfileProvider.notifier).updateProfile(update(profile));
+    return true;
+  }
+
+  /// Vloží hotový program z knihovny (kulturistika, běh, testy…)
+  /// jako nový tréninkový plán klienta.
+  Future<void> _insertLibraryProgram(
+    BuildContext context,
+    WidgetRef ref,
+    String clientId,
+    LibraryProgram program,
+  ) async {
+    final plans = ref.read(customTrainingPlanProvider);
+    final newName = _buildUniquePlanName(
+      program.title,
+      plans.where((p) => p.clientId == clientId).toList(),
+    );
+
+    final notifier = ref.read(customTrainingPlanProvider.notifier);
+    await notifier.createPlan(
+      clientId: clientId,
+      name: newName,
+      description: '${program.description}\n${program.length} · ${program.level}',
+      category: program.category,
+    );
+
+    CustomTrainingPlan? created;
+    for (final p in ref.read(customTrainingPlanProvider).reversed) {
+      if (p.clientId == clientId && p.name == newName) {
+        created = p;
+        break;
+      }
+    }
+    if (created == null) return;
+
+    final days = program.days();
+    for (final day in days) {
+      await notifier.addDay(planId: created.id, dayName: day.name);
+    }
+    for (var i = 0; i < days.length; i++) {
+      for (final ex in days[i].exercises) {
+        await notifier.addExerciseToDay(
+          planId: created.id,
+          dayIndex: i,
+          exercise: ex,
+        );
+      }
+    }
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Plán "$newName" byl vložen mezi vlastní tréninky.')),
     );
   }
 
@@ -515,2783 +541,287 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _insertHollywoodPlan(
-    BuildContext context,
-    WidgetRef ref,
-    String clientId,
-  ) async {
+/// Katalog programů – každý program vytvoří tréninkový plán a (kde to
+/// dává smysl) rovnou nastaví i jídelníček se stejným datem a fázemi.
+class _ProgramCatalogScreen extends ConsumerWidget {
+  final String clientId;
+
+  const _ProgramCatalogScreen({required this.clientId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    // Výchozí: natáčení za 12 týdnů (dnes = 1. týden přípravy).
-    final shootDate = await showDatePicker(
-      context: context,
-      initialDate: today.add(const Duration(days: 83)),
-      firstDate: today,
-      lastDate: today.add(const Duration(days: 730)),
-      helpText: l10n.hollywoodShootDate,
-    );
-
-    if (shootDate == null) return;
-    if (!context.mounted) return;
-
-    final plans = ref.read(customTrainingPlanProvider);
-    final newName = _buildUniquePlanName(
-      '🎬 ${HollywoodPrep.name}',
-      plans.where((p) => p.clientId == clientId).toList(),
-    );
-
-    await ref.read(customTrainingPlanProvider.notifier).createPlan(
-          clientId: clientId,
-          name: newName,
-          description:
-              'Příprava postavy na natáčení / focení ${_fmtDate(shootDate)}: '
-              'nízký tuk, důraz na partie viditelné na kameře, síla se udržuje.',
-          category: CustomTrainingCategory.hollywood,
-          type: CustomTrainingPlanType.hollywoodPrep,
-          meetDate: shootDate,
-        );
-
-    final updatedPlans = ref.read(customTrainingPlanProvider);
-    CustomTrainingPlan? createdPlan;
-
-    for (final plan in updatedPlans.reversed) {
-      if (plan.clientId == clientId && plan.name == newName) {
-        createdPlan = plan;
-        break;
-      }
-    }
-
-    if (createdPlan == null) {
+    Future<void> run(
+      Future<void> Function(BuildContext, WidgetRef, String) insert,
+    ) async {
+      if (!await requireFull(context, ref, 'Kompletní program')) return;
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.planCreationFailed)),
-      );
-      return;
+      int count() => ref
+          .read(customTrainingPlanProvider)
+          .where((p) => p.clientId == clientId)
+          .length;
+
+      final before = count();
+      await insert(context, ref, clientId);
+      // Plán se vytvořil (nebyl zrušen dialog) → zpět na seznam plánů.
+      if (context.mounted && count() > before) Navigator.pop(context);
     }
 
-    final notifier = ref.read(customTrainingPlanProvider.notifier);
-    final templateDays = _hollywoodPlanDays(shootDate);
-
-    for (final day in templateDays) {
-      await notifier.addDay(
-        planId: createdPlan.id,
-        dayName: day.name,
-      );
-    }
-
-    for (int dayIndex = 0; dayIndex < templateDays.length; dayIndex++) {
-      final day = templateDays[dayIndex];
-      for (final exercise in day.exercises) {
-        await notifier.addExerciseToDay(
-          planId: createdPlan.id,
-          dayIndex: dayIndex,
-          exercise: exercise,
-        );
-      }
-    }
-
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Plán "$newName" byl vložen mezi vlastní tréninky.'),
+    const programs = <_ProgramInfo>[
+      _ProgramInfo(
+        icon: Icons.movie_filter_outlined,
+        title: HollywoodPrep.name,
+        length: '12 týdnů k datu natáčení',
+        description:
+            'Příprava postavy na natáčení nebo focení: nízký tuk, důraz na '
+            'partie viditelné na kameře, síla se udržuje.',
+        diet: 'Jídelníček ${HollywoodPrep.name}',
+        insert: _insertHollywoodPlan,
       ),
-    );
-  }
-
-  /// Hollywood training – 12 týdnů zpětně od data natáčení, 5 tréninků
-  /// týdně. Když je natáčení dřív než za 12 týdnů, začíná se rovnou
-  /// aktuálním týdnem (fáze vždy sedí na datum natáčení – stejně jako
-  /// jídelníček Hollywood training).
-  List<CustomTrainingDay> _hollywoodPlanDays(DateTime shootDate) {
-    const weeks = [
-      // Týdny 1–4: stavba – hypertrofie, mírný deficit.
-      _PrepWeekConfig(
-        fromWeek: 1,
-        toWeek: 4,
-        phase: 'Stavba',
-        mainSets: '4',
-        mainReps: '6–8',
-        mainRir: '1–2',
-        accSets: '3',
-        accReps: '8–12',
-        accRir: '1–2',
-        rest: 'hlavní cvik 2–3 min, doplňky 90 s',
-        circuitRounds: '3',
-        circuitRest: '90 s',
-        cardio:
-            '8 000–10 000 kroků denně + 2× týdně 30 min kardio nízké intenzity (chůze do kopce, kolo).',
-        supersets: false,
-        dropSet: false,
+      _ProgramInfo(
+        icon: Icons.emoji_events_outlined,
+        title: BikiniPrep.name,
+        length: '16 týdnů k datu závodu',
+        description:
+            'Kompletní příprava na závody: hýždě a ramena, útlý pas, pózování, '
+            'peak week.',
+        diet: 'Jídelníček ${BikiniPrep.name}',
+        insert: _insertBikiniPlan,
       ),
-      // Týdny 5–8: rýsování – supersérie, víc kardia.
-      _PrepWeekConfig(
-        fromWeek: 5,
-        toWeek: 8,
-        phase: 'Rýsování',
-        mainSets: '4',
-        mainReps: '6–8',
-        mainRir: '1–2',
-        accSets: '3',
-        accReps: '10–15',
-        accRir: '1',
-        rest: 'hlavní cvik 2 min, supersérie 60 s',
-        circuitRounds: '4',
-        circuitRest: '60 s',
-        cardio:
-            '10 000–12 000 kroků denně + 3–4× týdně 30–40 min kardio nízké intenzity.',
-        supersets: true,
-        dropSet: false,
+      _ProgramInfo(
+        icon: Icons.favorite_outline,
+        title: GlutePlan.name,
+        length: '12 týdnů od dneška',
+        description:
+            'Růst a tvar hýždí: 3 tréninky hýždí + 1 horní tělo týdně, '
+            'progrese a odlehčovací týden.',
+        diet: 'Jídelníček ${GlutePlan.name}',
+        insert: _insertGlutePlan,
       ),
-      // Týdny 9–10: finální rýsování – síla drží svaly, hustota tréninku.
-      _PrepWeekConfig(
-        fromWeek: 9,
-        toWeek: 10,
-        phase: 'Finální rýsování',
-        mainSets: '3',
-        mainReps: '5–8',
-        mainRir: '1–2',
-        accSets: '3',
-        accReps: '12–15',
-        accRir: '0–1',
-        rest: 'hlavní cvik 2 min, supersérie 45–60 s',
-        circuitRounds: '5',
-        circuitRest: '45 s',
-        cardio:
-            '12 000+ kroků denně + 4–5× týdně 40 min kardio nízké intenzity.',
-        supersets: true,
-        dropSet: true,
+      _ProgramInfo(
+        icon: Icons.fitness_center,
+        title: 'Ruský cyklus – bench press',
+        length: '12 týdnů k datu závodu',
+        description:
+            'Příprava na závody v benchi: váhy z aktuálního maxima, trénink '
+            'nervové soustavy na konci, návrh pokusů na závod.',
+        diet: 'Jídelníček ${StrengthPlan.name}',
+        insert: _insertBenchRussianPlan,
       ),
-      // Týden 11: finální rýsování s nižším objemem (únava v deficitu).
-      _PrepWeekConfig(
-        fromWeek: 11,
-        toWeek: 11,
-        phase: 'Finální rýsování',
-        mainSets: '3',
-        mainReps: '5–8',
-        mainRir: '2',
-        accSets: '2',
-        accReps: '12–15',
-        accRir: '1',
-        rest: 'hlavní cvik 2 min, supersérie 45–60 s',
-        circuitRounds: '4',
-        circuitRest: '45 s',
-        cardio:
-            '12 000+ kroků denně + 4× týdně 40 min kardio nízké intenzity.',
-        supersets: true,
-        dropSet: true,
+      _ProgramInfo(
+        icon: Icons.fitness_center,
+        title: 'Silový trojboj – příprava na závody',
+        length: '12 týdnů k datu závodu',
+        description:
+            'Dřep, bench a mrtvý tah z training maxu, objem → síla → '
+            'intenzifikace → peak → taper.',
+        diet: 'Jídelníček ${StrengthPlan.name}',
+        insert: _insertPowerliftingMeetPrepPlan,
       ),
-      // Týden 12: peak / natáčení – jen pumpa, žádné selhání ani nové cviky.
-      _PrepWeekConfig(
-        fromWeek: 12,
-        toWeek: 12,
-        phase: 'Peak / natáčení',
-        mainSets: '2',
-        mainReps: '8',
-        mainRir: '3',
-        accSets: '2',
-        accReps: '12–15',
-        accRir: '2–3',
-        rest: '60 s',
-        circuitRounds: '2',
-        circuitRest: '90 s',
-        cardio:
-            '8 000–10 000 kroků denně, žádné další kardio – svaly se mají doplnit.',
-        supersets: false,
-        dropSet: false,
+      _ProgramInfo(
+        icon: Icons.local_fire_department,
+        title: '90denní vyrýsování',
+        length: '12 týdnů od dneška',
+        description: 'Shazovací plán zaměřený na spalování tuku a kondici.',
+        diet: null,
+        insert: _insertConstantinCutPlan,
       ),
     ];
 
-    final currentWeek = HollywoodPrep.weekFor(shootDate) ?? 1;
-    final days = <CustomTrainingDay>[];
-
-    for (var week = currentWeek; week <= HollywoodPrep.totalWeeks; week++) {
-      final c = weeks.firstWhere(
-        (w) => week >= w.fromWeek && week <= w.toWeek,
+    Future<void> preview(LibraryProgram p) async {
+      final insert = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => _LibraryPreview(program: p),
       );
-
-      final weekEnd = shootDate.subtract(
-        Duration(days: (HollywoodPrep.totalWeeks - week) * 7),
-      );
-      final weekStart = weekEnd.subtract(const Duration(days: 6));
-      final weekLabel =
-          'Týden $week (${_fmtDate(weekStart)} – ${_fmtDate(weekEnd)})';
-
-      final info = 'Fáze: ${c.phase}\n'
-          '${HollywoodPrep.name} – natáčení ${_fmtDate(shootDate)}\n'
-          'Pauzy: ${c.rest}\n'
-          'Kardio: ${c.cardio}';
-
-      CustomTrainingExercise mainLift(String name) => CustomTrainingExercise(
-            customName: name,
-            sets: c.mainSets,
-            reps: c.mainReps,
-            rir: c.mainRir,
-            note: '$info\n'
-                'Hlavní cvik – drž nebo zvyšuj váhu, síla v deficitu drží svaly.',
-          );
-
-      CustomTrainingExercise acc(String name, {String? note, String? reps}) =>
-          CustomTrainingExercise(
-            customName: name,
-            sets: c.accSets,
-            reps: reps ?? c.accReps,
-            rir: c.accRir,
-            note: note,
-          );
-
-      final superA =
-          c.supersets ? 'Supersérie A s následujícím cvikem.' : null;
-      final drop = c.dropSet
-          ? 'Poslední série jako drop set (−30 % váhy, do technického selhání).'
-          : null;
-
-      CustomTrainingExercise circuit(String name, String reps, {String? note}) =>
-          CustomTrainingExercise(
-            customName: 'Kruh: $name',
-            sets: c.circuitRounds,
-            reps: reps,
-            rir: '2',
-            note: note,
-          );
-
-      final isShootWeek = week == HollywoodPrep.totalWeeks;
-
-      days.addAll([
-        CustomTrainingDay(
-          name: '$weekLabel – Den 1 – Hrudník + ramena',
-          exercises: [
-            mainLift('Bench press na šikmé lavici (30°)'),
-            acc('Tlaky s jednoručkami na rovné lavici', note: superA),
-            acc('Rozpažky na kladce zdola nahoru (horní hrudník)'),
-            acc('Upažování s jednoručkami', note: drop ?? superA),
-            acc('Tlak s jednoručkami nad hlavu vsedě'),
-            acc('Triceps – stahování horní kladky', note: drop),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 2 – Záda + biceps (šířka, V-tvar)',
-          exercises: [
-            mainLift('Shyby nadhmatem (se zátěží, jinak stahování horní kladky)'),
-            acc('Přítahy jednoručky v předklonu', note: superA),
-            acc('Stahování horní kladky úzkým úchopem'),
-            acc('Face pull na kladce (zadní ramena, držení těla)'),
-            acc('Bicepsový zdvih s EZ činkou', note: drop ?? superA),
-            acc('Kladivové zdvihy s jednoručkami'),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 3 – Nohy + břicho',
-          exercises: [
-            mainLift('Dřep s velkou činkou (nebo hacken dřep)'),
-            acc('Rumunský mrtvý tah', note: superA),
-            acc('Bulharské výpady', reps: '8–12 na nohu'),
-            acc('Zakopávání na stroji', note: drop),
-            acc('Výpony na lýtka ve stoje'),
-            acc('Zvedání nohou ve visu', note: superA),
-            acc('Plank / břišní kolečko', reps: '30–45 s / 10–12'),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 4 – Ramena + paže (V-tvar)',
-          exercises: [
-            mainLift('Tlak nad hlavu s velkou činkou vestoje'),
-            acc('Upažování na kladce jednoruč', note: drop ?? superA),
-            acc('Zadní ramena – reverse fly na stroji'),
-            acc('Kliky na bradlech', note: superA),
-            acc('Bicepsový zdvih s jednoručkami na šikmé lavici'),
-            acc('Francouzský tlak s EZ činkou', note: drop),
-            acc('Krčení ramen s jednoručkami'),
-          ],
-        ),
-        if (isShootWeek)
-          CustomTrainingDay(
-            name: '$weekLabel – Den natáčení – pump-up před záběrem',
-            exercises: [
-              CustomTrainingExercise(
-                customName: 'Kliky',
-                sets: '2–3',
-                reps: '15',
-                rir: '3',
-                note: '$info\n'
-                    '10–15 min před záběrem jen na prokrvení svalů. '
-                    'Žádné selhání, žádná únava.',
-              ),
-              const CustomTrainingExercise(
-                customName: 'Upažování s gumou',
-                sets: '2',
-                reps: '20',
-                rir: '3',
-              ),
-              const CustomTrainingExercise(
-                customName: 'Roztahování gumy před hrudníkem (lopatky)',
-                sets: '2',
-                reps: '20',
-                rir: '3',
-              ),
-              const CustomTrainingExercise(
-                customName: 'Bicepsový zdvih s gumou',
-                sets: '2',
-                reps: '20',
-                rir: '3',
-              ),
-            ],
-          )
-        else
-          CustomTrainingDay(
-            name: '$weekLabel – Den 5 – Kruhový trénink + kondice',
-            exercises: [
-              CustomTrainingExercise(
-                customName: 'Mrtvý tah (technicky, bez selhání)',
-                sets: c.mainSets,
-                reps: '5',
-                rir: '2–3',
-                note: '$info\n'
-                    'Pak kruh: ${c.circuitRounds} kola, cviky bez pauzy, '
-                    'mezi koly ${c.circuitRest}.',
-              ),
-              circuit('Kettlebell swing', '15'),
-              circuit('Kliky', '12–20'),
-              circuit('Obrácený přítah (TRX / nízká hrazda)', '10–15'),
-              circuit('Goblet dřep', '15'),
-              circuit('Farmářská chůze', '30–40 m'),
-              circuit('Horolezec (mountain climbers)', '30 s'),
-            ],
-          ),
-      ]);
-    }
-
-    days.add(
-      CustomTrainingDay(
-        name: 'Instrukce – ${HollywoodPrep.name}',
-        exercises: [
-          CustomTrainingExercise(
-            customName: 'Datum natáčení / focení',
-            sets: '1',
-            reps: _fmtDate(shootDate),
-            rir: '—',
-            note:
-                'Všechny týdny jsou rozpočítané zpětně od tohoto data. '
-                'Jídelníček ${HollywoodPrep.name} (Jídelníčky) používá stejné '
-                'datum a stejné fáze.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 1–4',
-            sets: '1',
-            reps: 'Stavba',
-            rir: '—',
-            note:
-                'Hypertrofie s mírným deficitem. Těžké hlavní cviky, doplňky '
-                '8–12 opakování. Cíl: plné svaly před rýsováním.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 5–8',
-            sets: '1',
-            reps: 'Rýsování',
-            rir: '—',
-            note:
-                'Hlavní cviky stále těžké (drží svaly), doplňky v supersériích '
-                '10–15 opakování, víc kroků a kardia.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 9–11',
-            sets: '1',
-            reps: 'Finální rýsování',
-            rir: '—',
-            note:
-                'Nejpřísnější fáze. Krátké pauzy, drop sety, nejvíc kardia. '
-                'Síla se nemá ztrácet – když výrazně klesá, uber kardio, ne '
-                'hlavní cviky. V týdnu 11 méně sérií kvůli únavě.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týden 12',
-            sets: '1',
-            reps: 'Peak / natáčení',
-            rir: '—',
-            note:
-                'Jen lehké tréninky na pumpu, žádné selhání, žádné nové cviky '
-                '(svalovka by byla vidět). Jídlo na údržbě s vyššími sacharidy '
-                '– svaly se doplní a nejsou „prázdné“. V den natáčení krátký '
-                'pump-up těsně před záběrem.',
-          ),
-        ],
-      ),
-    );
-
-    return days;
-  }
-
-  /// Týden přípravy 1–[totalWeeks] počítaný zpětně od data závodu
-  /// (poslední týden = 7 dní včetně dne závodu), `null` = příprava ještě
-  /// nezačala nebo už skončila.
-  int? _prepWeekFor(DateTime eventDate, int totalWeeks) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final event = DateTime(eventDate.year, eventDate.month, eventDate.day);
-    final daysToEvent = event.difference(today).inDays;
-    if (daysToEvent < 0) return null;
-    final week = totalWeeks - daysToEvent ~/ 7;
-    return week < 1 ? null : week;
-  }
-
-const int _bikiniWeeks = BikiniPrep.totalWeeks;
-
-  Future<void> _insertBikiniPlan(
-    BuildContext context,
-    WidgetRef ref,
-    String clientId,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    // Výchozí: závod za 16 týdnů (dnes = 1. týden přípravy).
-    final meetDate = await showDatePicker(
-      context: context,
-      initialDate: today.add(const Duration(days: _bikiniWeeks * 7 - 1)),
-      firstDate: today,
-      lastDate: today.add(const Duration(days: 730)),
-      helpText: l10n.meetDate,
-    );
-
-    if (meetDate == null) return;
-    if (!context.mounted) return;
-
-    final plans = ref.read(customTrainingPlanProvider);
-    final newName = _buildUniquePlanName(
-      '👙 Příprava na závody – bikini fitness',
-      plans.where((p) => p.clientId == clientId).toList(),
-    );
-
-    await ref.read(customTrainingPlanProvider.notifier).createPlan(
-          clientId: clientId,
-          name: newName,
-          description:
-              'Kompletní ${_bikiniWeeks}týdenní příprava na závody v bikini fitness '
-              '(${_fmtDate(meetDate)}): hýždě a ramena, útlý pas, pózování, '
-              'peak week.',
-          category: CustomTrainingCategory.bikini,
-          type: CustomTrainingPlanType.bikiniMeetPrep,
-          meetDate: meetDate,
-        );
-
-    final updatedPlans = ref.read(customTrainingPlanProvider);
-    CustomTrainingPlan? createdPlan;
-
-    for (final plan in updatedPlans.reversed) {
-      if (plan.clientId == clientId && plan.name == newName) {
-        createdPlan = plan;
-        break;
+      if (insert == true && context.mounted) {
+        await run((c, r, id) => _insertLibraryProgram(c, r, id, p));
       }
     }
 
-    if (createdPlan == null) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.planCreationFailed)),
-      );
-      return;
-    }
-
-    final notifier = ref.read(customTrainingPlanProvider.notifier);
-    final templateDays = _bikiniPlanDays(meetDate);
-
-    for (final day in templateDays) {
-      await notifier.addDay(
-        planId: createdPlan.id,
-        dayName: day.name,
-      );
-    }
-
-    for (int dayIndex = 0; dayIndex < templateDays.length; dayIndex++) {
-      final day = templateDays[dayIndex];
-      for (final exercise in day.exercises) {
-        await notifier.addExerciseToDay(
-          planId: createdPlan.id,
-          dayIndex: dayIndex,
-          exercise: exercise,
-        );
-      }
-    }
-
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Plán "$newName" byl vložen mezi vlastní tréninky.'),
-      ),
-    );
-  }
-
-  /// Bikini fitness – 16 týdnů zpětně od data závodu, 5 tréninků týdně.
-  ///
-  /// Hodnotí se proporce: kulaté hýždě, ramena a záda (tvar X), útlý pas,
-  /// nepříliš objemná stehna a celkový dojem včetně pózování. Proto:
-  /// nejvíc práce na hýždě a ramena, kvadricepsy jen udržovat, žádné
-  /// šikmé břišní se zátěží, pózování od začátku a každý týden víc.
-  List<CustomTrainingDay> _bikiniPlanDays(DateTime meetDate) {
-    const weeks = [
-      // Týdny 1–6: stavba – tvar hýždí a ramen, mírný deficit.
-      _PrepWeekConfig(
-        fromWeek: 1,
-        toWeek: 6,
-        phase: 'Stavba tvaru',
-        mainSets: '4',
-        mainReps: '8–10',
-        mainRir: '1–2',
-        accSets: '3',
-        accReps: '10–15',
-        accRir: '1–2',
-        rest: 'hlavní cvik 2 min, doplňky 60–90 s',
-        circuitRounds: '3',
-        circuitRest: '60 s',
-        cardio:
-            '8 000–10 000 kroků denně + 2× týdně 30 min kardio nízké intenzity.',
-        supersets: false,
-        dropSet: false,
-        posing: '2× týdně 10 min – základní postoje zepředu, z boku, zezadu.',
-      ),
-      // Týdny 7–12: rýsování – supersérie, víc kardia.
-      _PrepWeekConfig(
-        fromWeek: 7,
-        toWeek: 12,
-        phase: 'Rýsování',
-        mainSets: '4',
-        mainReps: '8–10',
-        mainRir: '1–2',
-        accSets: '3',
-        accReps: '12–15',
-        accRir: '1',
-        rest: 'hlavní cvik 2 min, supersérie 60 s',
-        circuitRounds: '4',
-        circuitRest: '45–60 s',
-        cardio:
-            '10 000–12 000 kroků denně + 3–4× týdně 30–40 min kardio nízké intenzity.',
-        supersets: true,
-        dropSet: false,
-        posing:
-            'Denně 15 min + 2× týdně nácvik chůze (T-walk) v botách na podpatku.',
-      ),
-      // Týdny 13–14: finální rýsování.
-      _PrepWeekConfig(
-        fromWeek: 13,
-        toWeek: 14,
-        phase: 'Finální rýsování',
-        mainSets: '3',
-        mainReps: '8–10',
-        mainRir: '1–2',
-        accSets: '3',
-        accReps: '15',
-        accRir: '0–1',
-        rest: 'hlavní cvik 2 min, supersérie 45 s',
-        circuitRounds: '4',
-        circuitRest: '45 s',
-        cardio:
-            '12 000+ kroků denně + 5× týdně 40 min kardio nízké intenzity.',
-        supersets: true,
-        dropSet: true,
-        posing:
-            'Denně 20–30 min – celá rutina na podpatcích, přechody mezi pózami, úsměv.',
-      ),
-      // Týden 15: finální rýsování s nižším objemem (únava v deficitu).
-      _PrepWeekConfig(
-        fromWeek: 15,
-        toWeek: 15,
-        phase: 'Finální rýsování',
-        mainSets: '3',
-        mainReps: '8–10',
-        mainRir: '2',
-        accSets: '2',
-        accReps: '15',
-        accRir: '1',
-        rest: 'hlavní cvik 2 min, supersérie 45 s',
-        circuitRounds: '3',
-        circuitRest: '45 s',
-        cardio:
-            '12 000+ kroků denně + 4× týdně 40 min kardio nízké intenzity.',
-        supersets: true,
-        dropSet: true,
-        posing: 'Denně 30 min – celá rutina, zkouška kostýmu a bot.',
-      ),
-      // Týden 16: peak week / závod.
-      _PrepWeekConfig(
-        fromWeek: 16,
-        toWeek: 16,
-        phase: 'Peak week / závod',
-        mainSets: '2',
-        mainReps: '10',
-        mainRir: '3',
-        accSets: '2',
-        accReps: '15',
-        accRir: '2–3',
-        rest: '60 s',
-        circuitRounds: '2',
-        circuitRest: '90 s',
-        cardio:
-            '8 000–10 000 kroků denně, žádné další kardio; poslední 2 dny před závodem jen lehká chůze.',
-        supersets: false,
-        dropSet: false,
-        posing:
-            'Denně celá rutina – příchod na pódium, otočky, odchod. Poslední den jen krátce.',
-      ),
-    ];
-
-    final currentWeek = _prepWeekFor(meetDate, _bikiniWeeks) ?? 1;
-    final days = <CustomTrainingDay>[];
-
-    for (var week = currentWeek; week <= _bikiniWeeks; week++) {
-      final c = weeks.firstWhere(
-        (w) => week >= w.fromWeek && week <= w.toWeek,
-      );
-
-      final weekEnd = meetDate.subtract(
-        Duration(days: (_bikiniWeeks - week) * 7),
-      );
-      final weekStart = weekEnd.subtract(const Duration(days: 6));
-      final weekLabel =
-          'Týden $week (${_fmtDate(weekStart)} – ${_fmtDate(weekEnd)})';
-
-      final info = 'Fáze: ${c.phase}\n'
-          'Bikini fitness – závod ${_fmtDate(meetDate)}\n'
-          'Pauzy: ${c.rest}\n'
-          'Kardio: ${c.cardio}\n'
-          'Pózování: ${c.posing}';
-
-      CustomTrainingExercise mainLift(String name) => CustomTrainingExercise(
-            customName: name,
-            sets: c.mainSets,
-            reps: c.mainReps,
-            rir: c.mainRir,
-            note: '$info\n'
-                'Hlavní cvik – drž nebo zvyšuj váhu, síla v deficitu drží svaly.',
-          );
-
-      CustomTrainingExercise acc(String name, {String? note, String? reps}) =>
-          CustomTrainingExercise(
-            customName: name,
-            sets: c.accSets,
-            reps: reps ?? c.accReps,
-            rir: c.accRir,
-            note: note,
-          );
-
-      CustomTrainingExercise circuit(String name, String reps, {String? note}) =>
-          CustomTrainingExercise(
-            customName: 'Kruh: $name',
-            sets: c.circuitRounds,
-            reps: reps,
-            rir: '2',
-            note: note,
-          );
-
-      final posing = CustomTrainingExercise(
-        customName: 'Pózování',
-        sets: '1',
-        reps: 'podle fáze',
-        rir: '—',
-        note: c.posing,
-      );
-
-      final superA =
-          c.supersets ? 'Supersérie A s následujícím cvikem.' : null;
-      final drop = c.dropSet
-          ? 'Poslední série jako drop set (−30 % váhy, do technického selhání).'
-          : null;
-
-      final isMeetWeek = week == _bikiniWeeks;
-
-      days.addAll([
-        CustomTrainingDay(
-          name: '$weekLabel – Den 1 – Hýždě + zadní strana stehen',
-          exercises: [
-            mainLift('Hip thrust s velkou činkou'),
-            acc('Rumunský mrtvý tah', note: superA),
-            acc(
-              'Bulharské výpady (trup v předklonu – důraz na hýždě)',
-              reps: '10–12 na nohu',
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.programsTitle)),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(l10n.programsHint),
+          const SizedBox(height: 16),
+          const _GroupTitle('Programy s jídelníčkem'),
+          for (final p in programs)
+            Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(12),
+                leading: Icon(p.icon),
+                title: Text(
+                  p.title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  '${p.length}\n${p.description}\n'
+                  '${p.diet == null ? l10n.programDietByGoal : '${l10n.programIncludes}: ${p.diet}'}',
+                ),
+                isThreeLine: true,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => run(p.insert),
+              ),
             ),
-            acc('Zakopávání na stroji', note: drop),
-            acc(
-              'Unožování na stroji / s gumou (střední hýžďový sval)',
-              reps: '15–20',
-              note: superA,
-            ),
-            acc('Hyperextenze s důrazem na hýždě'),
-            posing,
+          for (final group in ProgramGroup.all) ...[
+            const SizedBox(height: 8),
+            _GroupTitle(group),
+            for (final p in ProgramLibrary.inGroup(group))
+              Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  leading: Icon(_groupIcon(group)),
+                  title: Text(
+                    p.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text('${p.level} · ${p.length}\n${p.description}'),
+                  isThreeLine: true,
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => preview(p),
+                ),
+              ),
           ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 2 – Ramena + záda (tvar X)',
-          exercises: [
-            mainLift('Tlak s jednoručkami nad hlavu vsedě'),
-            acc('Upažování s jednoručkami', note: drop ?? superA),
-            acc('Stahování horní kladky širokým úchopem'),
-            acc('Přítahy na kladce vsedě', note: superA),
-            acc('Zadní ramena – reverse fly na stroji'),
-            acc('Face pull na kladce (držení těla)'),
-            posing,
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 3 – Nohy + hýždě',
-          exercises: [
-            mainLift('Dřep s velkou činkou (široký postoj, hluboko)'),
-            acc(
-              'Leg press – chodidla vysoko a široko (hýždě)',
-              note: superA,
-            ),
-            acc('Zanožování na kladce (kickback)', reps: '12–15 na nohu'),
-            acc(
-              'Předkopávání',
-              note: 'Kvadricepsy jen udržovat – stehna nemají přibírat objem.',
-            ),
-            acc('Abdukce na stroji', reps: '15–20', note: drop),
-            acc('Výpony na lýtka ve stoje'),
-            posing,
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 4 – Horní tělo + paže',
-          exercises: [
-            mainLift('Shyby podhmatem (s dopomocí) / stahování kladky'),
-            acc('Upažování na kladce jednoruč', note: drop ?? superA),
-            acc('Tlaky s jednoručkami na šikmé lavici'),
-            acc('Přítahy jednoručky v předklonu', note: superA),
-            acc('Bicepsový zdvih s jednoručkami'),
-            acc('Triceps – tlak kladky nad hlavou'),
-            posing,
-          ],
-        ),
-        if (isMeetWeek)
-          CustomTrainingDay(
-            name: '$weekLabel – Den závodu – pump-up v zákulisí',
-            exercises: [
-              CustomTrainingExercise(
-                customName: 'Glute bridge s gumou',
-                sets: '2',
-                reps: '20',
-                rir: '3',
-                note: '$info\n'
-                    '10–15 min před nástupem jen na prokrvení. '
-                    'Žádné selhání, žádná únava.',
-              ),
-              const CustomTrainingExercise(
-                customName: 'Upažování s gumou',
-                sets: '2',
-                reps: '20',
-                rir: '3',
-              ),
-              const CustomTrainingExercise(
-                customName: 'Stahování gumy nad hlavou (záda)',
-                sets: '2',
-                reps: '20',
-                rir: '3',
-              ),
-              const CustomTrainingExercise(
-                customName: 'Kliky na kolenou',
-                sets: '2',
-                reps: '12–15',
-                rir: '3',
-              ),
-              const CustomTrainingExercise(
-                customName: 'Pózování – celá rutina',
-                sets: '1',
-                reps: '1× před nástupem',
-                rir: '—',
-                note: 'Klid, dech, úsměv. Stáhnutý pas, otevřená ramena.',
-              ),
-            ],
-          )
-        else
-          CustomTrainingDay(
-            name: '$weekLabel – Den 5 – Hýždě + břicho + kondice',
-            exercises: [
-              CustomTrainingExercise(
-                customName: 'Hip thrust s výdrží nahoře (2 s)',
-                sets: c.mainSets,
-                reps: '10–12',
-                rir: '2',
-                note: '$info\n'
-                    'Pak kruh: ${c.circuitRounds} kola, cviky bez pauzy, '
-                    'mezi koly ${c.circuitRest}.\n'
-                    'Žádné šikmé břišní se zátěží – rozšiřují pas.',
-              ),
-              circuit('Unožování v kleku s gumou', '20 na nohu'),
-              circuit('Chůze v podřepu s gumou', '20 kroků'),
-              circuit('Kettlebell swing', '15'),
-              circuit('Zvedání nohou vleže', '15'),
-              circuit('Plank', '30–45 s'),
-              circuit(
-                'Vakuum břicha (vtažení pupku)',
-                '20 s',
-                note: 'Učí stáhnout pas při pózování.',
-              ),
-              posing,
-            ],
-          ),
-      ]);
-    }
-
-    days.add(
-      CustomTrainingDay(
-        name: 'Instrukce – příprava na bikini fitness',
-        exercises: [
-          CustomTrainingExercise(
-            customName: 'Datum závodu',
-            sets: '1',
-            reps: _fmtDate(meetDate),
-            rir: '—',
-            note:
-                'Všech $_bikiniWeeks týdnů je rozpočítaných zpětně od tohoto data. '
-                'Když je závod dřív, plán začíná rovnou správným týdnem. '
-                'Jídelníček Bikini fitness (Jídelníčky) používá stejné datum '
-                'a stejné fáze.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 1–6',
-            sets: '1',
-            reps: 'Stavba tvaru',
-            rir: '—',
-            note:
-                'Nejvíc práce na hýždě, ramena a šířku zad (tvar X). '
-                'Kvadricepsy a paže jen udržovat. Mírný deficit.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 7–12',
-            sets: '1',
-            reps: 'Rýsování',
-            rir: '—',
-            note:
-                'Hlavní cviky stále těžké, doplňky v supersériích, víc kroků '
-                'a kardia. Pózování denně.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 13–15',
-            sets: '1',
-            reps: 'Finální rýsování',
-            rir: '—',
-            note:
-                'Nejpřísnější fáze – drop sety, nejvíc kardia, celá rutina na '
-                'podpatcích. V týdnu 15 méně sérií kvůli únavě. Když výrazně '
-                'klesá síla, uber kardio, ne hlavní cviky.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týden 16',
-            sets: '1',
-            reps: 'Peak week / závod',
-            rir: '—',
-            note:
-                'Jen lehké tréninky na pumpu, žádné selhání ani nové cviky. '
-                'Poslední 2 dny bez kardia. V den závodu krátký pump-up v '
-                'zákulisí a pózování.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Pas a břicho',
-            sets: '1',
-            reps: 'Důležité',
-            rir: '—',
-            note:
-                'Bikini hodnotí útlý pas. Nedělej šikmé břišní se zátěží ani '
-                'těžké mrtvé tahy navíc. Vakuum břicha a plank ano.',
-          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
-
-    return days;
   }
-
-const int _gluteWeeks = 12;
-
-  Future<void> _insertGlutePlan(
-    BuildContext context,
-    WidgetRef ref,
-    String clientId,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final plans = ref.read(customTrainingPlanProvider);
-    final newName = _buildUniquePlanName(
-      '🍑 ${l10n.gluteTitle}',
-      plans.where((p) => p.clientId == clientId).toList(),
-    );
-
-    final now = DateTime.now();
-    final startDate = DateTime(now.year, now.month, now.day);
-
-    await ref.read(customTrainingPlanProvider.notifier).createPlan(
-          clientId: clientId,
-          name: newName,
-          description:
-              '${_gluteWeeks}týdenní program na růst a tvar hýždí: 3 tréninky '
-              'hýždí + 1 horní tělo týdně, progrese a odlehčovací týden.',
-          category: CustomTrainingCategory.glutes,
-          type: CustomTrainingPlanType.gluteBuilder,
-        );
-
-    final updatedPlans = ref.read(customTrainingPlanProvider);
-    CustomTrainingPlan? createdPlan;
-
-    for (final plan in updatedPlans.reversed) {
-      if (plan.clientId == clientId && plan.name == newName) {
-        createdPlan = plan;
-        break;
-      }
-    }
-
-    if (createdPlan == null) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.planCreationFailed)),
-      );
-      return;
-    }
-
-    final notifier = ref.read(customTrainingPlanProvider.notifier);
-    final templateDays = _glutePlanDays(startDate);
-
-    for (final day in templateDays) {
-      await notifier.addDay(
-        planId: createdPlan.id,
-        dayName: day.name,
-      );
-    }
-
-    for (int dayIndex = 0; dayIndex < templateDays.length; dayIndex++) {
-      final day = templateDays[dayIndex];
-      for (final exercise in day.exercises) {
-        await notifier.addExerciseToDay(
-          planId: createdPlan.id,
-          dayIndex: dayIndex,
-          exercise: exercise,
-        );
-      }
-    }
-
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Plán "$newName" byl vložen mezi vlastní tréninky.'),
-      ),
-    );
-  }
-
-  /// Kulatý zadek – 12 týdnů od dneška, 4 tréninky týdně (3× hýždě,
-  /// 1× horní tělo pro proporce).
-  ///
-  /// Hýždě rostou z progresivního přetížení v celém rozsahu pohybu:
-  /// těžký hip thrust (maximální stah nahoře), cviky v protažení (rumunský
-  /// mrtvý tah, výpady, hluboký dřep) a střední hýžďový sval (unožování,
-  /// abdukce) pro „kulatý“ tvar z boku. Každý 12. týden odlehčení, pak se
-  /// cyklus opakuje s vyššími vahami.
-  List<CustomTrainingDay> _glutePlanDays(DateTime startDate) {
-    const weeks = [
-      _PrepWeekConfig(
-        fromWeek: 1,
-        toWeek: 4,
-        phase: 'Základ a technika',
-        mainSets: '3',
-        mainReps: '8–10',
-        mainRir: '2–3',
-        accSets: '3',
-        accReps: '10–15',
-        accRir: '2',
-        rest: 'hlavní cvik 2–3 min, doplňky 60–90 s',
-        circuitRounds: '2',
-        circuitRest: '60 s',
-        cardio:
-            '7 000–10 000 kroků denně, kardio max. 2× týdně 20–30 min chůze (nebrzdí růst).',
-        supersets: false,
-        dropSet: false,
-      ),
-      _PrepWeekConfig(
-        fromWeek: 5,
-        toWeek: 8,
-        phase: 'Objem',
-        mainSets: '4',
-        mainReps: '8–10',
-        mainRir: '1–2',
-        accSets: '4',
-        accReps: '10–15',
-        accRir: '1–2',
-        rest: 'hlavní cvik 2–3 min, doplňky 60–90 s',
-        circuitRounds: '3',
-        circuitRest: '60 s',
-        cardio:
-            '7 000–10 000 kroků denně, kardio max. 2× týdně 20–30 min chůze.',
-        supersets: false,
-        dropSet: false,
-      ),
-      _PrepWeekConfig(
-        fromWeek: 9,
-        toWeek: 11,
-        phase: 'Intenzita',
-        mainSets: '4',
-        mainReps: '6–8',
-        mainRir: '1',
-        accSets: '3',
-        accReps: '10–15',
-        accRir: '0–1',
-        rest: 'hlavní cvik 3 min, doplňky 60–90 s',
-        circuitRounds: '3',
-        circuitRest: '45 s',
-        cardio:
-            '7 000–10 000 kroků denně, kardio max. 2× týdně 20–30 min chůze.',
-        supersets: false,
-        dropSet: true,
-      ),
-      _PrepWeekConfig(
-        fromWeek: 12,
-        toWeek: 12,
-        phase: 'Odlehčení (deload)',
-        mainSets: '2',
-        mainReps: '8–10',
-        mainRir: '3–4',
-        accSets: '2',
-        accReps: '12–15',
-        accRir: '3',
-        rest: '90 s',
-        circuitRounds: '2',
-        circuitRest: '60 s',
-        cardio: '7 000–10 000 kroků denně.',
-        supersets: false,
-        dropSet: false,
-      ),
-    ];
-
-    final days = <CustomTrainingDay>[];
-
-    for (var week = 1; week <= _gluteWeeks; week++) {
-      final c = weeks.firstWhere(
-        (w) => week >= w.fromWeek && week <= w.toWeek,
-      );
-
-      final weekStart = startDate.add(Duration(days: (week - 1) * 7));
-      final weekEnd = weekStart.add(const Duration(days: 6));
-      final weekLabel =
-          'Týden $week (${_fmtDate(weekStart)} – ${_fmtDate(weekEnd)})';
-
-      final info = 'Fáze: ${c.phase}\n'
-          'Pauzy: ${c.rest}\n'
-          'Kardio: ${c.cardio}';
-
-      final progression = week == _gluteWeeks
-          ? 'Odlehčovací týden – o 20–30 % nižší váhy, žádné selhání.'
-          : 'Progrese: když zvládneš horní hranici opakování ve všech '
-              'sériích, přidej 2,5–5 kg.';
-
-      CustomTrainingExercise mainLift(String name) => CustomTrainingExercise(
-            customName: name,
-            sets: c.mainSets,
-            reps: c.mainReps,
-            rir: c.mainRir,
-            note: '$info\n$progression\n'
-                'Nahoře 1 s výdrž a maximální stah hýždí, pánev podsazená.',
-          );
-
-      CustomTrainingExercise acc(String name, {String? note, String? reps}) =>
-          CustomTrainingExercise(
-            customName: name,
-            sets: c.accSets,
-            reps: reps ?? c.accReps,
-            rir: c.accRir,
-            note: note,
-          );
-
-      final drop = c.dropSet
-          ? 'Poslední série jako drop set (−30 % váhy, do technického selhání).'
-          : null;
-
-      days.addAll([
-        CustomTrainingDay(
-          name: '$weekLabel – Den 1 – Hýždě těžce',
-          exercises: [
-            mainLift('Hip thrust s velkou činkou'),
-            acc(
-              'Rumunský mrtvý tah',
-              reps: '8–10',
-              note: 'Hýždě v protažení – pomalý spust, záda rovná.',
-            ),
-            acc(
-              'Bulharské výpady (trup v předklonu)',
-              reps: '8–12 na nohu',
-            ),
-            acc('Abdukce na stroji', reps: '15–20', note: drop),
-            acc('Hyperextenze s důrazem na hýždě (zakulacená záda)'),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 2 – Horní tělo (proporce)',
-          exercises: [
-            CustomTrainingExercise(
-              customName: 'Tlak s jednoručkami nad hlavu vsedě',
-              sets: c.accSets,
-              reps: '8–12',
-              rir: c.accRir,
-              note: '$info\n'
-                  'Širší ramena a záda opticky zúží pas a zvýrazní boky.',
-            ),
-            acc('Stahování horní kladky širokým úchopem'),
-            acc('Přítahy na kladce vsedě'),
-            acc('Upažování s jednoručkami', reps: '12–20'),
-            acc('Kliky (na kolenou nebo klasické)', reps: '8–15'),
-            acc('Face pull na kladce'),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 3 – Hýždě objem',
-          exercises: [
-            mainLift('Dřep s velkou činkou (široký postoj, hluboko)'),
-            acc(
-              'Leg press – chodidla vysoko a široko',
-              note: 'Hluboko, kolena ven – hýždě pracují v protažení.',
-            ),
-            acc('Zanožování na kladce (kickback)', reps: '12–15 na nohu'),
-            acc(
-              'Glute bridge jednonož',
-              reps: '12–15 na nohu',
-              note: drop,
-            ),
-            acc('Chůze v podřepu s gumou', reps: '20 kroků na stranu'),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 4 – Hýždě pumpa + tvar',
-          exercises: [
-            CustomTrainingExercise(
-              customName: 'Hip thrust s pauzou nahoře (2 s)',
-              sets: c.mainSets,
-              reps: '12–15',
-              rir: c.accRir,
-              note: '$info\n'
-                  'Lehčí než v Den 1 – důraz na stah, ne na váhu.',
-            ),
-            acc('Sumo mrtvý tah', reps: '8–10'),
-            acc('Výstupy na vysokou bednu', reps: '10–12 na nohu'),
-            acc(
-              'Abdukce vsedě v předklonu (horní část hýždí)',
-              reps: '15–20',
-              note: drop,
-            ),
-            acc(
-              'Frog pumps (žabí mosty)',
-              reps: '30',
-              note: 'Na konec – pumpa do „pálení“.',
-            ),
-          ],
-        ),
-      ]);
-    }
-
-    days.add(
-      const CustomTrainingDay(
-        name: 'Instrukce – Kulatý zadek',
-        exercises: [
-          CustomTrainingExercise(
-            customName: 'Týdny 1–4',
-            sets: '1',
-            reps: 'Základ a technika',
-            rir: '—',
-            note:
-                'Nauč se cítit hýždě v každém cviku (mind-muscle). Série daleko '
-                'od selhání, důraz na techniku a plný rozsah pohybu.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týdny 5–8',
-            sets: '1',
-            reps: 'Objem',
-            rir: '—',
-            note:
-                'Víc sérií a blíž k selhání. Každý týden přidávej váhu nebo '
-                'opakování.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týdny 9–11',
-            sets: '1',
-            reps: 'Intenzita',
-            rir: '—',
-            note:
-                'Těžší hlavní cviky (6–8 opakování) a drop sety na doplňcích.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týden 12',
-            sets: '1',
-            reps: 'Odlehčení',
-            rir: '—',
-            note:
-                'Nižší váhy i počet sérií – tělo zregeneruje a svaly rostou. '
-                'Pak vlož plán znovu a pokračuj s vyššími vahami.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Jídlo a regenerace',
-            sets: '1',
-            reps: 'Důležité',
-            rir: '—',
-            note:
-                'Svaly nerostou v deficitu – jez na údržbě nebo v mírném '
-                'přebytku (+5–10 %), bílkoviny 1,6–2,2 g/kg, spánek 7–9 h. '
-                'Mezi tréninky hýždí aspoň 1 den pauza. Jídelníček Kulatý '
-                'zadek (Jídelníčky) to spočítá automaticky.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Měření pokroku',
-            sets: '1',
-            reps: 'Každé 4 týdny',
-            rir: '—',
-            note:
-                'Obvod hýždí (nejširší místo), fotky z boku a zezadu ve stejném '
-                'světle, váhy v hip thrustu.',
-          ),
-        ],
-      ),
-    );
-
-    return days;
-  }
-
-const int _benchWeeks = 12;
-
-  Future<void> _insertBenchRussianPlan(
-    BuildContext context,
-    WidgetRef ref,
-    String clientId,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    final input = await showDialog<_BenchMeetInput>(
-      context: context,
-      builder: (_) => const _BenchMeetDialog(),
-    );
-
-    if (input == null) return;
-    if (!context.mounted) return;
-
-    final plans = ref.read(customTrainingPlanProvider);
-    final newName = _buildUniquePlanName(
-      '🏋️ Ruský cyklus – bench press (závody)',
-      plans.where((p) => p.clientId == clientId).toList(),
-    );
-
-    await ref.read(customTrainingPlanProvider.notifier).createPlan(
-          clientId: clientId,
-          name: newName,
-          description:
-              '${_benchWeeks}týdenní příprava na závody v bench pressu – ruský '
-              'cyklus, 1RM ${input.bench1rm.toStringAsFixed(1)} kg, závod '
-              '${_fmtDate(input.meetDate)}.',
-          category: CustomTrainingCategory.powerlifting,
-          type: CustomTrainingPlanType.benchMeetPrep,
-          meetDate: input.meetDate,
-          maxes: CustomTrainingMaxes(bench1rm: input.bench1rm),
-        );
-
-    final updatedPlans = ref.read(customTrainingPlanProvider);
-    CustomTrainingPlan? createdPlan;
-
-    for (final plan in updatedPlans.reversed) {
-      if (plan.clientId == clientId && plan.name == newName) {
-        createdPlan = plan;
-        break;
-      }
-    }
-
-    if (createdPlan == null) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.planCreationFailed)),
-      );
-      return;
-    }
-
-    final notifier = ref.read(customTrainingPlanProvider.notifier);
-    final templateDays = _benchRussianDays(input);
-
-    for (final day in templateDays) {
-      await notifier.addDay(
-        planId: createdPlan.id,
-        dayName: day.name,
-      );
-    }
-
-    for (int dayIndex = 0; dayIndex < templateDays.length; dayIndex++) {
-      final day = templateDays[dayIndex];
-      for (final exercise in day.exercises) {
-        await notifier.addExerciseToDay(
-          planId: createdPlan.id,
-          dayIndex: dayIndex,
-          exercise: exercise,
-        );
-      }
-    }
-
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Plán "$newName" byl vložen mezi vlastní tréninky.'),
-      ),
-    );
-  }
-
-  /// Ruský cyklus na bench press – 12 týdnů zpětně od data závodu,
-  /// 3 tréninky benche týdně. Všechny váhy se počítají z aktuálního 1RM
-  /// (zaokrouhlené na 2,5 kg) a v průběhu cyklu rostou.
-  ///
-  ///  - Týdny 1–4: základ – objem a technika (bench s pauzou), 4. týden
-  ///    odlehčení.
-  ///  - Týdny 5–10: ruský cyklus – nejdřív objem na 80 % (6×2 až 6×6),
-  ///    potom intenzita (5×5 @ 85 %, 4×4 @ 90 %, 3×3 @ 95 %) a těžký single.
-  ///  - Týden 11: peak / CNS – těžké singly, nadmaximální výdrž, lockouty
-  ///    a rychlostní bench – nervový systém se učí zvednout víc než 1RM.
-  ///  - Týden 12: taper – zkouška úvodního pokusu, pak jen rychlost a závod.
-  List<CustomTrainingDay> _benchRussianDays(_BenchMeetInput input) {
-    final max = input.bench1rm;
-    final meet = input.meetDate;
-
-    const weeks = [
-      _BenchWeek(1, 'Základ – objem', [
-        _BenchSession('Objem', '5', '6', 0.70),
-        _BenchSession('Technika – pauza 2 s na hrudníku', '5', '5', 0.625),
-        _BenchSession('Objem', '5', '6', 0.725),
-      ]),
-      _BenchWeek(2, 'Základ – objem', [
-        _BenchSession('Objem', '5', '5', 0.75),
-        _BenchSession('Technika – pauza 2 s na hrudníku', '5', '4', 0.65),
-        _BenchSession('Objem', '5', '5', 0.775),
-      ]),
-      _BenchWeek(3, 'Základ – síla', [
-        _BenchSession('Síla', '5', '4', 0.80),
-        _BenchSession('Technika – pauza 2 s na hrudníku', '5', '3', 0.675),
-        _BenchSession('Síla', '4', '4', 0.825),
-      ]),
-      _BenchWeek(4, 'Odlehčení', [
-        _BenchSession('Odlehčení', '3', '5', 0.70),
-        _BenchSession('Technika – pauza 2 s na hrudníku', '3', '3', 0.625),
-        _BenchSession('Odlehčení', '3', '3', 0.75),
-      ]),
-      _BenchWeek(5, 'Ruský cyklus – objem', [
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-        _BenchSession('Ruský cyklus', '6', '3', 0.80),
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-      ]),
-      _BenchWeek(6, 'Ruský cyklus – objem', [
-        _BenchSession('Ruský cyklus', '6', '4', 0.80),
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-        _BenchSession('Ruský cyklus', '6', '5', 0.80),
-      ]),
-      _BenchWeek(7, 'Ruský cyklus – objem', [
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-        _BenchSession('Ruský cyklus', '6', '6', 0.80),
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-      ]),
-      _BenchWeek(8, 'Ruský cyklus – intenzita', [
-        _BenchSession('Ruský cyklus', '5', '5', 0.85),
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-        _BenchSession('Ruský cyklus', '4', '4', 0.90),
-      ]),
-      _BenchWeek(9, 'Ruský cyklus – intenzita', [
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-        _BenchSession('Ruský cyklus', '3', '3', 0.95),
-        _BenchSession('Ruský cyklus', '6', '2', 0.80),
-      ]),
-      _BenchWeek(10, 'Ruský cyklus – intenzita', [
-        _BenchSession('Ruský cyklus', '2', '2', 0.95),
-        _BenchSession('Ruský cyklus – lehčí', '6', '2', 0.75),
-        _BenchSession('Těžký single – jistota', '1', '1', 0.975),
-      ]),
-      _BenchWeek(11, 'Peak / nervový systém', [
-        _BenchSession('Těžké singly (CNS)', '3', '1', 0.925),
-        _BenchSession('Rychlostní bench – maximální rychlost', '8', '2', 0.55),
-        _BenchSession('Top single (CNS)', '1', '1', 0.95),
-      ]),
-      _BenchWeek(12, 'Taper / závod', [
-        _BenchSession('Zkouška úvodního pokusu', '1', '1', 0.925),
-        _BenchSession('Rychlostní bench – jen prokrvení', '5', '2', 0.60),
-      ]),
-    ];
-
-    // Když je závod dřív než za 12 týdnů, začneme rovnou správným týdnem,
-    // aby peak a taper vyšly přesně na datum závodu.
-    final currentWeek = _prepWeekFor(meet, _benchWeeks) ?? 1;
-    final startWeek = currentWeek > _benchWeeks - 1 ? _benchWeeks - 1 : currentWeek;
-
-    String kg(double pct) =>
-        _formatWeightAndPercent(_weightFromMax(max, pct), pct);
-
-    const dayNames = ['Trénink A (Po)', 'Trénink B (St)', 'Trénink C (Pá)'];
-
-    final opener = _weightFromMax(max, 0.925);
-    final second = _weightFromMax(max, 0.975);
-    final third = _weightFromMax(max, 1.025);
-
-    final days = <CustomTrainingDay>[];
-
-    for (final w in weeks.where((w) => w.week >= startWeek)) {
-      final weekEnd = meet.subtract(
-        Duration(days: (_benchWeeks - w.week) * 7),
-      );
-      final weekStart = weekEnd.subtract(const Duration(days: 6));
-      final weekLabel =
-          'Týden ${w.week} (${_fmtDate(weekStart)} – ${_fmtDate(weekEnd)})';
-
-      final isBase = w.week <= 4;
-      final isRussian = w.week >= 5 && w.week <= 10;
-      final isPeak = w.week == 11;
-      final isTaper = w.week == 12;
-
-      // Doplňky podle fáze: v základu objem, v ruském cyklu síla,
-      // v peaku jen to nejdůležitější, v taperu nic.
-      final accSets = isBase ? '4' : (isRussian ? '3' : '2');
-      final accReps = isBase ? '8–10' : (isRussian ? '6–8' : '5');
-
-      CustomTrainingExercise acc(String name, {String? reps, String? note}) =>
-          CustomTrainingExercise(
-            customName: name,
-            sets: accSets,
-            reps: reps ?? accReps,
-            rir: isPeak ? '2–3' : '1–2',
-            note: note,
-          );
-
-      CustomTrainingExercise computed(
-        String name,
-        String sets,
-        String reps,
-        double pct, {
-        String? note,
-      }) =>
-          CustomTrainingExercise(
-            customName: name,
-            sets: sets,
-            reps: reps,
-            rir: '1–2',
-            weightKg: _weightFromMax(max, pct),
-            note: 'Pracovní váha: ${kg(pct)}${note == null ? '' : '\n$note'}',
-          );
-
-      for (var i = 0; i < w.sessions.length; i++) {
-        final s = w.sessions[i];
-
-        final mainSet = CustomTrainingExercise(
-          customName: 'Bench press – ${s.title}',
-          sets: s.sets,
-          reps: s.reps,
-          rir: s.pct >= 0.95 ? '0–1' : (s.pct >= 0.85 ? '1' : '2'),
-          weightKg: _weightFromMax(max, s.pct),
-          note: 'Fáze: ${w.phase}\n'
-              'Závod: ${_fmtDate(meet)}\n'
-              'Výchozí 1RM: ${max.toStringAsFixed(1)} kg\n'
-              'Pracovní váha: ${kg(s.pct)}\n'
-              'Rozcvičení: 40 % × 8, 55 % × 5, 65 % × 3, 75 % × 1 '
-              '(${_weightFromMax(max, 0.40).toStringAsFixed(1)} / '
-              '${_weightFromMax(max, 0.55).toStringAsFixed(1)} / '
-              '${_weightFromMax(max, 0.65).toStringAsFixed(1)} / '
-              '${_weightFromMax(max, 0.75).toStringAsFixed(1)} kg)\n'
-              'Závodní technika: pauza na hrudníku, nohy na zemi, hýždě na '
-              'lavici.',
-        );
-
-        final List<CustomTrainingExercise> extras;
-        final String dayTitle;
-
-        if (isTaper) {
-          dayTitle = i == 0
-              ? 'Den 1 (5 dní před závodem) – zkouška úvodního pokusu'
-              : 'Den 2 (3 dny před závodem) – jen rychlost';
-          extras = i == 0
-              ? [
-                  computed('Bench press – rychlé trojky', '3', '3', 0.70,
-                      note: 'Co nejrychleji, bez únavy.'),
-                ]
-              : const [];
-        } else if (i == 0) {
-          dayTitle = '${dayNames[0]} – bench + tricepsy + záda';
-          extras = [
-            if (isPeak)
-              computed(
-                'Nadmaximální výdrž – sundání činky ze stojanu (10 s)',
-                '3',
-                '10 s',
-                1.10,
-                note: 'Jen sundat, zamknout a držet s dopomocí jistících. '
-                    'Nervový systém si zvyká na váhu nad 1RM.',
-              )
-            else
-              computed(
-                'Úzký bench press (úchop na šířku ramen)',
-                '4',
-                isBase ? '8' : '6',
-                isBase ? 0.625 : 0.70,
-              ),
-            acc('Veslování s velkou činkou v předklonu'),
-            if (!isPeak) acc('Francouzský tlak s EZ činkou', reps: '8–12'),
-            if (!isPeak) acc('Face pull na kladce', reps: '15'),
-          ];
-        } else if (i == 1) {
-          dayTitle = '${dayNames[1]} – bench + ramena + široký sval zádový';
-          extras = isPeak
-              ? [acc('Shyby / stahování horní kladky')]
-              : [
-                  acc('Tlaky s jednoručkami na šikmé lavici', reps: '8–10'),
-                  acc('Shyby / stahování horní kladky'),
-                  acc('Zadní ramena – reverse fly', reps: '15'),
-                  acc('Rotátory ramen s gumou', reps: '15–20'),
-                ];
-        } else {
-          dayTitle = '${dayNames[2]} – bench + lockout + tricepsy';
-          extras = [
-            if (isPeak)
-              computed(
-                'Lockouty z bezpečnostních zarážek (posledních 10 cm)',
-                '3',
-                '2',
-                1.05,
-                note: 'Nadmaximální váha jen v horní části pohybu – '
-                    'síla zamknutí a nervový systém.',
-              )
-            else
-              computed(
-                'Bench press na prknech (2 prkna)',
-                isBase ? '4' : '3',
-                isBase ? '5' : '3',
-                isBase ? 0.80 : 0.90,
-                note: 'Přetížení horní části pohybu (lockout).',
-              ),
-            if (!isPeak)
-              acc('Kliky na bradlech se zátěží', reps: '6–10'),
-            acc('Přítahy jednoručky v předklonu'),
-            if (!isPeak) acc('JM press / triceps na kladce', reps: '10–12'),
-          ];
-        }
-
-        days.add(
-          CustomTrainingDay(
-            name: '$weekLabel – $dayTitle',
-            exercises: [mainSet, ...extras],
-          ),
-        );
-      }
-
-      if (isTaper) {
-        days.add(
-          CustomTrainingDay(
-            name: '$weekLabel – DEN ZÁVODU ${_fmtDate(meet)}',
-            exercises: [
-              CustomTrainingExercise(
-                customName: '1. pokus (úvodní)',
-                sets: '1',
-                reps: '1',
-                rir: '2',
-                weightKg: opener,
-                note: '${_formatWeightAndPercent(opener, 0.925)} – musí '
-                    'projít vždy, i ve špatný den.\n'
-                    'Rozcvička v zákulisí: 40 % × 5, 60 % × 3, 75 % × 1, '
-                    '85 % × 1 (${_weightFromMax(max, 0.40).toStringAsFixed(1)} / '
-                    '${_weightFromMax(max, 0.60).toStringAsFixed(1)} / '
-                    '${_weightFromMax(max, 0.75).toStringAsFixed(1)} / '
-                    '${_weightFromMax(max, 0.85).toStringAsFixed(1)} kg), '
-                    'poslední asi 10 min před pokusem.',
-              ),
-              CustomTrainingExercise(
-                customName: '2. pokus',
-                sets: '1',
-                reps: '1',
-                rir: '1',
-                weightKg: second,
-                note: '${_formatWeightAndPercent(second, 0.975)} – jistý '
-                    'výkon kolem starého maxima.',
-              ),
-              CustomTrainingExercise(
-                customName: '3. pokus (nový osobní rekord)',
-                sets: '1',
-                reps: '1',
-                rir: '0',
-                weightKg: third,
-                note: '${_formatWeightAndPercent(third, 1.025)}.\n'
-                    'Když 2. pokus šel rychle, klidně '
-                    '${_weightFromMax(max, 1.05).toStringAsFixed(1)} kg (105 %). '
-                    'Když šel ztěžka, jen '
-                    '${_weightFromMax(max, 1.0).toStringAsFixed(1)} kg (100 %).',
-              ),
-            ],
-          ),
-        );
-      }
-    }
-
-    days.add(
-      CustomTrainingDay(
-        name: 'Instrukce – ruský cyklus na bench press',
-        exercises: [
-          CustomTrainingExercise(
-            customName: 'Datum závodu a výchozí maximum',
-            sets: '1',
-            reps: _fmtDate(meet),
-            rir: '—',
-            weightKg: max,
-            note: 'Všechny váhy jsou spočítané z 1RM '
-                '${max.toStringAsFixed(1)} kg a zaokrouhlené na 2,5 kg. '
-                'Týdny jsou rozpočítané zpětně od data závodu.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 1–4',
-            sets: '1',
-            reps: 'Základ',
-            rir: '—',
-            note:
-                'Objem, technika (bench s pauzou) a síla doplňků. 4. týden '
-                'odlehčení před ruským cyklem.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 5–7',
-            sets: '1',
-            reps: 'Ruský cyklus – objem',
-            rir: '—',
-            note:
-                'Stále 80 % 1RM, ale přibývají opakování v sérii (6×2 → 6×6). '
-                'Lehké dny 6×2 mezi těžkými slouží k regeneraci – nepřidávej.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týdny 8–10',
-            sets: '1',
-            reps: 'Ruský cyklus – intenzita',
-            rir: '—',
-            note:
-                'Váha roste, opakování klesají: 5×5 @ 85 %, 4×4 @ 90 %, '
-                '3×3 @ 95 %, 2×2 @ 95 % a těžký single 97,5 %.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týden 11',
-            sets: '1',
-            reps: 'Peak / nervový systém',
-            rir: '—',
-            note:
-                'Nízký objem, vysoká intenzita: těžké singly, nadmaximální '
-                'výdrž 110 % ze stojanu, lockouty 105 % a rychlostní bench. '
-                'Cílem je nabudit nervový systém, ne unavit svaly.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Týden 12',
-            sets: '1',
-            reps: 'Taper / závod',
-            rir: '—',
-            note:
-                'Zkouška úvodního pokusu 5 dní před závodem, 3 dny před jen '
-                'rychlé dvojky, poslední 2 dny volno. Spánek, jídlo, klid.',
-          ),
-          const CustomTrainingExercise(
-            customName: 'Jídelníček',
-            sets: '1',
-            reps: 'Silová příprava',
-            rir: '—',
-            note:
-                'Jídelníček Silová příprava (Jídelníčky): údržba, bílkoviny '
-                '2,0 g/kg, dost sacharidů na trénink. Když musí klient do '
-                'váhové kategorie, nastav cíl a použij lineární jídelníček.',
-          ),
-        ],
-      ),
-    );
-
-    return days;
-  }
-
-  List<CustomTrainingDay> _constantinPlanDays() {
-    return [
-      CustomTrainingDay(
-        name: 'Pondělí – Silový trénink (Fáze 1 / týdny 1–4)',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Dřepy s vlastní vahou',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Kliky',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Výpady',
-            sets: '1',
-            reps: '10 na každou nohu',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Burpees',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'Mrtvý tah',
-            sets: '5 kol',
-            reps: '10–12',
-            rir: '1–2',
-            note:
-                'Bez pauzy mezi cviky. Pauza 60 s po kole. Poslední opakování má být těžké.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Výpady + tlak na ramena (jednoručky)',
-            sets: '5 kol',
-            reps: '10–12 na každou nohu',
-            rir: '1–2',
-            note: 'Součást pondělního okruhu ve Fázi 1.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Přítahy jednoruček v planku',
-            sets: '5 kol',
-            reps: '10–12 na každou ruku',
-            rir: '1–2',
-            note: 'Součást pondělního okruhu ve Fázi 1.',
-          ),
-        ],
-      ),
-      CustomTrainingDay(
-        name: 'Úterý – Kardio HIIT',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'HIIT: Sprint / kolo / běh',
-            sets: '8–15 kol',
-            reps: '20 s výkon / 10 s pauza',
-            rir: '—',
-            note:
-                'Začni na 8 kolech a postupně se dostaň až na 15 kol podle kondice a regenerace.',
-          ),
-        ],
-      ),
-      CustomTrainingDay(
-        name: 'Středa – Silový trénink (Fáze 1 / týdny 1–4)',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Dřepy s vlastní vahou',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Kliky',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Výpady',
-            sets: '1',
-            reps: '10 na každou nohu',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Burpees',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'Dřep + tlak s jednoručkami',
-            sets: '20 min',
-            reps: '10–12',
-            rir: '1–2',
-            note: 'Střídej cviky 20 minut. Pauza mezi cviky 20 s. Fáze 1.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Mrtvý tah s jednoručkami',
-            sets: '20 min',
-            reps: '10–12',
-            rir: '1–2',
-            note:
-                'Střídej s předchozím cvikem. Pauza mezi cviky 20 s. Fáze 1.',
-          ),
-        ],
-      ),
-      CustomTrainingDay(
-        name: 'Čtvrtek – Kardio chůze',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'Rychlá chůze',
-            sets: '1',
-            reps: '30–45 min',
-            rir: '—',
-            note:
-                'Začni na 30 minutách a postupně se dostaň až na 45 minut.',
-          ),
-        ],
-      ),
-      CustomTrainingDay(
-        name: 'Pátek – Silový trénink (Fáze 1 / týdny 1–4)',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Dřepy s vlastní vahou',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Kliky',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Výpady',
-            sets: '1',
-            reps: '10 na každou nohu',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'ROZCVIČKA: Burpees',
-            sets: '1',
-            reps: '10',
-            rir: '—',
-          ),
-          CustomTrainingExercise(
-            customName: 'Dřep',
-            sets: '20 min AMRAP',
-            reps: '12',
-            rir: '1–2',
-            note:
-                'Fáze 1 – co nejvíc kol za 20 minut. Bez zbytečných pauz mezi cviky.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Plyometrické kliky',
-            sets: '20 min AMRAP',
-            reps: '12',
-            rir: '1–2',
-            note: 'Fáze 1 – součást pátečního okruhu.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Přítahy v předklonu',
-            sets: '20 min AMRAP',
-            reps: '12',
-            rir: '1–2',
-            note: 'Fáze 1 – součást pátečního okruhu.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Výskoky na bednu',
-            sets: '20 min AMRAP',
-            reps: '15',
-            rir: '1–2',
-            note: 'Fáze 1 – součást pátečního okruhu.',
-          ),
-        ],
-      ),
-      CustomTrainingDay(
-        name: 'Sobota – Kardio HIIT',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'HIIT: Sprint / kolo / běh',
-            sets: '8–15 kol',
-            reps: '20 s výkon / 10 s pauza',
-            rir: '—',
-            note:
-                'Stejné jako úterý. Intenzivní výkon, ale pořád s kontrolou regenerace.',
-          ),
-        ],
-      ),
-      CustomTrainingDay(
-        name: 'Neděle – Volno / regenerace',
-        exercises: const [
-          CustomTrainingExercise(
-            customName: 'Volno',
-            sets: '—',
-            reps: 'Regenerace',
-            rir: '—',
-            note:
-                'Lehká chůze, mobilita nebo úplné volno. Každý týden zvyš váhu, zrychli tempo nebo přidej kola.',
-          ),
-          CustomTrainingExercise(
-            customName: 'FÁZE 2 – týdny 5–8 (instrukce)',
-            sets: '1',
-            reps: 'Přepni podle poznámky',
-            rir: '—',
-            note:
-                'Pondělí: Hacken dřep 12–15 / Clean & Press 8–10 / Burpees 10–12, 5 kol, bez pauzy mezi cviky, 60 s mezi koly. '
-                'Středa: Tlaky s jednoručkami na rovné lavici 10–12 / Rumunský mrtvý tah 10–12 / Výskoky na bednu 15, 5 kol. '
-                'Pátek: 20 min AMRAP – Mrtvý tah s trap osou 10 / Goblet dřep 10 / Přítahy v předklonu 12 / Tlaky na ramena 10.',
-          ),
-          CustomTrainingExercise(
-            customName: 'FÁZE 3 – týdny 9–12 (instrukce)',
-            sets: '1',
-            reps: 'Přepni podle poznámky',
-            rir: '—',
-            note:
-                'Pondělí: Mrtvý tah 12–15 / Plyometrické kliky 10–12 / Přítahy v předklonu 10–12 / Burpees 10–12, 5 kol, 60 s mezi koly. '
-                'Středa: intervaly – Dřep + tlak 20 s práce / 20 s pauza / 5 kol, poté Sumo mrtvý tah s přítahen k bradě 20 s práce / 20 s pauza / 5 kol. '
-                'Pátek: 20 min AMRAP – Hacken dřep 15 / Přítahy jednoruček v planku 15 na ruku / Rumunský mrtvý tah 10 / Krčení ramen s jednoručkami 15.',
-          ),
-        ],
-      ),
-    ];
-  }
-
-  List<CustomTrainingDay> _powerliftingMeetPrepDays(
-    BuildContext context,
-    _PowerliftingMaxes maxes,
-  ) {
-    final l10n = AppLocalizations.of(context)!;
-    // Všechny tři disciplíny se počítají z training maxu (90 % 1RM),
-    // aby procenta odpovídala předepsaným opakováním a RIR.
-    final squatBase = _trainingMax(maxes.squat1rm);
-    final benchTm = _trainingMax(maxes.bench1rm);
-    final deadliftBase = _trainingMax(maxes.deadlift1rm);
-
-    final phaseWeeks = <_PowerWeekConfig>[
-      _PowerWeekConfig(
-        week: 1,
-        phaseLabel: 'Objem',
-        squatPct: 0.70,
-        benchPct: 0.75,
-        deadliftPct: 0.70,
-        squatSets: '5',
-        squatReps: '5',
-        benchHeavySets: '5',
-        benchHeavyReps: '5',
-        deadliftSets: '5',
-        deadliftReps: '4',
-      ),
-      _PowerWeekConfig(
-        week: 2,
-        phaseLabel: 'Objem',
-        squatPct: 0.725,
-        benchPct: 0.775,
-        deadliftPct: 0.725,
-        squatSets: '5',
-        squatReps: '5',
-        benchHeavySets: '5',
-        benchHeavyReps: '5',
-        deadliftSets: '5',
-        deadliftReps: '4',
-      ),
-      _PowerWeekConfig(
-        week: 3,
-        phaseLabel: 'Objem',
-        squatPct: 0.75,
-        benchPct: 0.80,
-        deadliftPct: 0.75,
-        squatSets: '5',
-        squatReps: '5',
-        benchHeavySets: '5',
-        benchHeavyReps: '5',
-        deadliftSets: '5',
-        deadliftReps: '4',
-      ),
-      _PowerWeekConfig(
-        week: 4,
-        phaseLabel: 'Objem',
-        squatPct: 0.775,
-        benchPct: 0.825,
-        deadliftPct: 0.775,
-        squatSets: '5',
-        squatReps: '5',
-        benchHeavySets: '5',
-        benchHeavyReps: '5',
-        deadliftSets: '5',
-        deadliftReps: '4',
-      ),
-      _PowerWeekConfig(
-        week: 5,
-        phaseLabel: 'Síla',
-        squatPct: 0.80,
-        benchPct: 0.85,
-        deadliftPct: 0.80,
-        squatSets: '4',
-        squatReps: '4',
-        benchHeavySets: '4',
-        benchHeavyReps: '4',
-        deadliftSets: '4',
-        deadliftReps: '3',
-      ),
-      _PowerWeekConfig(
-        week: 6,
-        phaseLabel: 'Síla',
-        squatPct: 0.825,
-        benchPct: 0.875,
-        deadliftPct: 0.825,
-        squatSets: '4',
-        squatReps: '4',
-        benchHeavySets: '4',
-        benchHeavyReps: '4',
-        deadliftSets: '4',
-        deadliftReps: '3',
-      ),
-      _PowerWeekConfig(
-        week: 7,
-        phaseLabel: 'Síla',
-        squatPct: 0.85,
-        benchPct: 0.90,
-        deadliftPct: 0.85,
-        squatSets: '4',
-        squatReps: '4',
-        benchHeavySets: '4',
-        benchHeavyReps: '4',
-        deadliftSets: '4',
-        deadliftReps: '3',
-      ),
-      _PowerWeekConfig(
-        week: 8,
-        phaseLabel: 'Síla',
-        squatPct: 0.875,
-        benchPct: 0.925,
-        deadliftPct: 0.875,
-        squatSets: '4',
-        squatReps: '4',
-        benchHeavySets: '4',
-        benchHeavyReps: '4',
-        deadliftSets: '4',
-        deadliftReps: '3',
-      ),
-      _PowerWeekConfig(
-        week: 9,
-        phaseLabel: 'Intenzifikace',
-        squatPct: 0.90,
-        benchPct: 0.925,
-        deadliftPct: 0.90,
-        squatSets: '3',
-        squatReps: '3',
-        benchHeavySets: '3',
-        benchHeavyReps: '3',
-        deadliftSets: '3',
-        deadliftReps: '2',
-      ),
-      _PowerWeekConfig(
-        week: 10,
-        phaseLabel: 'Intenzifikace',
-        squatPct: 0.925,
-        benchPct: 0.95,
-        deadliftPct: 0.925,
-        squatSets: '3',
-        squatReps: '3',
-        benchHeavySets: '3',
-        benchHeavyReps: '3',
-        deadliftSets: '3',
-        deadliftReps: '2',
-      ),
-      _PowerWeekConfig(
-        week: 11,
-        phaseLabel: 'Peak / CNS',
-        squatPct: 0.90,
-        benchPct: 0.90,
-        deadliftPct: 0.90,
-        topSinglePct: 0.975,
-        squatSets: '3 + 2 singly',
-        squatReps: '2 + 1',
-        benchHeavySets: '3 + 2 singly',
-        benchHeavyReps: '2 + 1',
-        deadliftSets: '3 + 2 singly',
-        deadliftReps: '2 + 1',
-      ),
-      _PowerWeekConfig(
-        week: 12,
-        phaseLabel: 'Taper / závod',
-        squatPct: 0.85,
-        benchPct: 0.875,
-        deadliftPct: 0.85,
-        topSinglePct: 0.925,
-        squatSets: '2 + 1 single',
-        squatReps: '1 + 1',
-        benchHeavySets: '2 + 1 single',
-        benchHeavyReps: '1 + 1',
-        deadliftSets: '2 + 1 single',
-        deadliftReps: '1 + 1',
-      ),
-    ];
-
-    // Když je závod dřív než za 12 týdnů, začneme rovnou správným týdnem
-    // (první týdny vynecháme), aby peak a taper vyšly na datum závodu.
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final meetDay = DateTime(
-      maxes.meetDate.year,
-      maxes.meetDate.month,
-      maxes.meetDate.day,
-    );
-    final daysToMeet = meetDay.difference(today).inDays;
-    final weeksAvailable = (daysToMeet / 7).ceil().clamp(2, 12).toInt();
-    final weeksToUse =
-        phaseWeeks.where((w) => w.week > 12 - weeksAvailable).toList();
-
-    final days = <CustomTrainingDay>[];
-
-    for (final week in weeksToUse) {
-      final squatMain = _weightFromMax(squatBase, week.squatPct);
-      final benchMain = _weightFromTm(benchTm, week.benchPct);
-      final deadliftMain = _weightFromMax(deadliftBase, week.deadliftPct);
-
-      final squatTechPercent = week.week <= 4
-          ? 0.65
-          : week.week <= 8
-              ? 0.70
-              : week.week <= 10
-                  ? 0.75
-                  : 0.70;
-
-      final benchVolumePercent =
-          (week.benchPct - 0.10).clamp(0.65, 0.80).toDouble();
-      final benchTechPercent =
-          (week.benchPct - 0.15).clamp(0.60, 0.75).toDouble();
-      final backoffPercent = week.benchPct - 0.10;
-
-      final squatTech = _weightFromMax(squatBase, squatTechPercent);
-      final benchVolume = _weightFromTm(benchTm, benchVolumePercent);
-      final benchTech = _weightFromTm(benchTm, benchTechPercent);
-      final benchBackoff = _weightFromTm(benchTm, backoffPercent);
-
-      final topSingleSquat = week.topSinglePct == null
-          ? null
-          : _weightFromMax(squatBase, week.topSinglePct!);
-      final topSingleBench = week.topSinglePct == null
-          ? null
-          : _weightFromTm(benchTm, week.topSinglePct!);
-      final topSingleDeadlift = week.topSinglePct == null
-          ? null
-          : _weightFromMax(deadliftBase, week.topSinglePct!);
-
-      final daysBeforeMeetWeekEnd = (12 - week.week) * 7;
-      final weekEnd = maxes.meetDate.subtract(
-        Duration(days: daysBeforeMeetWeekEnd),
-      );
-      final weekStart = weekEnd.subtract(const Duration(days: 6));
-      final weekLabel =
-          'Týden ${week.week} (${_fmtDate(weekStart)} – ${_fmtDate(weekEnd)})';
-
-      final benchVolumeSets = week.week <= 4
-          ? '5'
-          : week.week <= 8
-              ? '4'
-              : week.week <= 10
-                  ? '4'
-                  : '3';
-
-      final benchVolumeReps = week.week <= 4
-          ? '6–8'
-          : week.week <= 8
-              ? '5–6'
-              : week.week <= 10
-                  ? '4–5'
-                  : '3–4';
-
-      final benchTechSets = week.week >= 11 ? '3' : '4';
-      final benchTechReps = week.week >= 11 ? '3–4' : '4–6';
-      final benchBackoffReps = week.week >= 11 ? '2' : week.benchHeavyReps;
-
-      days.addAll([
-        CustomTrainingDay(
-          name: '$weekLabel – Den 1 – Dřep těžce + spodní část',
-          exercises: [
-            CustomTrainingExercise(
-              customName: 'Dřep – závodní styl',
-              sets: week.squatSets,
-              reps: week.squatReps,
-              rir: week.week >= 11 ? '1–2' : '1–3',
-              weightKg: squatMain,
-              note:
-                  'Fáze: ${week.phaseLabel}\n'
-                  '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
-                  'Výchozí 1RM: ${maxes.squat1rm.toStringAsFixed(1)} kg\n'
-                  'Training max: ${squatBase.toStringAsFixed(1)} kg\n'
-                  'Pracovní váha: '
-                  '${_formatWeightAndPercent(squatMain, week.squatPct)}'
-                  '${topSingleSquat == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleSquat, week.topSinglePct!)}'}',
-            ),
-            CustomTrainingExercise(
-              customName: 'Dřep – lehčí technika / pauza',
-              sets: week.week >= 11 ? '3' : '4',
-              reps: week.week >= 11 ? '2–3' : '3–5',
-              rir: '2–3',
-              weightKg: squatTech,
-              note:
-                  'Technická práce.\n'
-                  'Pracovní váha: ${_formatWeightAndPercent(squatTech, squatTechPercent)}',
-            ),
-            CustomTrainingExercise(
-              customName: 'Rumunský mrtvý tah',
-              sets: '4',
-              reps: '6–8',
-              rir: '2–3',
-            ),
-            
-            
-            CustomTrainingExercise(
-              customName: 'Břicho / core',
-              sets: '3',
-              reps: '10–15 / 20–30 s',
-              rir: '2–3',
-            ),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 2 – Bench těžce + backoff + doplňky',
-          exercises: [
-            CustomTrainingExercise(
-              customName: 'Bench press – závodní pauza',
-              sets: week.benchHeavySets,
-              reps: week.benchHeavyReps,
-              rir: week.week >= 11 ? '1–2' : '1–3',
-              weightKg: benchMain,
-              note:
-                  'Fáze: ${week.phaseLabel}\n'
-                  '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
-                  'Training max: ${benchTm.toStringAsFixed(1)} kg\n'
-                  'Pracovní váha: '
-                  '${_formatWeightAndPercent(benchMain, week.benchPct)}'
-                  '${topSingleBench == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleBench, week.topSinglePct!)}'}',
-            ),
-            CustomTrainingExercise(
-              customName: 'Bench press – backoff série',
-              sets: '2',
-              reps: benchBackoffReps,
-              rir: '2',
-              weightKg: benchBackoff,
-              note:
-                  'Backoff práce po hlavním bench dni.\n'
-                  'Pracovní váha: ${_formatWeightAndPercent(benchBackoff, backoffPercent)}',
-            ),
-            CustomTrainingExercise(
-              customName: 'Incline Bench',
-              sets: '3',
-              reps: '8–10',
-              rir: '2–3',
-              note: 'Horní hrudník a přenos do bench pressu.',
-            ),
-            CustomTrainingExercise(
-              customName: 'Dips',
-              sets: '3',
-              reps: '6–10',
-              rir: '2–3',
-              note: 'Triceps, tlaková síla, lockout.',
-            ),
-            CustomTrainingExercise(
-              customName: 'Triceps Pushdown',
-              sets: '3',
-              reps: '10–15',
-              rir: '2–3',
-              note: 'Lokální objem pro triceps.',
-            ),
-            CustomTrainingExercise(
-              customName: 'Přítahy v předklonu',
-              sets: '4',
-              reps: '6–10',
-              rir: '2',
-            ),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 3 – Mrtvý tah těžce + záda',
-          exercises: [
-            CustomTrainingExercise(
-              customName: 'Mrtvý tah – závodní styl',
-              sets: week.deadliftSets,
-              reps: week.deadliftReps,
-              rir: week.week >= 11 ? '1–2' : '1–3',
-              weightKg: deadliftMain,
-              note:
-                  'Fáze: ${week.phaseLabel}\n'
-                  '${l10n.meetDate}: ${_fmtDate(maxes.meetDate)}\n'
-                  'Výchozí 1RM: ${maxes.deadlift1rm.toStringAsFixed(1)} kg\n'
-                  'Training max: ${deadliftBase.toStringAsFixed(1)} kg\n'
-                  'Pracovní váha: '
-                  '${_formatWeightAndPercent(deadliftMain, week.deadliftPct)}'
-                  '${topSingleDeadlift == null ? '' : '\nTop single: ${_formatWeightAndPercent(topSingleDeadlift, week.topSinglePct!)}'}',
-            ),
-
-            CustomTrainingExercise(
-              customName: 'Hamstringy',
-              sets: '3',
-              reps: '8–12',
-              rir: '2–3',
-            ),
-            CustomTrainingExercise(
-              customName: 'Shyby / horní kladka',
-              sets: '4',
-              reps: '6–10',
-              rir: '2',
-            ),
-            CustomTrainingExercise(
-              customName: 'Záda / mezilopatky',
-              sets: '3',
-              reps: '10–15',
-              rir: '2–3',
-            ),
-          ],
-        ),
-        CustomTrainingDay(
-          name: '$weekLabel – Den 4 – Bench objem / technika',
-          exercises: [
-            CustomTrainingExercise(
-              customName: 'Bench press – objem',
-              sets: benchVolumeSets,
-              reps: benchVolumeReps,
-              rir: '2–3',
-              weightKg: benchVolume,
-              note:
-                  'Objem, technika a bench-specific hypertrofie.\n'
-                  'Pracovní váha: ${_formatWeightAndPercent(benchVolume, benchVolumePercent)}',
-            ),
-            CustomTrainingExercise(
-              customName: 'Bench press – lehčí technika',
-              sets: benchTechSets,
-              reps: benchTechReps,
-              rir: '2–3',
-              weightKg: benchTech,
-              note:
-                  'Technika, rychlost osy, setup.\n'
-                  'Pracovní váha: ${_formatWeightAndPercent(benchTech, benchTechPercent)}',
-            ),
-            CustomTrainingExercise(
-              customName: 'Close-Grip Bench Press',
-              sets: '3',
-              reps: '6–8',
-              rir: '2–3',
-              weightKg: benchTech,
-              note:
-                  'Bench-specific doplněk se zaměřením na triceps a lockout.',
-            ),
-            CustomTrainingExercise(
-              customName: 'Tlaky nad hlavu / ramena',
-              sets: '3',
-              reps: '6–10',
-              rir: '2–3',
-            ),
-            CustomTrainingExercise(
-              customName: 'Rotátory / prevence ramen',
-              sets: '2–3',
-              reps: '12–20',
-              rir: '2–3',
-            ),
-          ],
-        ),
-      ]);
-    }
-
-    days.add(
-      CustomTrainingDay(
-        name: 'Instrukce k 12týdennímu cyklu',
-        exercises: [
-          CustomTrainingExercise(
-            customName: 'Datum závodu',
-            sets: '1',
-            reps: _fmtDate(maxes.meetDate),
-            rir: '—',
-            note: 'Všechny týdny jsou rozpočítané zpětně od tohoto data.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týdny 1–4',
-            sets: '1',
-            reps: 'Objem + technika',
-            rir: '—',
-            note:
-                'Buduješ základ, stabilitu a přesnost pohybu. Vyšší objem, nižší intenzita, žádné zbytečné selhání.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týdny 5–8',
-            sets: '1',
-            reps: 'Síla',
-            rir: '—',
-            note:
-                'Zvedáš intenzitu, snižuješ počet opakování a připravuješ se na těžší specifickou práci.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týdny 9–10',
-            sets: '1',
-            reps: 'Intenzifikace',
-            rir: '—',
-            note:
-                'Těžké trojky a dvojky. Důraz na závodní provedení a kontrolu únavy.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týden 11',
-            sets: '1',
-            reps: 'Peak / CNS',
-            rir: '—',
-            note:
-                'Ano, tohle je přesně prostor pro nabuzení nervového systému. Nízký objem, vysoká intenzita, žádné zbytečné doplňky navíc.',
-          ),
-          CustomTrainingExercise(
-            customName: 'Týden 12',
-            sets: '1',
-            reps: 'Taper / závod',
-            rir: '—',
-            note:
-                'Výrazně stáhni objem. Cílem je čerstvost, jistota a rychlost na platformě.',
-          ),
-        ],
-      ),
-    );
-
-    return days;
-  }
-
-  String _fmtDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.'
-        '${date.month.toString().padLeft(2, '0')}.'
-        '${date.year}';
-  }
-
-  double _trainingMax(double oneRepMax) {
-    return _roundToNearest2_5(oneRepMax * 0.90);
-  }
-
-  double _weightFromTm(double trainingMax, double percent) {
-    return _roundToNearest2_5(trainingMax * percent);
-  }
-
-  double _weightFromMax(double max, double percent) {
-    return _roundToNearest2_5(max * percent);
-  }
-
-  double _roundToNearest2_5(double value) {
-    return (value / 2.5).round() * 2.5;
-  }
-
-  String _formatWeightAndPercent(double weight, double percent) {
-    return '${(percent * 100).toStringAsFixed(percent * 100 % 1 == 0 ? 0 : 1)} % = ${weight.toStringAsFixed(1)} kg';
 }
 
+IconData _groupIcon(String group) => switch (group) {
+      ProgramGroup.bodybuilding => Icons.fitness_center,
+      ProgramGroup.strength => Icons.sports_gymnastics,
+      ProgramGroup.running => Icons.directions_run,
+      ProgramGroup.tests => Icons.local_police_outlined,
+      _ => Icons.bolt_outlined,
+    };
 
-class _PrepWeekConfig {
-  final int fromWeek;
-  final int toWeek;
-  final String phase;
+class _GroupTitle extends StatelessWidget {
+  final String text;
+  const _GroupTitle(this.text);
 
-  final String mainSets;
-  final String mainReps;
-  final String mainRir;
-
-  final String accSets;
-  final String accReps;
-  final String accRir;
-
-  final String rest;
-  final String circuitRounds;
-  final String circuitRest;
-  final String cardio;
-
-  final bool supersets;
-  final bool dropSet;
-
-  /// Nácvik pózování (bikini fitness), jinak `null`.
-  final String? posing;
-
-  const _PrepWeekConfig({
-    required this.fromWeek,
-    required this.toWeek,
-    required this.phase,
-    required this.mainSets,
-    required this.mainReps,
-    required this.mainRir,
-    required this.accSets,
-    required this.accReps,
-    required this.accRir,
-    required this.rest,
-    required this.circuitRounds,
-    required this.circuitRest,
-    required this.cardio,
-    required this.supersets,
-    required this.dropSet,
-    this.posing,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: Text(
+        text,
+        style: Theme.of(context)
+            .textTheme
+            .titleLarge
+            ?.copyWith(fontWeight: FontWeight.w900),
+      ),
+    );
+  }
 }
 
-class _BenchSession {
+/// Náhled programu před vložením – všechny dny a cviky.
+class _LibraryPreview extends StatelessWidget {
+  final LibraryProgram program;
+  const _LibraryPreview({required this.program});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final days = program.days();
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.85,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scroll) => Column(
+        children: [
+          Expanded(
+            child: ListView(
+              controller: scroll,
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              children: [
+                Text(
+                  program.title,
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${program.level} · ${program.length} · ${days.length} tréninků v plánu',
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
+                const SizedBox(height: 10),
+                Text(program.description),
+                const SizedBox(height: 16),
+                for (final d in days)
+                  Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            d.name,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 6),
+                          for (final e in d.exercises)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 3),
+                              child: Text(
+                                '• ${e.customName} – ${e.sets} × ${e.reps}'
+                                '${e.rir == '—' ? '' : ' (RIR ${e.rir})'}',
+                                style: TextStyle(color: cs.onSurfaceVariant),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.pop(context, true),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Vložit plán klientovi'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProgramInfo {
+  final IconData icon;
   final String title;
-  final String sets;
-  final String reps;
-  final double pct;
+  final String length;
+  final String description;
+  final String? diet;
+  final Future<void> Function(BuildContext, WidgetRef, String) insert;
 
-  const _BenchSession(this.title, this.sets, this.reps, this.pct);
-}
-
-class _BenchWeek {
-  final int week;
-  final String phase;
-  final List<_BenchSession> sessions;
-
-  const _BenchWeek(this.week, this.phase, this.sessions);
-}
-
-class _BenchMeetInput {
-  final double bench1rm;
-  final DateTime meetDate;
-
-  const _BenchMeetInput({
-    required this.bench1rm,
-    required this.meetDate,
+  const _ProgramInfo({
+    required this.icon,
+    required this.title,
+    required this.length,
+    required this.description,
+    required this.diet,
+    required this.insert,
   });
-}
-
-class _PowerliftingMaxes {
-  final double squat1rm;
-  final double bench1rm;
-  final double deadlift1rm;
-  final DateTime meetDate;
-
-  const _PowerliftingMaxes({
-    required this.squat1rm,
-    required this.bench1rm,
-    required this.deadlift1rm,
-    required this.meetDate,
-  });
-}
-
-class _PowerWeekConfig {
-  final int week;
-  final String phaseLabel;
-
-  final double squatPct;
-  final double benchPct;
-  final double deadliftPct;
-
-  final double? topSinglePct;
-
-  final String squatSets;
-  final String squatReps;
-
-  final String benchHeavySets;
-  final String benchHeavyReps;
-
-  final String deadliftSets;
-  final String deadliftReps;
-
-  _PowerWeekConfig({
-    required this.week,
-    required this.phaseLabel,
-    required this.squatPct,
-    required this.benchPct,
-    required this.deadliftPct,
-    this.topSinglePct,
-    required this.squatSets,
-    required this.squatReps,
-    required this.benchHeavySets,
-    required this.benchHeavyReps,
-    required this.deadliftSets,
-    required this.deadliftReps,
-  });
-}
-
-class _PowerliftingMaxesDialog extends StatefulWidget {
-  const _PowerliftingMaxesDialog();
-
-  @override
-  State<_PowerliftingMaxesDialog> createState() =>
-      _PowerliftingMaxesDialogState();
-}
-
-class _PowerliftingMaxesDialogState
-    extends State<_PowerliftingMaxesDialog> {
-  final squatCtrl = TextEditingController();
-  final benchCtrl = TextEditingController();
-  final deadliftCtrl = TextEditingController();
-
-  DateTime meetDate = DateTime.now().add(
-    const Duration(days: 84),
-  );
-
-  @override
-  void dispose() {
-    squatCtrl.dispose();
-    benchCtrl.dispose();
-    deadliftCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(l10n.enterMaxes),
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(
-              controller: squatCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.squat1rm,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: benchCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.bench1rm,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: deadliftCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: l10n.deadlift1rm,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            FilledButton(
-              onPressed: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: meetDate,
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(
-                    const Duration(days: 365),
-                  ),
-                );
-
-                if (!context.mounted) return;
-
-                if (picked != null) {
-                  setState(() {
-                    meetDate = picked;
-                  });
-                }
-              },
-              child: Text(
-                '${l10n.meetDate}: '
-                '${meetDate.day}.${meetDate.month}.${meetDate.year}',
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final squat =
-                double.tryParse(squatCtrl.text);
-            final bench =
-                double.tryParse(benchCtrl.text);
-            final deadlift =
-                double.tryParse(deadliftCtrl.text);
-
-            if (squat == null ||
-                bench == null ||
-                deadlift == null) {
-              return;
-            }
-
-            Navigator.pop(
-              context,
-              _PowerliftingMaxes(
-                squat1rm: squat,
-                bench1rm: bench,
-                deadlift1rm: deadlift,
-                meetDate: meetDate,
-              ),
-            );
-          },
-          child: Text(l10n.createPlan),
-        ),
-      ],
-    );
-  }
-}
-
-
-
-class _BenchMeetDialog extends StatefulWidget {
-  const _BenchMeetDialog();
-
-  @override
-  State<_BenchMeetDialog> createState() => _BenchMeetDialogState();
-}
-
-class _BenchMeetDialogState extends State<_BenchMeetDialog> {
-  final benchCtrl = TextEditingController();
-
-  // Výchozí: závod za 12 týdnů (dnes = 1. týden).
-  DateTime meetDate = DateTime.now().add(
-    const Duration(days: _benchWeeks * 7 - 1),
-  );
-
-  @override
-  void dispose() {
-    benchCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return AlertDialog(
-      title: Text(l10n.enterMaxes),
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(
-              controller: benchCtrl,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: l10n.bench1rm,
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: meetDate,
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(
-                    const Duration(days: 730),
-                  ),
-                );
-
-                if (!context.mounted) return;
-
-                if (picked != null) {
-                  setState(() {
-                    meetDate = picked;
-                  });
-                }
-              },
-              child: Text(
-                '${l10n.meetDate}: '
-                '${meetDate.day}.${meetDate.month}.${meetDate.year}',
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            final bench = double.tryParse(
-              benchCtrl.text.trim().replaceAll(',', '.'),
-            );
-
-            if (bench == null || bench <= 0) return;
-
-            Navigator.pop(
-              context,
-              _BenchMeetInput(bench1rm: bench, meetDate: meetDate),
-            );
-          },
-          child: Text(l10n.createPlan),
-        ),
-      ],
-    );
-  }
 }
 
 class _TemplateCategorySection extends StatelessWidget {
@@ -3496,7 +1026,7 @@ class _PlanCard extends ConsumerWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => _PlanDetailScreen(
+        builder: (_) => CustomPlanDetailScreen(
           planId: plan.id,
         ),
       ),
@@ -3589,1095 +1119,4 @@ class _PlanCard extends ConsumerWidget {
       ),
     );
   }
-}
-
-class _PlanDetailScreen extends ConsumerWidget {
-  final String planId;
-
-  const _PlanDetailScreen({
-    required this.planId,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-
-    final allPlans = ref.watch(customTrainingPlanProvider);
-
-    CustomTrainingPlan? plan;
-
-    for (final p in allPlans) {
-      if (p.id == planId) {
-        plan = p;
-        break;
-      }
-    }
-
-    if (plan == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.planDetail),
-        ),
-        body: Center(
-          child: Text(l10n.planNotFound),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(plan.name),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                '${l10n.category}: ${_categoryLabel(context, plan.category)}\n'
-                '${l10n.description}: ${plan.description ?? l10n.noDescription}\n'
-                '${l10n.numberOfDays}: ${plan.days.length}',
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    await ref
-                        .read(customTrainingPlanProvider.notifier)
-                        .setActivePlan(
-                          clientId: plan!.clientId,
-                          planId: plan.id,
-                        );
-
-                    if (!context.mounted) return;
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const TrainingPlanScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.play_arrow),
-                  label: Text(l10n.activateAndOpen),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await ref
-                        .read(
-                          sharedTrainingTemplatesProvider
-                              .notifier,
-                        )
-                        .addTemplateFromPlan(plan!);
-
-                    if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          l10n.planSavedAsTemplate(plan.name),
-                        )
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.share),
-                  label: Text(l10n.shareAsTemplate),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _editPlanMetaDialog(
-                    context,
-                    ref,
-                    plan!,
-                  ),
-                  icon: const Icon(Icons.edit),
-                  label: Text(l10n.editInfo),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _addDayDialog(
-                    context,
-                    ref,
-                    plan!,
-                  ),
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.addDay),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          if (plan.days.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(l10n.planHasNoDays),
-              ),
-            )
-          else
-            ...List.generate(
-              plan.days.length,
-              (dayIndex) => _DayCard(
-                plan: plan!,
-                dayIndex: dayIndex,
-              ),
-            ),
-
-          const SizedBox(height: 12),
-
-          OutlinedButton.icon(
-            onPressed: () => _confirmDeletePlan(
-              context,
-              ref,
-              plan!,
-            ),
-            icon: const Icon(Icons.delete_outline),
-            label: Text(l10n.deleteWholePlan),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _editPlanMetaDialog(
-    BuildContext context,
-    WidgetRef ref,
-    CustomTrainingPlan plan,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final nameCtrl = TextEditingController(
-      text: plan.name,
-    );
-
-    final descriptionCtrl = TextEditingController(
-      text: plan.description ?? '',
-    );
-
-    CustomTrainingCategory selectedCategory =
-        plan.category;
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(l10n.editPlan),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                DropdownButtonFormField<CustomTrainingCategory>(
-                  initialValue: selectedCategory,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: l10n.category,
-                  ),
-                  items: CustomTrainingCategory.values
-                      .map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(
-                        _categoryLabel(context, category)
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-
-                    setState(() {
-                      selectedCategory = value;
-                    });
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: nameCtrl,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: l10n.planName,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: descriptionCtrl,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    labelText: l10n.description,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, false),
-              child: Text(l10n.cancel),
-            ),
-            ElevatedButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, true),
-              child: Text(l10n.save),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (ok == true && nameCtrl.text.trim().isNotEmpty) {
-      await ref
-          .read(customTrainingPlanProvider.notifier)
-          .updatePlanMeta(
-            planId: plan.id,
-            name: nameCtrl.text.trim(),
-            description:
-                descriptionCtrl.text.trim().isEmpty
-                    ? null
-                    : descriptionCtrl.text.trim(),
-            category: selectedCategory,
-          );
-    }
-  }
-}
-
-  Future<void> _confirmDeletePlan(
-  BuildContext context,
-  WidgetRef ref,
-  CustomTrainingPlan plan,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-
-  final first = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(l10n.reallyDeletePlan),
-      content: Text(
-        l10n.confirmDeletePlan(plan.name),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: Text(l10n.no),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: Text(l10n.yes),
-        ),
-      ],
-    ),
-  );
-
-  if (first != true) return;
-  if (!context.mounted) return;
-
-  final second = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(l10n.confirmDeletion),
-      content: Text(
-        l10n.deletePlanWarning,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: Text(l10n.back),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-          ),
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: Text(l10n.deleteForever),
-        ),
-      ],
-    ),
-  );
-
-  if (second == true) {
-    await ref
-        .read(customTrainingPlanProvider.notifier)
-        .deletePlan(plan.id);
-
-    if (!context.mounted) return;
-
-    Navigator.pop(context);
-  }
-}
-
-Future<void> _addDayDialog(
-  BuildContext context,
-  WidgetRef ref,
-  CustomTrainingPlan plan,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-  final ctrl = TextEditingController();
-
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(l10n.addTrainingDay),
-      content: TextField(
-        controller: ctrl,
-        decoration: InputDecoration(
-          border: const OutlineInputBorder(),
-          labelText: l10n.dayName,
-          hintText: l10n.dayNameHint,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: Text(l10n.add),
-        ),
-      ],
-    ),
-  );
-
-  if (ok == true && ctrl.text.trim().isNotEmpty) {
-    await ref
-        .read(customTrainingPlanProvider.notifier)
-        .addDay(
-          planId: plan.id,
-          dayName: ctrl.text.trim(),
-        );
-  }
-}
-
-
-class _DayCard extends ConsumerWidget {
-  final CustomTrainingPlan plan;
-  final int dayIndex;
-
-  const _DayCard({
-    required this.plan,
-    required this.dayIndex,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final day = plan.days[dayIndex];
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      elevation: 0,
-      child: ExpansionTile(
-        title: Text(day.name),
-        subtitle: Text(
-          '${l10n.exercises}: ${day.exercises.length}',
-        ),
-        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showAddExerciseOptions(
-                    context,
-                    ref,
-                    plan.id,
-                    dayIndex,
-                  ),
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.addExercise),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () =>
-                      _confirmDeleteDay(context, ref),
-                  icon: const Icon(Icons.delete_outline),
-                  label: Text(l10n.deleteDay),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _confirmDeleteDay(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final first = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.reallyDeleteDay),
-        content: Text(
-          l10n.confirmDeleteDay(plan.days[dayIndex].name),
-        ),
-                actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, false),
-            child: Text(l10n.no),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, true),
-            child: Text(l10n.yes),
-          ),
-        ],
-      ),
-    );
-
-    if (first != true) return;
-    if (!context.mounted) return;
-
-    final second = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.confirmDeletion),
-        content: Text(
-          l10n.deleteDayWarning,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, false),
-            child: Text(l10n.back),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            onPressed: () =>
-                Navigator.pop(dialogContext, true),
-            child: Text(l10n.deleteForever),
-          ),
-        ],
-      ),
-    );
-
-    if (second == true) {
-      await ref
-          .read(customTrainingPlanProvider.notifier)
-          .removeDay(
-            planId: plan.id,
-            dayIndex: dayIndex,
-          );
-    }
-  }
-  Future<void> _showAddExerciseOptions(
-  BuildContext context,
-  WidgetRef ref,
-  String planId,
-  int dayIndex,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-
-  final choice = await showModalBottomSheet<String>(
-    context: context,
-    builder: (sheetContext) => SafeArea(
-      child: Wrap(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.fitness_center),
-            title: Text(l10n.selectFromExerciseDatabase),
-            onTap: () => Navigator.pop(sheetContext, 'db'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit_note),
-            title: Text(l10n.enterCustomExerciseManually),
-            onTap: () => Navigator.pop(sheetContext, 'custom'),
-          ),
-        ],
-      ),
-    ),
-  );
-
-  if (!context.mounted) return;
-
-  if (choice == 'db') {
-    await _addExerciseFromDatabaseDialog(
-      context,
-      ref,
-      planId,
-      dayIndex,
-    );
-  } else if (choice == 'custom') {
-    await _addCustomExerciseDialog(
-      context,
-      ref,
-      planId,
-      dayIndex,
-    );
-  }
-}
-
-Future<void> _addExerciseFromDatabaseDialog(
-  BuildContext context,
-  WidgetRef ref,
-  String planId,
-  int dayIndex,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-
-  final Exercise? selected =
-      await Navigator.push<Exercise>(
-    context,
-    MaterialPageRoute(
-      builder: (_) =>
-          const _ExerciseDatabasePickerScreen(),
-    ),
-  );
-
-  if (selected == null) return;
-  if (!context.mounted) return;
-
-  final setsCtrl = TextEditingController(text: '3');
-  final repsCtrl = TextEditingController(text: '8–12');
-  final rirCtrl = TextEditingController(text: '2');
-  final noteCtrl = TextEditingController();
-
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(selected.displayName),
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(
-              controller: setsCtrl,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.sets,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: repsCtrl,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.repsOrTime,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: rirCtrl,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: l10n.rir
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: noteCtrl,
-              maxLines: 2,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.note,
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () =>
-              Navigator.pop(dialogContext, false),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () =>
-              Navigator.pop(dialogContext, true),
-          child: Text(l10n.add),
-        ),
-      ],
-    ),
-  );
-
-  if (ok == true) {
-    await ref
-        .read(customTrainingPlanProvider.notifier)
-        .addExerciseToDay(
-          planId: planId,
-          dayIndex: dayIndex,
-          exercise: CustomTrainingExercise(
-            exerciseId: selected.id,
-            customName: selected.displayName,
-            sets: setsCtrl.text.trim().isEmpty
-                ? '3'
-                : setsCtrl.text.trim(),
-            reps: repsCtrl.text.trim().isEmpty
-                ? '8–12'
-                : repsCtrl.text.trim(),
-            rir: rirCtrl.text.trim().isEmpty
-                ? '2'
-                : rirCtrl.text.trim(),
-            note: noteCtrl.text.trim().isEmpty
-                ? null
-                : noteCtrl.text.trim(),
-          ),
-        );
-  }
-}
-
-Future<void> _addCustomExerciseDialog(
-  BuildContext context,
-  WidgetRef ref,
-  String planId,
-  int dayIndex,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-
-  final nameCtrl = TextEditingController();
-  final setsCtrl = TextEditingController(text: '3');
-  final repsCtrl = TextEditingController(text: '8–12');
-  final rirCtrl = TextEditingController(text: '2');
-  final noteCtrl = TextEditingController();
-
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(l10n.addCustomExercise),
-      content: SingleChildScrollView(
-        child: Column(
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.exerciseName,
-                hintText: l10n.exerciseNameHint,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: setsCtrl,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.sets,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: repsCtrl,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.repsOrTime,
-                hintText: l10n.repsOrTimeHint,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: rirCtrl,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.rir
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: noteCtrl,
-              maxLines: 2,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: l10n.note,
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () =>
-              Navigator.pop(dialogContext, false),
-          child: Text(l10n.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () =>
-              Navigator.pop(dialogContext, true),
-          child: Text(l10n.add),
-        ),
-      ],
-    ),
-  );
-
-  if (ok == true &&
-      nameCtrl.text.trim().isNotEmpty) {
-    await ref
-        .read(customTrainingPlanProvider.notifier)
-        .addExerciseToDay(
-          planId: planId,
-          dayIndex: dayIndex,
-          exercise: CustomTrainingExercise(
-            exerciseId: null,
-            customName: nameCtrl.text.trim(),
-            sets: setsCtrl.text.trim().isEmpty
-                ? '3'
-                : setsCtrl.text.trim(),
-            reps: repsCtrl.text.trim().isEmpty
-                ? '8–12'
-                : repsCtrl.text.trim(),
-            rir: rirCtrl.text.trim().isEmpty
-                ? '2'
-                : rirCtrl.text.trim(),
-            note: noteCtrl.text.trim().isEmpty
-                ? null
-                : noteCtrl.text.trim(),
-          ),
-        );
-  }
-}
-}
-// ignore: unused_element
-class _ExerciseTile extends ConsumerWidget {
-  final String planId;
-  final int dayIndex;
-  final int exerciseIndex;
-  final CustomTrainingExercise exercise;
-
-  const _ExerciseTile({
-    required this.planId,
-    required this.dayIndex,
-    required this.exerciseIndex,
-    required this.exercise,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(exercise.customName),
-        subtitle: Text(
-          '${exercise.sets} × ${exercise.reps}'
-          '${exercise.weightKg != null ? ' | ${exercise.weightKg!.toStringAsFixed(1)} kg' : ''}'
-          ' | RIR ${exercise.rir}'
-          '${exercise.note != null ? '\n${exercise.note}' : ''}',
-        ),
-        onTap: () => _editExerciseDialog(
-          context,
-          ref,
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () => _confirmDeleteExercise(
-            context,
-            ref,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _confirmDeleteExercise(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.deleteExerciseQuestion),
-        content: Text(
-          l10n.confirmDeleteExercise(exercise.customName),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, false),
-            child: Text(l10n.no),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            onPressed: () =>
-                Navigator.pop(dialogContext, true),
-            child: Text(l10n.yesDelete),
-          ),
-        ],
-      ),
-    );
-
-    if (ok == true) {
-      await ref
-          .read(customTrainingPlanProvider.notifier)
-          .removeExerciseFromDay(
-            planId: planId,
-            dayIndex: dayIndex,
-            exerciseIndex: exerciseIndex,
-          );
-    }
-  }
-
-  Future<void> _editExerciseDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final nameCtrl = TextEditingController(
-      text: exercise.customName,
-    );
-
-    final setsCtrl = TextEditingController(
-      text: exercise.sets,
-    );
-
-    final repsCtrl = TextEditingController(
-      text: exercise.reps,
-    );
-
-    final rirCtrl = TextEditingController(
-      text: exercise.rir,
-    );
-
-    final noteCtrl = TextEditingController(
-      text: exercise.note ?? '',
-    );
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.editExercise),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: l10n.exerciseName,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: setsCtrl,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: l10n.sets,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: repsCtrl,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: l10n.repsOrTime,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: rirCtrl,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: l10n.rir
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: noteCtrl,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: l10n.note,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, false),
-            child: Text(l10n.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, true),
-            child: Text(l10n.save),
-          ),
-        ],
-      ),
-    );
-
-    if (ok == true &&
-        nameCtrl.text.trim().isNotEmpty) {
-      await ref
-          .read(customTrainingPlanProvider.notifier)
-          .updateExerciseInDay(
-            planId: planId,
-            dayIndex: dayIndex,
-            exerciseIndex: exerciseIndex,
-            exercise: CustomTrainingExercise(
-              exerciseId: exercise.exerciseId,
-              customName: nameCtrl.text.trim(),
-              sets: setsCtrl.text.trim().isEmpty
-                  ? '3'
-                  : setsCtrl.text.trim(),
-              reps: repsCtrl.text.trim().isEmpty
-                  ? '8–12'
-                  : repsCtrl.text.trim(),
-              rir: rirCtrl.text.trim().isEmpty
-                  ? '2'
-                  : rirCtrl.text.trim(),
-              weightKg: exercise.weightKg,
-              note: noteCtrl.text.trim().isEmpty
-                  ? null
-                  : noteCtrl.text.trim(),
-            ),
-          );
-    }
-  }
-}
-
-class _ExerciseDatabasePickerScreen
-    extends StatefulWidget {
-  const _ExerciseDatabasePickerScreen();
-
-  @override
-  State<_ExerciseDatabasePickerScreen>
-      createState() =>
-          _ExerciseDatabasePickerScreenState();
-}
-
-class _ExerciseDatabasePickerScreenState
-    extends State<_ExerciseDatabasePickerScreen> {
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final filtered = ExerciseDB.all.where((e) {
-      if (_query.trim().isEmpty) return true;
-
-      final q = _query.trim().toLowerCase();
-
-      return e.name.toLowerCase().contains(q) ||
-          e.displayName.toLowerCase().contains(q) ||
-          (e.czName?.toLowerCase().contains(q) ??
-              false);
-    }).toList();
-
-   return Scaffold(
-  appBar: AppBar(
-    title: Text(
-      l10n.selectExerciseFromDatabase,
-    ),
-  ),
-  body: Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(
-          12,
-          12,
-          12,
-          8,
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: l10n.searchExercise,
-          ),
-          onChanged: (v) {
-            setState(() {
-              _query = v;
-            });
-          },
-        ),
-      ),
-
-      Expanded(
-        child: filtered.isEmpty
-            ? Center(
-                child: Text(
-                  l10n.noExerciseFound,
-                ),
-              )
-            : ListView.builder(
-                itemCount: filtered.length,
-                itemBuilder: (_, index) {
-                  final ex = filtered[index];
-
-                  return Card(
-                    child: ListTile(
-                      title: Text(ex.displayName),
-                      subtitle: Text(
-                        'Anglicky: ${ex.name}\n'
-                        'Vybavení: ${ex.equipment.join(', ')}',
-                      ),
-                                     onTap: () => Navigator.pop(
-                      context,
-                      ex,
-                    ),
-                  ),
-                );
-              },
-            ),
-        ),
-      ],
-    ),
-  );
-}
 }

@@ -11,6 +11,7 @@ import '../../../providers/coach/coach_circumference_controller.dart';
 import '../../../providers/coach/coach_inbody_controller.dart';
 import '../../../providers/performance_provider.dart';
 import '../../../services/pdf/client_report_pdf_service.dart';
+import '../../../providers/subscription/subscription_provider.dart';
 
 class ClientMonthlyReportScreen extends ConsumerStatefulWidget {
   final CoachClient client;
@@ -45,17 +46,29 @@ class _ClientMonthlyReportScreenState
       59,
     );
 
-    final linkedAt = widget.client.linkedAt;
-    final suggestedFrom =
-        DateTime(now.year, now.month - 1, now.day);
+    // Výchozí je celé období spolupráce – při měření jednou měsíčně
+    // by kratší období obsahovalo jen jedno měření a nebylo by s čím
+    // porovnávat. Minulý měsíc zvlášť ukazuje sloupec „Od minula“.
+    _applyPreset(0);
+  }
 
-    _dateFrom = linkedAt.isAfter(suggestedFrom)
-        ? DateTime(
-            linkedAt.year,
-            linkedAt.month,
-            linkedAt.day,
-          )
-        : suggestedFrom;
+  /// Rychlá volba období: 0 = od začátku, jinak počet měsíců zpět.
+  int _preset = 0;
+
+  /// Černobílý tisk (pro černobílé tiskárny, šetří toner).
+  bool _blackAndWhite = false;
+
+  void _applyPreset(int months) {
+    final now = DateTime.now();
+    final linked = widget.client.linkedAt;
+    final start = DateTime(linked.year, linked.month, linked.day);
+    var from = months == 0
+        ? start
+        : DateTime(now.year, now.month - months, now.day);
+    if (from.isBefore(start)) from = start;
+    _preset = months;
+    _dateFrom = from;
+    _dateTo = DateTime(now.year, now.month, now.day, 23, 59, 59);
   }
 
   Future<void> _pickFromDate() async {
@@ -68,6 +81,7 @@ class _ClientMonthlyReportScreenState
 
     if (picked != null) {
       setState(() {
+        _preset = -1;
         _dateFrom = DateTime(
           picked.year,
           picked.month,
@@ -89,6 +103,7 @@ class _ClientMonthlyReportScreenState
 
     if (picked != null) {
       setState(() {
+        _preset = -1;
         _dateTo = DateTime(
           picked.year,
           picked.month,
@@ -105,6 +120,7 @@ class _ClientMonthlyReportScreenState
     required List<CoachInbodyEntry> inbody,
     required List<CoachCircumferenceEntry> circs,
     required List<ExercisePerformance> performances,
+    bool share = false,
   }) async {
     final pdf = await ClientReportPdfService.generate(
       client: widget.client,
@@ -113,9 +129,22 @@ class _ClientMonthlyReportScreenState
       inbody: inbody,
       circs: circs,
       performances: performances,
+      blackAndWhite: _blackAndWhite,
+      trialWatermark: !ref.read(accessProvider).cleanPdf,
     );
 
+    final name = '${widget.client.displayName.trim().replaceAll(' ', '_')}'
+        '_souhrn_${_dateTo.year}-${_dateTo.month.toString().padLeft(2, '0')}'
+        '-${_dateTo.day.toString().padLeft(2, '0')}.pdf';
+
+    if (share) {
+      await Printing.sharePdf(bytes: await pdf.save(), filename: name);
+      return;
+    }
+
+    // Systémový dialog tisku – nabízí i „Uložit jako PDF“.
     await Printing.layoutPdf(
+      name: name,
       onLayout: (format) async => pdf.save(),
     );
   }
@@ -167,8 +196,20 @@ class _ClientMonthlyReportScreenState
         title: Text(l10n.clientAnalysis),
         actions: [
           IconButton(
+            tooltip: 'Sdílet PDF',
+            icon: const Icon(Icons.share),
+            onPressed: () async {
+              await _exportPdf(
+                inbody: filteredInbody,
+                circs: filteredCircs,
+                performances: filteredPerformances,
+                share: true,
+              );
+            },
+          ),
+          IconButton(
             tooltip: l10n.exportPdf,
-            icon: const Icon(Icons.picture_as_pdf),
+            icon: const Icon(Icons.print),
             onPressed: () async {
               await _exportPdf(
                 inbody: filteredInbody,
@@ -221,6 +262,26 @@ class _ClientMonthlyReportScreenState
 
               const SizedBox(height: 12),
 
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final o in const [
+                    (0, 'Od začátku'),
+                    (6, 'Půl roku'),
+                    (3, '3 měsíce'),
+                    (1, 'Poslední měsíc'),
+                  ])
+                    ChoiceChip(
+                      label: Text(o.$2),
+                      selected: _preset == o.$1,
+                      onSelected: (_) => setState(() => _applyPreset(o.$1)),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
               Row(
                 children: [
                   Expanded(
@@ -245,6 +306,19 @@ class _ClientMonthlyReportScreenState
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(height: 4),
+
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.print_outlined),
+                title: const Text('Černobílý tisk'),
+                subtitle: const Text(
+                  'Pro černobílou tiskárnu – bez barevných ploch, šetří toner.',
+                ),
+                value: _blackAndWhite,
+                onChanged: (v) => setState(() => _blackAndWhite = v),
               ),
             ],
           ),

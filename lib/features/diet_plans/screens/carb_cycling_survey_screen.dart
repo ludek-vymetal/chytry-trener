@@ -224,8 +224,6 @@ class _CarbCyclingSurveyScreenState
               height: 55,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Colors.orangeAccent,
                   shape:
                       RoundedRectangleBorder(
                     borderRadius:

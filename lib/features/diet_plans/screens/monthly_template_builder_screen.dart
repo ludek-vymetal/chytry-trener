@@ -251,13 +251,13 @@ class _MonthlyTemplateBuilderScreenState
                 FilledButton.icon(
                   onPressed: () => _previewMonth(weeklyPlans),
                   icon: const Icon(Icons.visibility_outlined),
-                  label: const Text('NÁHLED MĚSÍČNÍHO PLÁNU'),
+                  label: const Text('Náhled měsíčního plánu'),
                 ),
                 const SizedBox(height: 12),
                 FilledButton.tonalIcon(
                   onPressed: () => _saveMonth(weeklyPlans),
                   icon: const Icon(Icons.save_outlined),
-                  label: const Text('ULOŽIT MĚSÍČNÍ JÍDELNÍČEK'),
+                  label: const Text('Uložit měsíční jídelníček'),
                 ),
               ],
             ),

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/role/role_select_screen.dart';
+import '../../providers/coach/app_role_provider.dart';
 import '../../providers/coach/active_client_provider.dart';
 import '../../providers/user_profile_provider.dart';
+import '../../features/coach/auth/coach_pin_gate.dart';
 
 Future<void> switchToRoleSelect(BuildContext context, WidgetRef ref) async {
   final profileNotifier = ref.read(userProfileProvider.notifier);
@@ -30,10 +31,11 @@ Future<void> switchToRoleSelect(BuildContext context, WidgetRef ref) async {
     'stateGoal=${detachedProfile?.goal?.type.name}/${detachedProfile?.goal?.reason.name}',
   );
 
-  if (!context.mounted) return;
+  // Trenérský režim se po změně režimu znovu zamkne PINem.
+  CoachPinGate.lock();
 
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-    (_) => false,
-  );
+  // 3) zruš uloženou roli – aplikace se sama vrátí na výběr režimu.
+  //    (Dřív se výběr jen „přidal“ nad současný režim; když pak uživatel
+  //    zvolil stejný režim, role se nezměnila a nic se nestalo.)
+  await ref.read(appRoleProvider.notifier).setRole(null);
 }

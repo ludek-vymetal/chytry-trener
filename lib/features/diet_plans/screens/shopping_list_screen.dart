@@ -4,6 +4,8 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/diet_settings_provider.dart';
+import '../../../providers/subscription/subscription_provider.dart';
+import '../../paywall/paywall_screen.dart';
 import '../logic/keto_calculator.dart';
 import '../models/carb_cycling_food_logic.dart';
 import '../models/carb_cycling_plan.dart';
@@ -184,6 +186,14 @@ class _ShoppingListScreenState
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context)!;
+
+    if (!ref.watch(accessProvider).shoppingList) {
+      return const LockedFeatureScreen(
+        title: 'Nákupní seznam',
+        description: 'V plné verzi se ti z jídelníčku sám vytvoří nákupní '
+            'seznam na celý týden – s gramážemi a možností sdílet ho.',
+      );
+    }
 
     _generateList(l10n);
 

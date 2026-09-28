@@ -36,23 +36,30 @@ class OnboardingGoalScreen
     final l10n =
         AppLocalizations.of(context)!;
 
+    // Otevřeno z jiné obrazovky (změna cíle, trenér u klienta) → normální
+    // šipka zpět; přepínač režimu jen při prvním nastavení.
+    final canPop = Navigator.of(context).canPop();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           l10n.changeGoal,
         ),
-        leading: IconButton(
-          icon: const Icon(
-            Icons.swap_horiz,
-          ),
-          tooltip: l10n.changeMode,
-          onPressed: () =>
-              switchToRoleSelect(
-            context,
-            ref,
-          ),
-        ),
+        leading: canPop
+            ? null
+            : IconButton(
+                icon: const Icon(
+                  Icons.swap_horiz,
+                ),
+                tooltip: l10n.changeMode,
+                onPressed: () =>
+                    switchToRoleSelect(
+                  context,
+                  ref,
+                ),
+              ),
         actions: [
+          if (!canPop)
           TextButton(
             onPressed: () =>
                 switchToRoleSelect(

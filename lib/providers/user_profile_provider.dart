@@ -11,6 +11,7 @@ import '../models/body_circumference.dart';
 import '../models/goal.dart';
 import '../models/measurement.dart';
 import '../models/user_profile.dart';
+import '../services/coach/extra_backup_service.dart';
 
 class UserProfileNotifier extends StateNotifier<UserProfile?> {
   UserProfileNotifier() : super(null) {
@@ -117,6 +118,12 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
       final jsonString = json.encode(safeProfile.toJson());
       await prefs.setString(key, jsonString);
+      // Čas změny – podle něj se při online coachingu pozná novější profil.
+      await prefs.setString(
+        'profile_updated_at_${safeProfile.clientId ?? ''}',
+        DateTime.now().toUtc().toIso8601String(),
+      );
+      ExtraBackupService.schedulePush();
 
       state = safeProfile;
 

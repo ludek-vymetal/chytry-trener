@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/goal.dart';
+import '../../providers/coach/app_role_provider.dart';
 import '../../providers/user_profile_provider.dart';
-import '../dashboard/dashboard_screen.dart';
+import '../home/user_shell.dart';
 
 class GoalDetailScreen extends ConsumerStatefulWidget {
   final GoalType type;
@@ -44,6 +45,26 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
     if (_isGainSupport) {
       _date = DateTime.now().add(const Duration(days: 120));
       _showTargetWeightForGain = false;
+      return;
+    }
+
+    // Rozumné předvolby – uživatel může rovnou pokračovat
+    // a jen případně upravit.
+    _reason = _defaultReason();
+    if (_isPhysique) _phase = GoalPhase.build;
+  }
+
+  GoalReason _defaultReason() {
+    switch (widget.type) {
+      case GoalType.strength:
+      case GoalType.endurance:
+        return GoalReason.performance;
+      case GoalType.physique:
+        return GoalReason.aesthetic;
+      case GoalType.weightLoss:
+        return GoalReason.health;
+      case GoalType.weightGainSupport:
+        return GoalReason.eatingDisorderSupport;
     }
   }
 
@@ -134,10 +155,7 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        (_) => false,
-      );
+      _finishGoal();
       return;
     }
 
@@ -181,8 +199,20 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
     if (!mounted) {
       return;
     }
+    _finishGoal();
+  }
+
+  /// Po uložení cíle: trenér (nastavuje cíl klientovi z detailu klienta)
+  /// se vrátí zpět do detailu, běžný uživatel jde na přehled.
+  void _finishGoal() {
+    if (ref.read(appRoleProvider) == AppRole.coach) {
+      Navigator.of(context)
+        ..pop()
+        ..pop();
+      return;
+    }
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      MaterialPageRoute(builder: (_) => const UserShell()),
       (_) => false,
     );
   }
@@ -215,10 +245,7 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
     if (!mounted) {
       return;
     }
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      (_) => false,
-    );
+    _finishGoal();
   }
 
   Future<bool> _validatePhysiqueDateAndOfferModes() async {
@@ -375,19 +402,25 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
             border: OutlineInputBorder(),
           ),
         ),
-        const SizedBox(height: 24),
-        TextField(
-          controller: _noteController,
-          decoration: const InputDecoration(
-            labelText: 'Poznámka (nepovinné)',
-            hintText: 'např. Mistrovství ČR v trojboji',
-            border: OutlineInputBorder(),
-          ),
+        const SizedBox(height: 8),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: const Text('Poznámka (nepovinné)'),
+          children: [
+            TextField(
+              controller: _noteController,
+              decoration: const InputDecoration(
+                hintText: 'např. Mistrovství ČR v trojboji',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: _save,
             child: const Text('Pokračovat'),
           ),

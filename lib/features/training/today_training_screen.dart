@@ -96,7 +96,7 @@ class TodayTrainingScreen extends ConsumerWidget {
           );
         }
 
-        return '➡️ ${decision.reason}';
+        return decision.reason;
 
       case ProgressAction.keep:
         if (next != null) {
@@ -105,10 +105,10 @@ class TodayTrainingScreen extends ConsumerWidget {
           );
         }
 
-        return '➡️ ${decision.reason}';
+        return decision.reason;
 
       case ProgressAction.noData:
-        return '➡️ ${decision.reason}';
+        return decision.reason;
     }
   }
 

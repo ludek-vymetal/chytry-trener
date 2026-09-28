@@ -42,7 +42,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coachMode => 'Coach Mode';
 
   @override
-  String get switchToThisProfile => 'SWITCH TO THIS PROFILE';
+  String get switchToThisProfile => 'Switch to this profile';
 
   @override
   String get profileActivatedUserMode => 'Profile activated. Mode: User.';
@@ -60,10 +60,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subscriptionInactive => 'Subscription is not active.';
 
   @override
-  String get activeCoachClient => 'Active: Coach + Client ✅';
+  String get activeCoachClient => 'Active: coach and client mode';
 
   @override
-  String get activeClientCoachLocked => 'Active: Client ✅ (Coach locked)';
+  String get activeClientCoachLocked => 'Active: client mode (coach mode locked)';
 
   @override
   String get noAccess => 'No access';
@@ -159,10 +159,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sharePdf => 'Share PDF';
 
   @override
-  String get dailyCarbIntake => 'DAILY CARBOHYDRATE INTAKE';
+  String get dailyCarbIntake => 'Daily carbohydrate intake';
 
   @override
-  String get weeklyCarbBank => 'YOUR WEEKLY CARB BANK';
+  String get weeklyCarbBank => 'Your weekly carb budget';
 
   @override
   String get proteinLabel => 'Protein';
@@ -171,19 +171,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fatsLabel => 'Fats';
 
   @override
-  String get generateShoppingList => 'GENERATE SHOPPING LIST';
+  String get generateShoppingList => 'Generate shopping list';
 
   @override
-  String get showFullWeeklyMealPlan => 'SHOW FULL WEEKLY MEAL PLAN';
+  String get showFullWeeklyMealPlan => 'Show full weekly meal plan';
 
   @override
   String get dayMealBreakdown => 'Daily breakdown and meal plan:';
 
   @override
-  String get refeedDay => 'REFEED DAY 🚀';
+  String get refeedDay => 'Refeed day';
 
   @override
-  String get closeAndActivate => 'CLOSE AND ACTIVATE';
+  String get closeAndActivate => 'Close and activate';
 
   @override
   String get setupProfileAndGoalFirst => 'Please set up profile and goal first.';
@@ -477,13 +477,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hydrationQuestion => 'Do you drink at least 2–3 liters of water daily?';
 
   @override
-  String get evaluateReadiness => 'EVALUATE READINESS';
+  String get evaluateReadiness => 'Evaluate readiness';
 
   @override
-  String get approved => 'APPROVED';
+  String get approved => 'Approved';
 
   @override
-  String get notRecommended => 'NOT RECOMMENDED';
+  String get notRecommended => 'Not recommended';
 
   @override
   String get iUnderstand => 'I Understand';
@@ -522,7 +522,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yourWeeklyKetoPlan => 'Your Weekly Keto Plan';
 
   @override
-  String get openFullWeek => 'OPEN FULL WEEK';
+  String get openFullWeek => 'Open full week';
 
   @override
   String get weeklyKetoMealPlan => 'Weekly Keto Meal Plan';
@@ -943,16 +943,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get valueCannotBeNegative => 'Value cannot be negative';
 
   @override
-  String get phaseLogicCoreTest => 'PHASE LOGIC TEST (CORE)';
+  String get phaseLogicCoreTest => 'Phase logic test';
 
   @override
   String get profileOrGoalNotSet => 'Profile or goal is not set';
 
   @override
-  String get dataSource => 'DATA SOURCE';
+  String get dataSource => 'Data source';
 
   @override
-  String get goal => 'GOAL';
+  String get goal => 'Goal';
 
   @override
   String get reason => 'Reason';
@@ -964,7 +964,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weeksToGoal => 'Weeks to goal';
 
   @override
-  String get currentEvaluation => 'CURRENT EVALUATION';
+  String get currentEvaluation => 'Current evaluation';
 
   @override
   String get currentPhase => 'Current phase';
@@ -976,7 +976,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeSegment => 'Active segment';
 
   @override
-  String get foodStrategy => 'FOOD STRATEGY';
+  String get foodStrategy => 'Food strategy';
 
   @override
   String get calorieMultiplier => 'Calorie multiplier';
@@ -985,10 +985,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get highCarbs => 'High carbs';
 
   @override
-  String get phasePlan => 'PHASE PLAN';
+  String get phasePlan => 'Phase plan';
 
   @override
-  String get finalMacros => 'FINAL MACROS';
+  String get finalMacros => 'Final macros';
 
   @override
   String get coreEngineInfo => 'Everything is controlled by date through the Core engine.';
@@ -1081,16 +1081,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lastMeal => 'Last meal';
 
   @override
-  String get ketoShoppingListTitle => '🛒 MY KETO SHOPPING LIST';
+  String get ketoShoppingListTitle => 'My keto shopping list';
 
   @override
-  String get fastingShoppingListTitle => '🛒 MY FASTING SHOPPING LIST';
+  String get fastingShoppingListTitle => 'My fasting shopping list';
 
   @override
-  String get shoppingListTitle => '🛒 MY SHOPPING LIST';
+  String get shoppingListTitle => 'My shopping list';
 
   @override
-  String get generatedBySmartCoach => 'Generated by your smart coach 🍏';
+  String get generatedBySmartCoach => 'Generated by Chytrý trenér';
 
   @override
   String get ketoShopping => 'Keto Shopping';
@@ -1246,7 +1246,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFoodYet => 'There is no food yet. Add your first meal.';
 
   @override
-  String get allSlotsAdded => 'Added ✅ (all slots)';
+  String get allSlotsAdded => 'Added to all meals of the day';
 
   @override
   String get manualOverrideHint => 'Tip: when you edit something manually, the solver will no longer recalculate it.';
@@ -2203,7 +2203,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nextTimeWeight(Object weight, Object delta) {
-    return '➡️ Next time use $weight kg ($delta)';
+    return 'Next time use $weight kg ($delta)';
   }
 
   @override
@@ -2216,7 +2216,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedMealPlansDescription => 'Load your own complete weekly or monthly templates and reuse them anytime.';
 
   @override
-  String get openMealDatabase => 'OPEN MEAL PLAN DATABASE';
+  String get openMealDatabase => 'Open meal plan database';
 
   @override
   String get createCustomMealPlan => 'Create Custom Meal Plan';
@@ -2225,7 +2225,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createCustomMealPlanDescription => 'Manually build a daily meal plan from prepared meals and save it as your own template.';
 
   @override
-  String get openDailyEditor => 'OPEN DAILY EDITOR';
+  String get openDailyEditor => 'Open daily editor';
 
   @override
   String get foodComboLibrary => 'Food Combo Library';
@@ -2234,7 +2234,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foodComboLibraryDescription => 'Browse, duplicate, edit and delete your saved food combos.';
 
   @override
-  String get openFoodComboLibrary => 'OPEN FOOD COMBO LIBRARY';
+  String get openFoodComboLibrary => 'Open ready meal library';
 
   @override
   String get createFoodCombo => 'Create Food Combo';
@@ -2243,7 +2243,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createFoodComboDescription => 'Build your own meal from individual foods and save it into the combo library.';
 
   @override
-  String get openFoodComboEditor => 'OPEN FOOD COMBO EDITOR';
+  String get openFoodComboEditor => 'Open ready meal editor';
 
   @override
   String get weekBuilder => 'Build Week From Daily Templates';
@@ -2252,7 +2252,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weekBuilderDescription => 'Choose a daily template for each day and create a complete weekly meal plan.';
 
   @override
-  String get openWeeklyBuilder => 'OPEN WEEKLY BUILDER';
+  String get openWeeklyBuilder => 'Open weekly template';
 
   @override
   String get monthBuilder => 'Build Month From Weeks';
@@ -2261,7 +2261,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get monthBuilderDescription => 'Choose 4 saved weekly meal plans and combine them into a complete monthly plan.';
 
   @override
-  String get openMonthlyBuilder => 'OPEN MONTHLY BUILDER';
+  String get openMonthlyBuilder => 'Open monthly template';
 
   @override
   String get linearPlanTitle => 'Constant Intake (Linear)';
@@ -2270,7 +2270,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linearPlanDescription => 'Same macros every day. The easiest path for stable muscle growth.';
 
   @override
-  String get activateAndOpenPlan => 'ACTIVATE AND OPEN PLAN';
+  String get activateAndOpenPlan => 'Activate and open plan';
 
   @override
   String get carbCyclingTitle => 'Carb Cycling';
@@ -2279,7 +2279,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get carbCyclingDescription => 'Carbohydrate cycling for fat loss.';
 
   @override
-  String get startAnalysisAndCycling => 'START ANALYSIS AND CYCLING';
+  String get startAnalysisAndCycling => 'Start analysis and carb cycling';
 
   @override
   String get ketoDietTitle => 'Keto Diet';
@@ -2288,7 +2288,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ketoDietDescription => 'High fat intake with minimal carbohydrates.';
 
   @override
-  String get selectKetoAndPreferences => 'SELECT KETO AND ADJUST PREFERENCES';
+  String get selectKetoAndPreferences => 'Select keto and adjust preferences';
 
   @override
   String get fastingTitle => 'Intermittent Fasting';
@@ -2297,10 +2297,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fastingDescription => 'Time-restricted eating window. Helps improve recovery.';
 
   @override
-  String get setMealTimes => 'SET MEAL TIMES';
+  String get setMealTimes => 'Set meal times';
 
   @override
-  String get enterMealPlan => 'ENTER MEAL PLAN';
+  String get enterMealPlan => 'Open meal plan';
 
   @override
   String get mainSquatExercise => 'Main squat exercise';
@@ -2495,7 +2495,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fastingLengthQuestion => 'How long fasting period do you prefer?';
 
   @override
-  String get fastingWindowQuestion => 'WHEN DOES YOUR EATING WINDOW START?';
+  String get fastingWindowQuestion => 'When does your eating window start?';
 
   @override
   String get setGoalFirst => 'Set your goal first.';
@@ -2605,19 +2605,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get salmonOption => 'Salmon (I don\'t like fish)';
 
   @override
-  String get generatePlanButton => 'THAT\'S FINE, GENERATE!';
+  String get generatePlanButton => 'Fine, generate the plan';
 
   @override
   String editTime(Object time) {
-    return 'EDIT TIME ($time)';
+    return 'Edit time ($time)';
   }
 
   @override
-  String get newBadge => 'NEW';
+  String get newBadge => 'New';
 
   @override
   String nextTimeKeepWeight(Object weight) {
-    return '➡️ Keep $weight kg next time';
+    return 'Keep $weight kg next time';
   }
 
   @override
@@ -2719,7 +2719,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get originalDaysStaySaved => 'Original days in the plan will remain saved.';
 
   @override
-  String get mainLift => 'MAIN LIFT';
+  String get mainLift => 'Main lift';
 
   @override
   String get reps => 'Reps';
@@ -2925,7 +2925,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get equipment => 'Equipment';
 
   @override
-  String get completed => 'Completed ✅';
+  String get completed => 'Completed';
 
   @override
   String noMealsInCategory(Object category) {
@@ -3032,7 +3032,105 @@ class AppLocalizationsEn extends AppLocalizations {
   String get budgetShort => 'Budget';
 
   @override
-  String get benchInsertPlan => '🏋️ INSERT RUSSIAN CYCLE – BENCH PRESS (MEET)';
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get helpTitle => 'Help';
+
+  @override
+  String get dangerZone => 'Irreversible actions';
+
+  @override
+  String get importExport => 'Import / export';
+
+  @override
+  String get changeMealPlanTitle => 'Change meal plan?';
+
+  @override
+  String get changeMealPlanConfirm => 'Change';
+
+  @override
+  String changeMealPlanBody(Object program) {
+    return 'The program $program is active now. After the change, calories and macros across the app are recalculated for the new meal plan.';
+  }
+
+  @override
+  String get myMealPlan => 'My meal plan';
+
+  @override
+  String get openMealPlan => 'Whole week';
+
+  @override
+  String get navToday => 'Today';
+
+  @override
+  String get navFood => 'Food';
+
+  @override
+  String get navTraining => 'Training';
+
+  @override
+  String get navProgress => 'Progress';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get darkModeLabel => 'Dark mode';
+
+  @override
+  String get programsTitle => 'Programs';
+
+  @override
+  String get programsButton => 'Programs – training and meal plan';
+
+  @override
+  String get programsHint => 'Pick a program. A training plan is created and the client also gets the matching meal plan with the same date and phases.';
+
+  @override
+  String get programIncludes => 'Also includes';
+
+  @override
+  String get programDietByGoal => 'Meal plan based on the client goal';
+
+  @override
+  String get clientPlanTitle => 'Client plan';
+
+  @override
+  String get clientGoalButton => 'Goal';
+
+  @override
+  String get clientDietButton => 'Meal plan';
+
+  @override
+  String get clientTrainingButton => 'Training';
+
+  @override
+  String get clientProgramsButton => 'Programs and custom plans';
+
+  @override
+  String get clientFoodTodayButton => 'Food today';
+
+  @override
+  String get openAsClient => 'Open the whole app as this client';
+
+  @override
+  String get highBodyFatInterpretation => 'Body fat is high – the priority is fat loss (mild deficit, strength training, more activity).';
+
+  @override
+  String get mediumBodyFatInterpretation => 'Body fat is in the normal range – a cut or recomposition is appropriate.';
+
+  @override
+  String get lowBodyFatInterpretation => 'Body fat is low (athletic) – focus on building muscle, further fat loss only with care.';
+
+  @override
+  String get goodMuscleBase => 'Good muscle base.';
+
+  @override
+  String get lowMuscleMassInterpretation => 'Low muscle mass – the priority is strength training and enough protein.';
+
+  @override
+  String get benchInsertPlan => 'Insert Russian cycle – bench press (meet)';
 
   @override
   String get strengthDietDescription => 'Meal plan for strength prep (Russian bench cycle, powerlifting). Maintenance calories – strength grows without a surplus and body weight stays in the weight class. Protein 2.0 g/kg, fat 1.0 g/kg, the rest carbs to fuel heavy sets and recovery.';
@@ -3069,13 +3167,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gluteTitle => 'Round glutes';
 
   @override
-  String get gluteInsertPlan => '🍑 INSERT ROUND GLUTES PLAN';
+  String get gluteInsertPlan => 'Insert Round Glutes plan';
 
   @override
   String get bikiniTitle => 'Bikini fitness';
 
   @override
-  String get bikiniInsertPlan => '👙 INSERT CONTEST PREP – BIKINI FITNESS';
+  String get bikiniInsertPlan => 'Insert contest prep – bikini fitness';
 
   @override
   String get hollywoodTitle => 'Hollywood training';
@@ -3093,7 +3191,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hollywoodNoDate => 'Shoot date is missing.';
 
   @override
-  String get hollywoodInsertPlan => '🎬 INSERT HOLLYWOOD TRAINING – SHOOT PREP';
+  String get hollywoodInsertPlan => 'Insert Hollywood training – shoot prep';
 
   @override
   String hollywoodNotStarted(Object start, Object shoot) {

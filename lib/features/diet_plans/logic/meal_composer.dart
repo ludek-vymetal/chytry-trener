@@ -217,7 +217,7 @@ class MealComposer {
       if (budget && slot.kind == MealKind.main) cookedMain ??= template;
 
       final lunch = cookedPortions;
-      final portions = (reuse != null && lunch != null)
+      final solved = (reuse != null && lunch != null)
           ? _scaleLeftover(lunch, reuse, tP, tC, tF, maxScale)
           : PortionSolver.solve(
               variable: template.vars,
@@ -227,6 +227,12 @@ class MealComposer {
               fixed: template.fixed,
               maxScale: maxScale,
             );
+      // Pojistka pro alergie: záložní šablona (když je vyloučeno skoro
+      // všechno) by mohla obsahovat zakázanou potravinu – ta se vždy
+      // vyřadí, i za cenu menší přesnosti jídla.
+      final portions = solved
+          .where((x) => !FoodCatalog.isExcluded(x.food, excluded))
+          .toList();
       if (budget && slot.kind == MealKind.main) cookedPortions ??= portions;
 
       final meal = _toPlannedMeal(slot, portions, leftover: reuse != null);
@@ -249,6 +255,83 @@ class MealComposer {
       carbs: _round1(sumC),
       fats: _round1(sumF),
     );
+  }
+
+  /// Výběrový stravovací plán: pro jedno jídlo dne až [count] RŮZNÝCH
+  /// možností se stejnými makroživinami (podíl slotu z denního cíle).
+  /// Klient si pak z každého jídla vybere, na co má zrovna chuť.
+  static List<PlannedMeal> composeOptions({
+    required MealSlot slot,
+    required double protein,
+    required double carbs,
+    required double fats,
+    DietStyle style = DietStyle.standard,
+    List<String> excluded = const [],
+    DietPreference preference = DietPreference.none,
+    int count = 10,
+
+    /// Posun výběru – aby dvě svačiny v plánu nezačínaly stejně.
+    int offset = 0,
+  }) {
+    final dayKcal = protein * 4 + carbs * 4 + fats * 9;
+    var maxScale = dayKcal / _referenceKcal;
+    if (maxScale < 1) maxScale = 1;
+    if (maxScale > _maxPortionScale) maxScale = _maxPortionScale;
+    if (style == DietStyle.keto) maxScale *= 1.5;
+
+    final tP = protein * slot.proteinShare;
+    final tC = carbs * slot.carbsShare;
+    final tF = fats * slot.fatShare;
+    final fit = _Fit(tP, tC, tF, maxScale);
+
+    final good = <PlannedMeal>[];
+    final rough = <PlannedMeal>[];
+    final seen = <String>{};
+
+    for (var k = 0; k < 80 && good.length < count; k++) {
+      final template = _chooseTemplate(
+        kind: slot.kind,
+        style: style,
+        targetC: tC,
+        excluded: excluded,
+        choice: offset + k,
+        preference: preference,
+        budget: false,
+      );
+      // Záložní šablona s vyloučenou potravinou (alergie) se nepoužije.
+      final banned = [
+        ...template.vars,
+        ...template.fixed.map((p) => p.food),
+      ].any((f) => FoodCatalog.isExcluded(f, excluded));
+      if (banned) continue;
+      final key = ([
+        ...template.vars.map((f) => f.id),
+        ...template.fixed.map((p) => p.food.id),
+      ]..sort())
+          .join('|');
+      if (!seen.add(key)) continue;
+
+      final portions = PortionSolver.solve(
+        variable: template.vars,
+        targetProtein: tP,
+        targetCarbs: tC,
+        targetFat: tF,
+        fixed: template.fixed,
+        maxScale: maxScale,
+      );
+      final meal = _toPlannedMeal(slot, portions);
+      // Jen možnosti, které cíl opravdu trefí – jinak by si klient
+      // výběrem jídla nevědomky měnil denní příjem.
+      if (fit.errorOf(template) <= _Fit.tolerance * 2) {
+        good.add(meal);
+      } else {
+        rough.add(meal);
+      }
+    }
+
+    // Málo přesných možností (např. hodně vyloučených potravin) –
+    // doplní se nejbližší.
+    return [...good, ...rough].take(count).toList();
   }
 
   // ---------------------------------------------------------------
@@ -602,6 +685,9 @@ class MealComposer {
               tpl([FoodCatalog.eggs, FoodCatalog.gouda, FoodCatalog.ryeBread], [veg100]),
               tpl([FoodCatalog.quarkLowFat, FoodCatalog.almonds, FoodCatalog.blueberries]),
               tpl([FoodCatalog.tofu, FoodCatalog.wholegrainBread, FoodCatalog.avocado], [veg100]),
+              tpl([FoodCatalog.skyr, FoodCatalog.walnuts, FoodCatalog.blueberries]),
+              tpl([FoodCatalog.ham, FoodCatalog.mozzarellaLight, FoodCatalog.ryeBread], [veg100]),
+              tpl([FoodCatalog.greekYogurt, FoodCatalog.almonds, FoodCatalog.strawberries]),
             ],
             _Tpl(const [FoodCatalog.tofu, FoodCatalog.wholegrainBread, FoodCatalog.avocado], const [veg100]),
           );
@@ -618,6 +704,12 @@ class MealComposer {
             tpl([FoodCatalog.skyr, FoodCatalog.oats, FoodCatalog.almonds],
                 [const FoodPortion(FoodCatalog.apple, 100)]),
             tpl([FoodCatalog.tofu, FoodCatalog.wholegrainBread, FoodCatalog.avocado], [veg100]),
+            tpl([FoodCatalog.quarkLowFat, FoodCatalog.oats, FoodCatalog.almonds],
+                [const FoodPortion(FoodCatalog.blueberries, 80)]),
+            tpl([FoodCatalog.eggs, FoodCatalog.ryeBread, FoodCatalog.avocado], [veg100]),
+            tpl([FoodCatalog.ham, FoodCatalog.tortilla, FoodCatalog.mozzarellaLight], [veg100]),
+            tpl([proteinPowder, FoodCatalog.riceCakes, FoodCatalog.peanutButter],
+                [const FoodPortion(FoodCatalog.banana, 100)]),
             if (soyOk)
               tpl([FoodCatalog.soyProtein, FoodCatalog.oats, FoodCatalog.walnuts],
                 [const FoodPortion(FoodCatalog.strawberries, 100)]),
@@ -636,6 +728,10 @@ class MealComposer {
               tpl([proteinPowder, FoodCatalog.banana, FoodCatalog.peanutButter]),
               tpl([FoodCatalog.quarkLowFat, FoodCatalog.blueberries, FoodCatalog.cashews]),
               tpl([FoodCatalog.ham, FoodCatalog.wholegrainBread, FoodCatalog.avocado], [veg100]),
+              tpl([FoodCatalog.cottage, FoodCatalog.apple, FoodCatalog.almonds]),
+              tpl([FoodCatalog.tuna, FoodCatalog.wholegrainBread], [veg100]),
+              tpl([FoodCatalog.eggs, FoodCatalog.ryeBread], [veg100]),
+              tpl([FoodCatalog.skyr, FoodCatalog.strawberries, FoodCatalog.cashews]),
               if (soyOk)
                 tpl([FoodCatalog.soyProtein, FoodCatalog.apple, FoodCatalog.walnuts],
                   [const FoodPortion(FoodCatalog.soyYogurt, 150)]),
@@ -653,6 +749,9 @@ class MealComposer {
             tpl([FoodCatalog.quarkLowFat, FoodCatalog.almonds, FoodCatalog.riceCakes]),
             if (soyOk) tpl([FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.riceCakes]),
             tpl([FoodCatalog.tofu, FoodCatalog.cashews], [veg100]),
+            tpl([FoodCatalog.skyr, FoodCatalog.walnuts]),
+            tpl([FoodCatalog.greekYogurt, FoodCatalog.almonds]),
+            tpl([FoodCatalog.ham, FoodCatalog.cottage], [veg100]),
           ],
           _Tpl(const [FoodCatalog.soyProtein, FoodCatalog.almonds, FoodCatalog.riceCakes]),
         );

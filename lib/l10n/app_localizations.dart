@@ -5981,6 +5981,198 @@ abstract class AppLocalizations {
   /// **'Budget'**
   String get budgetShort;
 
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @helpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get helpTitle;
+
+  /// No description provided for @dangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Irreversible actions'**
+  String get dangerZone;
+
+  /// No description provided for @importExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import / export'**
+  String get importExport;
+
+  /// No description provided for @changeMealPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change meal plan?'**
+  String get changeMealPlanTitle;
+
+  /// No description provided for @changeMealPlanConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get changeMealPlanConfirm;
+
+  /// No description provided for @changeMealPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The program {program} is active now. After the change, calories and macros across the app are recalculated for the new meal plan.'**
+  String changeMealPlanBody(Object program);
+
+  /// No description provided for @myMealPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'My meal plan'**
+  String get myMealPlan;
+
+  /// No description provided for @openMealPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole week'**
+  String get openMealPlan;
+
+  /// No description provided for @navToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get navToday;
+
+  /// No description provided for @navFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get navFood;
+
+  /// No description provided for @navTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get navTraining;
+
+  /// No description provided for @navProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get navProgress;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
+  /// No description provided for @darkModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark mode'**
+  String get darkModeLabel;
+
+  /// No description provided for @programsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Programs'**
+  String get programsTitle;
+
+  /// No description provided for @programsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Programs – training and meal plan'**
+  String get programsButton;
+
+  /// No description provided for @programsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a program. A training plan is created and the client also gets the matching meal plan with the same date and phases.'**
+  String get programsHint;
+
+  /// No description provided for @programIncludes.
+  ///
+  /// In en, this message translates to:
+  /// **'Also includes'**
+  String get programIncludes;
+
+  /// No description provided for @programDietByGoal.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal plan based on the client goal'**
+  String get programDietByGoal;
+
+  /// No description provided for @clientPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Client plan'**
+  String get clientPlanTitle;
+
+  /// No description provided for @clientGoalButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get clientGoalButton;
+
+  /// No description provided for @clientDietButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal plan'**
+  String get clientDietButton;
+
+  /// No description provided for @clientTrainingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Training'**
+  String get clientTrainingButton;
+
+  /// No description provided for @clientProgramsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Programs and custom plans'**
+  String get clientProgramsButton;
+
+  /// No description provided for @clientFoodTodayButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Food today'**
+  String get clientFoodTodayButton;
+
+  /// No description provided for @openAsClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the whole app as this client'**
+  String get openAsClient;
+
+  /// No description provided for @highBodyFatInterpretation.
+  ///
+  /// In en, this message translates to:
+  /// **'Body fat is high – the priority is fat loss (mild deficit, strength training, more activity).'**
+  String get highBodyFatInterpretation;
+
+  /// No description provided for @mediumBodyFatInterpretation.
+  ///
+  /// In en, this message translates to:
+  /// **'Body fat is in the normal range – a cut or recomposition is appropriate.'**
+  String get mediumBodyFatInterpretation;
+
+  /// No description provided for @lowBodyFatInterpretation.
+  ///
+  /// In en, this message translates to:
+  /// **'Body fat is low (athletic) – focus on building muscle, further fat loss only with care.'**
+  String get lowBodyFatInterpretation;
+
+  /// No description provided for @goodMuscleBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Good muscle base.'**
+  String get goodMuscleBase;
+
+  /// No description provided for @lowMuscleMassInterpretation.
+  ///
+  /// In en, this message translates to:
+  /// **'Low muscle mass – the priority is strength training and enough protein.'**
+  String get lowMuscleMassInterpretation;
+
   /// No description provided for @benchInsertPlan.
   ///
   /// In en, this message translates to:

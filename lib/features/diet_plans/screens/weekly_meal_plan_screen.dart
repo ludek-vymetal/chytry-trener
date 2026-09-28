@@ -11,6 +11,8 @@ import '../models/saved_meal_plan.dart';
 import '../providers/saved_meal_plans_provider.dart';
 import 'saved_meal_plans_screen.dart';
 import 'shopping_list_screen.dart';
+import '../../paywall/paywall_screen.dart';
+import '../../../providers/subscription/subscription_provider.dart';
 
 class WeeklyMealPlanScreen extends ConsumerWidget {
   final CarbCyclingPlan? plan;
@@ -93,6 +95,11 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(userProfileProvider);
     final resolvedPlan = _resolvePlan(l10n);
+    // Zkušební verze: první den celý, zbytek týdne zamčený.
+    final locked = !ref.watch(accessProvider).fullMealPlan &&
+        resolvedPlan.days.length > 1;
+    final shownDays =
+        locked ? resolvedPlan.days.take(1).toList() : resolvedPlan.days;
     
 
     return Scaffold(
@@ -191,9 +198,16 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(15),
-              itemCount: resolvedPlan.days.length,
+              itemCount: shownDays.length + (locked ? 1 : 0),
               itemBuilder: (context, index) {
-                final day = resolvedPlan.days[index];
+                if (index >= shownDays.length) {
+                  return const LockedFeatureCard(
+                    feature: 'Celý týdenní jídelníček',
+                    description: 'Zbylé dny týdne, střídání jídel, levná '
+                        'varianta a nákupní seznam jsou v plné verzi.',
+                  );
+                }
+                final day = shownDays[index];
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 20),

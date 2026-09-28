@@ -157,7 +157,7 @@ class CarbCyclingResultScreen extends StatelessWidget {
               ),
               icon: const Icon(Icons.shopping_basket),
               label: Text(
-                l10n.generateShoppingList,
+                l10n.shoppingList,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               onPressed: resolvedMealPlan == null

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import 'coach_storage_service.dart';
+import 'extra_backup_service.dart';
 
 class CoachCloudSyncReport {
   final bool success;
@@ -83,6 +84,14 @@ class CoachCloudSyncService {
         }
       }
 
+      // Profily klientů, výkony, jídelníčky a nastavení.
+      try {
+        await ExtraBackupService.push();
+        processedKeys.add(ExtraBackupService.snapshotKey);
+      } catch (e) {
+        warnings.add('Extras failed -> $e');
+      }
+
       final finishedAt = DateTime.now();
       await CoachStorageService.saveLastCloudSyncAt(finishedAt);
 
@@ -160,6 +169,14 @@ class CoachCloudSyncService {
           debugPrint('CLOUD PULL MERGE ERROR -> uid=$uid key=$key error=$e');
           debugPrint('$st');
         }
+      }
+
+      // Profily klientů, výkony, jídelníčky a nastavení.
+      try {
+        await ExtraBackupService.pullMissing();
+        processedKeys.add(ExtraBackupService.snapshotKey);
+      } catch (e) {
+        warnings.add('Extras failed -> $e');
       }
 
       final finishedAt = DateTime.now();
@@ -254,6 +271,14 @@ class CoachCloudSyncService {
         }
       }
 
+      // Profily klientů, výkony, jídelníčky a nastavení.
+      try {
+        await ExtraBackupService.reconcile();
+        processedKeys.add(ExtraBackupService.snapshotKey);
+      } catch (e) {
+        warnings.add('Extras failed -> $e');
+      }
+
       final finishedAt = DateTime.now();
       await CoachStorageService.saveLastCloudSyncAt(finishedAt);
 
@@ -301,6 +326,14 @@ class CoachCloudSyncService {
   ) {
     return CoachStorageService.readCloudSnapshot(uid: uid, key: key);
   }
+
+  /// Sloučení dvou verzí seznamu (novější verze záznamu vyhrává).
+  static List<Map<String, dynamic>> mergeLists({
+    required String key,
+    required List<Map<String, dynamic>> localItems,
+    required List<Map<String, dynamic>> cloudItems,
+  }) =>
+      _mergeLists(key: key, localItems: localItems, cloudItems: cloudItems);
 
   static List<Map<String, dynamic>> _mergeLists({
     required String key,

@@ -31,13 +31,15 @@ class HelpAndResetActions extends ConsumerWidget {
         IconButton(
           tooltip: 'Tovární nastavení',
           icon: const Icon(Icons.restore_from_trash_outlined),
-          onPressed: () => _handleResetTap(context, ref),
+          onPressed: () => handleResetTap(context, ref),
         ),
       ],
     );
   }
 
-  Future<void> _handleResetTap(BuildContext context, WidgetRef ref) async {
+  /// Tovární nastavení (s bezpečnostním kódem trenéra) – volá se i
+  /// z Nastavení trenéra.
+  Future<void> handleResetTap(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
 
     try {

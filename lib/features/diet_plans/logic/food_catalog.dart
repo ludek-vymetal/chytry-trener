@@ -500,13 +500,105 @@ class FoodCatalog {
 
   /// Klíčová slova vyloučení (z výběru "nechci jíst") → potraviny.
   /// Hodnoty výběru v aplikaci: 'Losos', 'Vejce', 'Hovězí maso'.
+  /// Alergie, nesnášenlivosti a neoblíbená jídla právě vybraného klienta.
+  /// Nastavuje je `activeFoodExclusionsProvider`; platí pro VŠECHNY
+  /// jídelníčky (týdenní, keto, půst, vlny, výběrový plán).
+  static List<String> activeExclusions = const [];
+
+  /// Alergeny a skupiny potravin → potraviny z katalogu. Klíč je začátek
+  /// slova, takže sedí „mléko“, „mléčné výrobky“, „ořechy“, „ořech“…
+  static const Map<String, List<String>> _groups = {
+    // mléko a mléčné výrobky (alergie na bílkovinu i laktóza)
+    'mlé': _dairy,
+    'mlék': _dairy,
+    'mléč': _dairy,
+    'lakt': _dairy,
+    'sýr': ['gouda', 'cottage', 'mozzarella_light'],
+    'jogurt': ['greek_yogurt', 'white_yogurt', 'skyr'],
+    'tvaroh': ['quark_low_fat'],
+    'syrovátk': ['whey'],
+    // lepek
+    'lepe': _gluten,
+    'glut': _gluten,
+    'pšen': _gluten,
+    'celiak': _gluten,
+    'oves': ['oats'],
+    'vločk': ['oats'],
+    // vejce
+    'vejc': ['eggs'],
+    'vaj': ['eggs'],
+    // skořápkové plody a arašídy
+    // „ořechy“ z opatrnosti včetně arašídů (u alergie častá zkřížená reakce)
+    'ořech': ['almonds', 'walnuts', 'cashews', 'peanut_butter'],
+    'mandl': ['almonds'],
+    'kešu': ['cashews'],
+    'arašíd': ['peanut_butter'],
+    'buráks': ['peanut_butter'],
+    'burák': ['peanut_butter'],
+    // ryby a mořské plody
+    'ryb': ['salmon', 'cod', 'tuna'],
+    'losos': ['salmon'],
+    'tuňák': ['tuna'],
+    'tresk': ['cod'],
+    'kreve': ['shrimp'],
+    'korýš': ['shrimp'],
+    'mořsk': ['shrimp'],
+    // sója
+    'sój': _soy,
+    'soj': _soy,
+    'tofu': ['tofu'],
+    // luštěniny
+    'lušt': ['lentils', 'chickpeas', 'red_beans'],
+    'čočk': ['lentils'],
+    'cizr': ['chickpeas'],
+    'fazol': ['red_beans'],
+    // maso
+    'vepř': ['pork_tenderloin', 'pork_leg', 'ham'],
+    'šunk': ['ham'],
+    'hověz': ['beef_lean', 'beef_ribeye', 'beef_ground_5'],
+    'kuř': ['chicken_breast', 'chicken_thigh'],
+    'krůt': ['turkey_breast'],
+    'drůbe': ['chicken_breast', 'chicken_thigh', 'turkey_breast'],
+    // ovoce
+    'banán': ['banana'],
+    'jahod': ['strawberries'],
+    'borův': ['blueberries'],
+    'jablk': ['apple'],
+    'avok': ['avocado'],
+  };
+
+  static const List<String> _dairy = [
+    'milk', 'quark_low_fat', 'skyr', 'greek_yogurt', 'white_yogurt',
+    'cottage', 'gouda', 'mozzarella_light', 'butter', 'whey',
+  ];
+  static const List<String> _gluten = [
+    'oats', 'wholegrain_bread', 'rye_bread', 'pasta', 'tortilla',
+    'couscous', 'bulgur', 'seitan',
+  ];
+  static const List<String> _soy = [
+    'tofu', 'tempeh', 'soy_protein', 'soy_yogurt',
+  ];
+
+  /// Rozdělí volný text („laktóza, ořechy; ryby“) na jednotlivé položky.
+  static List<String> parseExclusions(String text) => text
+      .toLowerCase()
+      .split(RegExp(r'[,;/\n]|\s+a\s+|\s+nebo\s+'))
+      .map((s) => s.trim())
+      .where((s) => s.length >= 3 && s != '—' && s != 'nic' && s != 'žádné')
+      .toSet()
+      .toList();
+
   static bool isExcluded(NutritionFood food, List<String> excluded) {
-    for (final raw in excluded) {
+    for (final raw in [...excluded, ...activeExclusions]) {
       final e = raw.trim().toLowerCase();
       if (e.isEmpty) continue;
 
       final name = food.name.toLowerCase();
       if (name.contains(e)) return true;
+
+      for (final g in _groups.entries) {
+        if (e.contains(g.key) && g.value.contains(food.id)) return true;
+      }
 
       if (e.contains('hovězí') && food.id.startsWith('beef')) return true;
       if (e.contains('vejce') && food.id == 'eggs') return true;

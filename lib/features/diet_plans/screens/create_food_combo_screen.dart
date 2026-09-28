@@ -420,7 +420,7 @@ class _CreateFoodComboScreenState extends ConsumerState<CreateFoodComboScreen> {
           FilledButton.icon(
             onPressed: _saveCombo,
             icon: const Icon(Icons.save),
-            label: const Text('ULOŽIT HOTOVKU'),
+            label: const Text('Uložit hotovku'),
           ),
         ],
       ),

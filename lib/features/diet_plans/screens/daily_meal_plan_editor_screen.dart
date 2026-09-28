@@ -253,7 +253,7 @@ class _DailyMealPlanEditorScreenState
           FilledButton.icon(
             onPressed: _saveTemplate,
             icon: const Icon(Icons.save),
-            label: const Text('ULOŽIT DENNÍ JÍDELNÍČEK'),
+            label: const Text('Uložit denní jídelníček'),
           ),
         ],
       ),

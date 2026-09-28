@@ -9,7 +9,7 @@ class AppLocalizationsCs extends AppLocalizations {
   AppLocalizationsCs([String locale = 'cs']) : super(locale);
 
   @override
-  String get dashboard => 'Dashboard';
+  String get dashboard => 'Přehled';
 
   @override
   String get addClient => 'Přidat klienta';
@@ -42,7 +42,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get coachMode => 'Trenérský mód';
 
   @override
-  String get switchToThisProfile => 'PŘEPNOUT NA TENTO PROFIL';
+  String get switchToThisProfile => 'Přepnout na tento profil';
 
   @override
   String get profileActivatedUserMode => 'Profil aktivován. Režim: Uživatel.';
@@ -60,10 +60,10 @@ class AppLocalizationsCs extends AppLocalizations {
   String get subscriptionInactive => 'Předplatné není aktivní.';
 
   @override
-  String get activeCoachClient => 'Aktivní: Coach + Client ✅';
+  String get activeCoachClient => 'Aktivní: režim trenéra i klienta';
 
   @override
-  String get activeClientCoachLocked => 'Aktivní: Client ✅ (Coach zamčený)';
+  String get activeClientCoachLocked => 'Aktivní: režim klienta (režim trenéra zamčený)';
 
   @override
   String get noAccess => 'Bez přístupu';
@@ -81,10 +81,10 @@ class AppLocalizationsCs extends AppLocalizations {
   String get coachModeLocked => 'Trenérský mód (zamčeno)';
 
   @override
-  String get unlockClient => 'Odemknout Client (Paywall)';
+  String get unlockClient => 'Odemknout režim klienta';
 
   @override
-  String get unlockCoach => 'Odemknout Coach (upgrade)';
+  String get unlockCoach => 'Odemknout režim trenéra';
 
   @override
   String get exportFolderSaved => 'Exportní složka byla uložena.';
@@ -159,10 +159,10 @@ class AppLocalizationsCs extends AppLocalizations {
   String get sharePdf => 'Sdílet PDF';
 
   @override
-  String get dailyCarbIntake => 'DENNÍ PŘÍJEM SACHARIDŮ';
+  String get dailyCarbIntake => 'Denní příjem sacharidů';
 
   @override
-  String get weeklyCarbBank => 'TVŮJ TÝDENNÍ BANK SACHARIDŮ';
+  String get weeklyCarbBank => 'Tvůj týdenní rozpočet sacharidů';
 
   @override
   String get proteinLabel => 'Bílkoviny';
@@ -171,19 +171,19 @@ class AppLocalizationsCs extends AppLocalizations {
   String get fatsLabel => 'Tuky';
 
   @override
-  String get generateShoppingList => 'GENEROVAT NÁKUPNÍ SEZNAM';
+  String get generateShoppingList => 'Vytvořit nákupní seznam';
 
   @override
-  String get showFullWeeklyMealPlan => 'ZOBRAZIT CELÝ TÝDENNÍ JÍDELNÍČEK';
+  String get showFullWeeklyMealPlan => 'Zobrazit celý týdenní jídelníček';
 
   @override
   String get dayMealBreakdown => 'Rozpis a jídelníček na dny:';
 
   @override
-  String get refeedDay => 'REFEED DEN 🚀';
+  String get refeedDay => 'Doplňovací den (refeed)';
 
   @override
-  String get closeAndActivate => 'ZAVŘÍT A AKTIVOVAT';
+  String get closeAndActivate => 'Zavřít a aktivovat';
 
   @override
   String get setupProfileAndGoalFirst => 'Nejprve nastav profil a cíl.';
@@ -299,10 +299,10 @@ class AppLocalizationsCs extends AppLocalizations {
   String get fillWeeklyMealPlanName => 'Vyplň název týdenního plánu';
 
   @override
-  String get selectTemplateForEachDay => 'Vyber template pro každý den';
+  String get selectTemplateForEachDay => 'Vyber šablonu pro každý den';
 
   @override
-  String get failedToLoadDailyTemplate => 'Nepodařilo se načíst denní template';
+  String get failedToLoadDailyTemplate => 'Nepodařilo se načíst denní šablonu';
 
   @override
   String get weeklyMealPlanSaved => 'Týdenní plán byl uložen';
@@ -314,13 +314,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get saveWeek => 'Uložit týden';
 
   @override
-  String get createDailyTemplateFirst => 'Nejdřív vytvoř denní template';
+  String get createDailyTemplateFirst => 'Nejdřív vytvoř denní šablonu';
 
   @override
   String get weeklyMealPlanName => 'Název týdenního plánu';
 
   @override
-  String get selectDailyTemplate => 'Vyber denní template';
+  String get selectDailyTemplate => 'Vyber denní šablonu';
 
   @override
   String get saveWeeklyMealPlan => 'Uložit týdenní plán';
@@ -477,13 +477,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get hydrationQuestion => 'Vypiji denně alespoň 2-3 litry vody?';
 
   @override
-  String get evaluateReadiness => 'VYHODNOTIT PŘIPRAVENOST';
+  String get evaluateReadiness => 'Vyhodnotit připravenost';
 
   @override
-  String get approved => 'SCHVÁLENO';
+  String get approved => 'Schváleno';
 
   @override
-  String get notRecommended => 'NEDOPORUČENO';
+  String get notRecommended => 'Nedoporučeno';
 
   @override
   String get iUnderstand => 'Rozumím';
@@ -522,7 +522,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get yourWeeklyKetoPlan => 'Tvůj týdenní keto plán';
 
   @override
-  String get openFullWeek => 'OTEVŘÍT CELÝ TÝDEN';
+  String get openFullWeek => 'Otevřít celý týden';
 
   @override
   String get weeklyKetoMealPlan => 'Týdenní keto jídelníček';
@@ -590,7 +590,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get planGenerationFailed => 'Nepodařilo se vygenerovat plán.';
 
   @override
-  String get coachGoal => 'Coach cíl';
+  String get coachGoal => 'Cíl od trenéra';
 
   @override
   String get newMeasurement => 'Nové měření';
@@ -778,13 +778,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get createCoachAccount => 'Vytvoř účet trenéra';
 
   @override
-  String get loginToCoachCloud => 'Přihlas se do coach cloudu';
+  String get loginToCoachCloud => 'Přihlas se do účtu trenéra';
 
   @override
   String get coachAccountDescription => 'Každý trenér má vlastní účet a vlastní cloud prostor pro klienty, poznámky a měření.';
 
   @override
-  String get coachLoginDescription => 'Přihlas se svým e-mailem a heslem. Po přihlášení uvidíš jen svá vlastní coach data.';
+  String get coachLoginDescription => 'Přihlas se svým e-mailem a heslem. Po přihlášení uvidíš jen data svých klientů.';
 
   @override
   String get email => 'E-mail';
@@ -943,16 +943,16 @@ class AppLocalizationsCs extends AppLocalizations {
   String get valueCannotBeNegative => 'Hodnota nemůže být záporná';
 
   @override
-  String get phaseLogicCoreTest => 'TEST LOGIKY FÁZÍ (CORE)';
+  String get phaseLogicCoreTest => 'Test logiky fází';
 
   @override
   String get profileOrGoalNotSet => 'Není nastaven profil nebo cíl';
 
   @override
-  String get dataSource => 'ZDROJ DAT';
+  String get dataSource => 'Zdroj dat';
 
   @override
-  String get goal => 'CÍL';
+  String get goal => 'Cíl';
 
   @override
   String get reason => 'Důvod';
@@ -964,7 +964,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get weeksToGoal => 'Týdnů do cíle';
 
   @override
-  String get currentEvaluation => 'AKTUÁLNÍ VYHODNOCENÍ';
+  String get currentEvaluation => 'Aktuální vyhodnocení';
 
   @override
   String get currentPhase => 'Aktuální fáze';
@@ -976,19 +976,19 @@ class AppLocalizationsCs extends AppLocalizations {
   String get activeSegment => 'Aktivní segment';
 
   @override
-  String get foodStrategy => 'FOOD STRATEGY';
+  String get foodStrategy => 'Strategie stravy';
 
   @override
-  String get calorieMultiplier => 'Kcal multiplier';
+  String get calorieMultiplier => 'Násobitel kalorií';
 
   @override
   String get highCarbs => 'Vysoké sacharidy';
 
   @override
-  String get phasePlan => 'PHASE PLAN (celý plán)';
+  String get phasePlan => 'Plán fází (celý plán)';
 
   @override
-  String get finalMacros => 'VÝSLEDNÁ MAKRA';
+  String get finalMacros => 'Výsledná makra';
 
   @override
   String get coreEngineInfo => 'Vše je řízené datem přes Core engine.';
@@ -1081,22 +1081,22 @@ class AppLocalizationsCs extends AppLocalizations {
   String get lastMeal => 'Poslední jídlo';
 
   @override
-  String get ketoShoppingListTitle => '🛒 MŮJ KETO NÁKUPNÍ SEZNAM';
+  String get ketoShoppingListTitle => 'Můj keto nákupní seznam';
 
   @override
-  String get fastingShoppingListTitle => '🛒 MŮJ FASTING NÁKUPNÍ SEZNAM';
+  String get fastingShoppingListTitle => 'Můj nákupní seznam – přerušovaný půst';
 
   @override
-  String get shoppingListTitle => '🛒 MŮJ NÁKUPNÍ SEZNAM';
+  String get shoppingListTitle => 'Můj nákupní seznam';
 
   @override
-  String get generatedBySmartCoach => 'Generováno tvým chytrým trenérem 🍏';
+  String get generatedBySmartCoach => 'Vygenerováno aplikací Chytrý trenér';
 
   @override
   String get ketoShopping => 'Keto nákup';
 
   @override
-  String get fastingShopping => 'Fasting nákup';
+  String get fastingShopping => 'Nákup – přerušovaný půst';
 
   @override
   String get weeklyShopping => 'Týdenní nákup';
@@ -1246,7 +1246,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get noFoodYet => 'Zatím tu nic není. Přidej první jídlo.';
 
   @override
-  String get allSlotsAdded => 'Přidáno ✅ (všechny sloty)';
+  String get allSlotsAdded => 'Přidáno do všech jídel dne';
 
   @override
   String get manualOverrideHint => 'Tip: když něco upravíš, solver už to nepřepočítává – je to ruční override.';
@@ -1428,7 +1428,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get waterPreviewHint => 'Tip: po zadání hmotnosti a vody uvidíš i procento vody z váhy.';
 
   @override
-  String get yourFastingMealPlan => 'Tvůj fasting jídelníček';
+  String get yourFastingMealPlan => 'Tvůj jídelníček – přerušovaný půst';
 
   @override
   String get skeletalMuscleMass => 'SMM – kosterní svalovina (kg)';
@@ -1437,7 +1437,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get weeklyMealPlan => 'Týdenní jídelní plán';
 
   @override
-  String get saveTemplate => 'Uložit template';
+  String get saveTemplate => 'Uložit šablonu';
 
   @override
   String get bodyFat => 'Tuk';
@@ -1716,7 +1716,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get createFirstPlanHint => 'Vytvoř první tréninkový plán';
 
   @override
-  String get coachData => 'Coach data';
+  String get coachData => 'Data trenéra';
 
   @override
   String get activity => 'Aktivita';
@@ -1767,7 +1767,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get ketoMealPlan => 'Keto jídelníček';
 
   @override
-  String get fastingMealPlan => 'Fasting jídelníček';
+  String get fastingMealPlan => 'Jídelníček – přerušovaný půst';
 
   @override
   String get linearMealPlan => 'Linear jídelníček';
@@ -2203,7 +2203,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String nextTimeWeight(Object weight, Object delta) {
-    return '➡️ Příště: $weight kg ($delta kg)';
+    return 'Příště: $weight kg ($delta kg)';
   }
 
   @override
@@ -2216,7 +2216,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get savedMealPlansDescription => 'Načti si vlastní kompletní týdenní nebo měsíční šablony a použij je znovu.';
 
   @override
-  String get openMealDatabase => 'OTEVŘÍT DATABANKU JÍDELNÍČKŮ';
+  String get openMealDatabase => 'Otevřít databanku jídelníčků';
 
   @override
   String get createCustomMealPlan => 'Vytvořit vlastní jídelníček';
@@ -2225,7 +2225,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get createCustomMealPlanDescription => 'Ručně poskládej denní jídelníček z hotových jídel a ulož si ho jako vlastní šablonu.';
 
   @override
-  String get openDailyEditor => 'OTEVŘÍT DENNÍ EDITOR';
+  String get openDailyEditor => 'Otevřít denní editor';
 
   @override
   String get foodComboLibrary => 'Databanka hotovek';
@@ -2234,7 +2234,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get foodComboLibraryDescription => 'Procházej, duplikuj, upravuj a maž vlastní hotovky z databanky.';
 
   @override
-  String get openFoodComboLibrary => 'OTEVŘÍT DATABANKU HOTOVEK';
+  String get openFoodComboLibrary => 'Otevřít databanku hotovek';
 
   @override
   String get createFoodCombo => 'Vytvořit hotovku z potravin';
@@ -2243,7 +2243,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get createFoodComboDescription => 'Poskládej vlastní jídlo z jednotlivých potravin a ulož ho do databanky hotovek.';
 
   @override
-  String get openFoodComboEditor => 'OTEVŘÍT EDITOR HOTOVKY';
+  String get openFoodComboEditor => 'Otevřít editor hotovky';
 
   @override
   String get weekBuilder => 'Sestavit týden z denních šablon';
@@ -2252,7 +2252,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get weekBuilderDescription => 'Vyber denní šablonu pro každý den a ulož si kompletní týdenní jídelníček.';
 
   @override
-  String get openWeeklyBuilder => 'OTEVŘÍT TÝDENNÍ BUILDER';
+  String get openWeeklyBuilder => 'Otevřít týdenní šablonu';
 
   @override
   String get monthBuilder => 'Sestavit měsíc z týdnů';
@@ -2261,7 +2261,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get monthBuilderDescription => 'Vyber 4 uložené týdenní jídelníčky a slož z nich kompletní měsíční plán.';
 
   @override
-  String get openMonthlyBuilder => 'OTEVŘÍT MĚSÍČNÍ BUILDER';
+  String get openMonthlyBuilder => 'Otevřít měsíční šablonu';
 
   @override
   String get linearPlanTitle => 'Konstantní příjem (Linear)';
@@ -2270,7 +2270,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get linearPlanDescription => 'Každý den stejná makra. Nejjednodušší cesta pro stabilní růst svalů.';
 
   @override
-  String get activateAndOpenPlan => 'AKTIVOVAT A OTEVŘÍT PLÁN';
+  String get activateAndOpenPlan => 'Aktivovat a otevřít plán';
 
   @override
   String get carbCyclingTitle => 'Sacharidové vlny';
@@ -2279,7 +2279,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get carbCyclingDescription => 'Cyklování sacharidů pro spalování tuku.';
 
   @override
-  String get startAnalysisAndCycling => 'SPUSTIT ANALÝZU A VLNY';
+  String get startAnalysisAndCycling => 'Spustit analýzu a sacharidové vlny';
 
   @override
   String get ketoDietTitle => 'Keto dieta';
@@ -2288,7 +2288,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get ketoDietDescription => 'Vysoký obsah tuků, minimum sacharidů.';
 
   @override
-  String get selectKetoAndPreferences => 'VYBRAT KETO A UPRAVIT CHUTĚ';
+  String get selectKetoAndPreferences => 'Vybrat keto a upravit chutě';
 
   @override
   String get fastingTitle => 'Přerušovaný půst';
@@ -2297,10 +2297,10 @@ class AppLocalizationsCs extends AppLocalizations {
   String get fastingDescription => 'Časově omezené okno pro jídlo. Zlepšuje regeneraci.';
 
   @override
-  String get setMealTimes => 'NASTAVIT ČASY JÍDLA';
+  String get setMealTimes => 'Nastavit časy jídla';
 
   @override
-  String get enterMealPlan => 'VSTOUPIT DO JÍDELNÍČKU';
+  String get enterMealPlan => 'Otevřít jídelníček';
 
   @override
   String get mainSquatExercise => 'Hlavní dřepový cvik';
@@ -2495,7 +2495,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get fastingLengthQuestion => 'Jak dlouhý půst preferuješ?';
 
   @override
-  String get fastingWindowQuestion => 'KDY TI ZAČÍNÁ OKNO JÍDLA?';
+  String get fastingWindowQuestion => 'Kdy ti začíná okno jídla?';
 
   @override
   String get setGoalFirst => 'Nejprve nastav cíl.';
@@ -2605,19 +2605,19 @@ class AppLocalizationsCs extends AppLocalizations {
   String get salmonOption => 'Losos (nemám rád ryby)';
 
   @override
-  String get generatePlanButton => 'TO JE V POHODĚ, GENERUJ!';
+  String get generatePlanButton => 'V pořádku, vytvořit jídelníček';
 
   @override
   String editTime(Object time) {
-    return 'UPRAVIT ČAS ($time)';
+    return 'Upravit čas ($time)';
   }
 
   @override
-  String get newBadge => 'NOVINKA';
+  String get newBadge => 'Novinka';
 
   @override
   String nextTimeKeepWeight(Object weight) {
-    return '➡️ Příště drž $weight kg';
+    return 'Příště drž $weight kg';
   }
 
   @override
@@ -2719,7 +2719,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get originalDaysStaySaved => 'Původní dny v plánu se nemažou.';
 
   @override
-  String get mainLift => 'HLAVNÍ LIFT';
+  String get mainLift => 'Hlavní cvik';
 
   @override
   String get reps => 'Opakování';
@@ -2925,7 +2925,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get equipment => 'Vybavení';
 
   @override
-  String get completed => 'Splněno ✅';
+  String get completed => 'Splněno';
 
   @override
   String noMealsInCategory(Object category) {
@@ -3032,7 +3032,105 @@ class AppLocalizationsCs extends AppLocalizations {
   String get budgetShort => 'Levnější';
 
   @override
-  String get benchInsertPlan => '🏋️ VLOŽIT RUSKÝ CYKLUS – BENCH PRESS (ZÁVODY)';
+  String get settingsTitle => 'Nastavení';
+
+  @override
+  String get helpTitle => 'Nápověda';
+
+  @override
+  String get dangerZone => 'Nevratné akce';
+
+  @override
+  String get importExport => 'Import / export';
+
+  @override
+  String get changeMealPlanTitle => 'Změnit jídelníček?';
+
+  @override
+  String get changeMealPlanConfirm => 'Změnit';
+
+  @override
+  String changeMealPlanBody(Object program) {
+    return 'Teď je aktivní program $program. Po změně se kalorie a makra v celé aplikaci přepočítají podle nového jídelníčku.';
+  }
+
+  @override
+  String get myMealPlan => 'Můj jídelníček';
+
+  @override
+  String get openMealPlan => 'Celý týden';
+
+  @override
+  String get navToday => 'Dnes';
+
+  @override
+  String get navFood => 'Jídlo';
+
+  @override
+  String get navTraining => 'Trénink';
+
+  @override
+  String get navProgress => 'Pokrok';
+
+  @override
+  String get navProfile => 'Profil';
+
+  @override
+  String get darkModeLabel => 'Tmavý režim';
+
+  @override
+  String get programsTitle => 'Programy';
+
+  @override
+  String get programsButton => 'Programy – trénink i jídelníček';
+
+  @override
+  String get programsHint => 'Vyber program. Vytvoří se tréninkový plán a klientovi se rovnou nastaví i jídelníček se stejným datem a fázemi.';
+
+  @override
+  String get programIncludes => 'Obsahuje i';
+
+  @override
+  String get programDietByGoal => 'Jídelníček podle cíle klienta';
+
+  @override
+  String get clientPlanTitle => 'Plán klienta';
+
+  @override
+  String get clientGoalButton => 'Cíl';
+
+  @override
+  String get clientDietButton => 'Jídelníček';
+
+  @override
+  String get clientTrainingButton => 'Trénink';
+
+  @override
+  String get clientProgramsButton => 'Programy a vlastní plány';
+
+  @override
+  String get clientFoodTodayButton => 'Jídlo dnes';
+
+  @override
+  String get openAsClient => 'Otevřít celou aplikaci jako klient';
+
+  @override
+  String get highBodyFatInterpretation => 'Podíl tuku je vysoký – prioritou je snížit tuk (mírný deficit, silový trénink, víc pohybu).';
+
+  @override
+  String get mediumBodyFatInterpretation => 'Podíl tuku je v běžném rozmezí – vhodné je rýsování nebo rekompozice.';
+
+  @override
+  String get lowBodyFatInterpretation => 'Podíl tuku je nízký (sportovní) – vhodné budovat svaly, další shazování jen opatrně.';
+
+  @override
+  String get goodMuscleBase => 'Dobrá svalová základna.';
+
+  @override
+  String get lowMuscleMassInterpretation => 'Nízký podíl svalové hmoty – prioritou je silový trénink a dostatek bílkovin.';
+
+  @override
+  String get benchInsertPlan => 'Vložit Ruský cyklus – bench press (závody)';
 
   @override
   String get strengthDietDescription => 'Jídelníček k silové přípravě (ruský cyklus na bench, trojboj). Příjem na údržbě – síla roste i bez přebytku a váha zůstane ve váhové kategorii. Bílkoviny 2,0 g/kg, tuky 1,0 g/kg, zbytek sacharidy jako palivo na těžké série a regeneraci.';
@@ -3069,13 +3167,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get gluteTitle => 'Kulatý zadek';
 
   @override
-  String get gluteInsertPlan => '🍑 VLOŽIT PLÁN KULATÝ ZADEK';
+  String get gluteInsertPlan => 'Vložit plán Kulatý zadek';
 
   @override
   String get bikiniTitle => 'Bikini fitness';
 
   @override
-  String get bikiniInsertPlan => '👙 VLOŽIT PŘÍPRAVU NA ZÁVODY – BIKINI FITNESS';
+  String get bikiniInsertPlan => 'Vložit přípravu na závody – bikini fitness';
 
   @override
   String get hollywoodTitle => 'Hollywood training';
@@ -3093,7 +3191,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get hollywoodNoDate => 'Chybí datum natáčení.';
 
   @override
-  String get hollywoodInsertPlan => '🎬 VLOŽIT HOLLYWOOD TRAINING – PŘÍPRAVA NA NATÁČENÍ';
+  String get hollywoodInsertPlan => 'Vložit Hollywood training – příprava na natáčení';
 
   @override
   String hollywoodNotStarted(Object start, Object shoot) {

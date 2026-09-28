@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/app_localizations.dart';
 
 import '../../../providers/coach/coach_clients_controller.dart';
+import '../../../providers/coach/coach_client_details_controller.dart';
 
 class AddClientScreen
     extends ConsumerStatefulWidget {
@@ -37,6 +38,9 @@ class _AddClientScreenState
   final weightCtrl =
       TextEditingController();
 
+  final allergiesCtrl = TextEditingController();
+  final intolerancesCtrl = TextEditingController();
+
   String gender = 'male';
 
   bool eatingDisorderSupport =
@@ -52,6 +56,8 @@ class _AddClientScreenState
     ageCtrl.dispose();
     heightCtrl.dispose();
     weightCtrl.dispose();
+    allergiesCtrl.dispose();
+    intolerancesCtrl.dispose();
 
     super.dispose();
   }
@@ -110,7 +116,7 @@ class _AddClientScreenState
     });
 
     try {
-      await ref
+      final newId = await ref
           .read(
             coachClientsControllerProvider
                 .notifier,
@@ -147,6 +153,19 @@ class _AddClientScreenState
             isEatingDisorderSupport:
                 eatingDisorderSupport,
           );
+
+      // Alergie hned do karty klienta – jídelníčky je vynechají.
+      final allergies = allergiesCtrl.text.trim();
+      final intolerances = intolerancesCtrl.text.trim();
+      if (allergies.isNotEmpty || intolerances.isNotEmpty) {
+        await ref
+            .read(coachClientDetailsControllerProvider.notifier)
+            .upsertForClient(
+              clientId: newId,
+              allergies: allergies,
+              intolerances: intolerances,
+            );
+      }
 
       if (mounted) {
         Navigator.pop(context);
@@ -495,6 +514,31 @@ class _AddClientScreenState
                 onChanged: (_) {
                   setState(() {});
                 },
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: allergiesCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Alergie (nepovinné)',
+                  hintText: 'např. ořechy, ryby, mléko',
+                  helperText: 'Jídelníčky tyto potraviny vynechají.',
+                  prefixIcon: Icon(Icons.warning_amber_rounded),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: intolerancesCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Nesnášenlivost (nepovinné)',
+                  hintText: 'např. laktóza, lepek',
+                  prefixIcon: Icon(Icons.no_food_outlined),
+                  border: OutlineInputBorder(),
+                ),
               ),
 
               const SizedBox(

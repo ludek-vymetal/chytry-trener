@@ -370,7 +370,7 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
     if (result == null) return;
 
     ref.read(foodBankProvider.notifier).upsert(result);
-    _toast('Uloženo do banky ✅');
+    _toast('Uloženo do banky');
 
     final grams = _parseGramsOrNull() ?? result.defaultGrams;
 

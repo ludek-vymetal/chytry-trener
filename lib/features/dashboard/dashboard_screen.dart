@@ -1,838 +1,557 @@
-import 'dart:io';
+import 'dart:math' as math;
 
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/training/training_plan_models.dart';
 import '../../l10n/app_localizations.dart';
-
-import '../../providers/coach/active_client_data_providers.dart';
-import '../../providers/coach/app_role_provider.dart';
-import '../../providers/locale_provider.dart';
-import '../../providers/theme_provider.dart';
+import '../../models/goal.dart';
+import '../../models/user_profile.dart';
+import '../../providers/daily_history_provider.dart';
+import '../../providers/nav_provider.dart';
+import '../../providers/slot_selection_provider.dart';
+import '../../providers/training_session_provider.dart';
 import '../../providers/user_profile_provider.dart';
-
-import '../../services/local_storage_service.dart';
 import '../../services/macro_service.dart';
 import '../../services/metabolism_service.dart';
-
-import '../body/add_circumference_screen.dart';
+import '../../services/today_training_service.dart';
 import '../body/add_measurement_screen.dart';
-import '../body/circumference_list_screen.dart';
-
-import '../coach/clients/add_circumference_entry_screen.dart';
-import '../coach/clients/coach_circumference_history_screen.dart';
-
+import '../common/adaptive_shell.dart';
 import '../debug/phase_test_screen.dart';
-
 import '../diet_plans/diet_strategy_screen.dart';
+import '../help/help_button.dart';
+import '../help/help_screen.dart';
+import '../training/today_training_screen.dart';
 
-import '../food/food_summary_screen.dart';
-
-import '../onboarding/onboarding_goal_screen.dart';
-
-import '../performance/performance_list_screen.dart';
-
-import '../role/role_select_screen.dart';
-
-import '../training/training_overview_screen.dart';
-
-import 'macros_screen.dart';
-
+/// Obrazovka „Dnes“ – přehled dne pro klienta: cesta k cíli, dnešní
+/// trénink, jídlo, týden a rychlé akce.
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  ConsumerState<DashboardScreen> createState() =>
-      _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState
-    extends ConsumerState<DashboardScreen> {
-  String? _exportFolderPath;
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  static const _weekdays = [
+    'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle',
+  ];
+  static const _months = [
+    'ledna', 'února', 'března', 'dubna', 'května', 'června', 'července',
+    'srpna', 'září', 'října', 'listopadu', 'prosince',
+  ];
 
-  bool _loadingExportFolder = true;
-
-  bool _changingExportFolder = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadExportFolderPath();
+  String _greeting(DateTime now) {
+    final h = now.hour;
+    if (h < 10) return 'Dobré ráno';
+    if (h < 18) return 'Dobrý den';
+    return 'Dobrý večer';
   }
 
-  Future<void> _loadExportFolderPath() async {
-    final path =
-        await LocalStorageService.loadClientExportFolderPath();
+  String _goalLabel(GoalType t) => switch (t) {
+        GoalType.strength => 'Síla',
+        GoalType.physique => 'Postava',
+        GoalType.weightLoss => 'Hubnutí',
+        GoalType.endurance => 'Vytrvalost',
+        GoalType.weightGainSupport => 'Podpora nabírání',
+      };
 
-    if (!mounted) return;
-
-    setState(() {
-      _exportFolderPath = path;
-      _loadingExportFolder = false;
-    });
-  }
-
-  Future<void> _pickExportFolder() async {
-    if (_changingExportFolder) return;
-
-    final messenger = ScaffoldMessenger.of(context);
-    final l10n = AppLocalizations.of(context)!;
-
-    final colorScheme = Theme.of(context).colorScheme;
-
-    
-    
-
-    setState(() {
-      _changingExportFolder = true;
-    });
-
-    try {
-      final selectedPath = await getDirectoryPath(
-        confirmButtonText: 'Vybrat složku',
-      );
-
-      if (selectedPath == null ||
-          selectedPath.trim().isEmpty) {
-        return;
-      }
-
-      final dir = Directory(selectedPath);
-
-      if (!dir.existsSync()) {
-        await dir.create(recursive: true);
-      }
-
-      await LocalStorageService
-          .saveClientExportFolderPath(selectedPath);
-
-      if (!mounted) return;
-
-      setState(() {
-        _exportFolderPath = selectedPath;
-      });
-
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(l10n.exportFolderSaved),
-          backgroundColor: colorScheme.primary,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.folderPickFailed(e.toString()),
-          ),
-          backgroundColor: colorScheme.error,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _changingExportFolder = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _clearExportFolder() async {
-    final messenger = ScaffoldMessenger.of(context);
-
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final l10n = AppLocalizations.of(context)!;
-    
-    await LocalStorageService.clearClientExportFolderPath();
-
-    if (!mounted) return;
-
-    setState(() {
-      _exportFolderPath = null;
-    });
-
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          l10n.customExportFolderRemoved,
-        ),
-        backgroundColor: colorScheme.tertiary,
-      ),
-    );
-  }
+  static String _n(double v, [int d = 1]) =>
+      v.toStringAsFixed(d).replaceAll('.', ',');
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    final activeCoachClientAsync =
-        ref.watch(activeCoachClientProvider);
-
-    final activeCoachClient =
-        activeCoachClientAsync.asData?.value;
     final profile = ref.watch(userProfileProvider);
-    
-    final themeMode = ref.watch(themeProvider);
 
     if (profile == null || profile.goal == null) {
-      return Scaffold(
-        body: Center(
-          child: Text(
-            l10n.profileNotFound,
-          ),
-        ),
-      );
+      return Scaffold(body: Center(child: Text(l10n.profileNotFound)));
     }
 
     final tdee = MetabolismService.calculateTDEE(
       profile,
       MetabolismService.activityFor(profile),
     );
+    final macro = MacroService.calculate(profile, tdee);
 
-    final macro =
-        MacroService.calculate(profile, tdee);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final intake = ref.watch(dailyHistoryProvider).intakeFor(today);
+    final sessions = ref.watch(trainingSessionProvider);
+    final slots = ref.watch(slotSelectionProvider);
 
-    final currentKg = profile.weight;
-
-    final targetKg =
-        profile.goal?.targetWeightKg;
-
-    void forceRestart() {
-      ref
-          .read(appRoleProvider.notifier)
-          .setRole(null);
-
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => const RoleSelectScreen(),
-        ),
-        (route) => false,
-      );
+    TrainingDayPlan? todayPlan;
+    try {
+      todayPlan = TodayTrainingService.today(profile, slotSelections: slots);
+    } catch (_) {
+      todayPlan = null;
     }
 
-    void openCircumferenceHistory() {
-      if (activeCoachClient != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                CoachCircumferenceHistoryScreen(
-              client: activeCoachClient,
-            ),
-          ),
-        );
+    // Týden: pondělí – neděle, odtrénované dny.
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final trained = <int>{
+      for (final s in sessions)
+        if ((s.completed || s.entries.isNotEmpty) &&
+            !s.date.isBefore(monday) &&
+            s.date.isBefore(monday.add(const Duration(days: 7))))
+          s.date.weekday,
+    };
 
-        return;
-      }
+    final name = profile.firstName.trim();
+    final header = _Header(
+      date: '${_weekdays[now.weekday - 1]} ${now.day}. ${_months[now.month - 1]}',
+      greeting: name.isEmpty ? _greeting(now) : '${_greeting(now)}, $name',
+      initials: name.isEmpty
+          ? null
+          : '${name[0]}${profile.lastName.trim().isEmpty ? '' : profile.lastName.trim()[0]}'
+              .toUpperCase(),
+    );
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              const CircumferenceListScreen(),
-        ),
-      );
-    }
+    final goalCard = _GoalCard(
+      profile: profile,
+      goalLabel: _goalLabel(profile.goal!.type),
+      weeksToTarget: macro.weeksToTarget,
+    );
 
-    void openAddCircumference() {
-      if (activeCoachClient != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                AddCircumferenceEntryScreen(
-              clientId:
-                  activeCoachClient.clientId,
-            ),
-          ),
-        );
+    final trainingCard = _TrainingCard(plan: todayPlan);
 
-        return;
-      }
+    final foodCard = _FoodCard(
+      eatenKcal: intake.calories,
+      targetKcal: macro.targetCalories,
+      protein: (intake.protein, macro.protein),
+      carbs: (intake.carbs, macro.carbs),
+      fat: (intake.fat, macro.fat),
+      onOpenFood: () => ref.read(userTabProvider.notifier).state = 1,
+    );
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              const AddCircumferenceScreen(),
-        ),
-      );
-    }
+    final week = _WeekStrip(trainedWeekdays: trained, todayWeekday: now.weekday);
 
-    Future<void> openChangeGoal() async {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(
-            l10n.changeGoal,
-          ),
-          content: Text(
-            l10n.changeGoalDescription,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
-              child: Text(
-                l10n.no,
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
-              child: Text(
-                l10n.yes,
-              ),
-            ),
-          ],
-        ),
-      );
-
-      if (!mounted) return;
-
-      if (confirmed == true) {
-        if (!context.mounted) return;
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const OnboardingGoalScreen(),
-            ),
+    final actionItems = <_Action>[
+        _Action(Icons.restaurant_menu, 'Jídelníček', () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DietStrategyScreen()),
           );
-        }
-      }  
+        }),
+        _Action(Icons.monitor_weight_outlined, 'Zapsat váhu', () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddMeasurementScreen()),
+          );
+        }),
+        _Action(Icons.show_chart, 'Můj pokrok',
+            () => ref.read(userTabProvider.notifier).state = 3),
+        _Action(Icons.help_outline, 'Nápověda', () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const HelpScreen(topic: 'today')),
+          );
+        }),
+    ];
+    final actions = _QuickActions(items: actionItems);
+    final withSide = SidePanelLayout.isWide(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.dashboard,
+    final details = Card(
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        leading: const Icon(Icons.calculate_outlined),
+        title: const Text('Jak je spočítaný tvůj cíl'),
+        subtitle: Text(
+          '${macro.targetCalories} kcal · B ${macro.protein} g · '
+          'S ${macro.carbs} g · T ${macro.fat} g',
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: forceRestart,
-        ),
-        actions: [
-          PopupMenuButton<Locale?>(
-            icon: const Icon(Icons.language),
-            onSelected: (locale) {
-              ref
-                  .read(localeProvider.notifier)
-                  .state = locale;
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: null,
-                child: Text(
-                  l10n.automatic,
-                ),
-              ),
-              PopupMenuItem(
-                value: const Locale('cs'),
-                child: Text(
-                  l10n.czech,
-                ),
-              ),
-              PopupMenuItem(
-                value: const Locale('en'),
-                child: Text(
-                  l10n.english,
-                ),
-              ),
-            ],
-          ),
-
-          IconButton(
-            tooltip: themeMode == ThemeMode.dark
-                ? l10n.switchToLightMode
-                : l10n.switchToDarkMode,
-            icon: Icon(
-              themeMode == ThemeMode.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
-            ),
-            onPressed: () {
-              ref
-                  .read(themeProvider.notifier)
-                  .toggleLightDark();
-            },
-          ),
-
-          TextButton.icon(
-            onPressed: forceRestart,
-            icon: Icon(
-              Icons.swap_horiz,
-              color: colorScheme.primary,
-            ),
-            label: Text(
-              l10n.changeMode,
-              style: TextStyle(
-                color: colorScheme.primary,
-              ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Denní výdej ${tdee.toStringAsFixed(0)} kcal · '
+              '${macro.strategyLabel} · ${macro.phaseLabel}',
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
-        ],
-      ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-
-        child: Column(
-          children: [
-            _MetricCard(
-              title: 'TDEE',
-              value:
-                  '${tdee.toStringAsFixed(0)} kcal',
-              subtitle:
-                  l10n.dailyEnergyExpenditure,
-            ),
-
+          const SizedBox(height: 8),
+          Text(macro.rationale),
+          if (kDebugMode) ...[
             const SizedBox(height: 12),
-
-            _MetricCard(
-              title:
-                  l10n.targetCalories.toUpperCase(),
-              value:
-                  '${macro.targetCalories} kcal',
-              subtitle:
-                  '${macro.strategyLabel} • ${macro.phaseLabel} • ${macro.planModeLabel}',
-            ),
-
-            const SizedBox(height: 12),
-
-            _MetricCard(
-              title: l10n.macros,
-              value:
-                  'B ${macro.protein} g | S ${macro.carbs} g | T ${macro.fat} g',
-              subtitle:
-                  '${l10n.weeksToTarget}: ${macro.weeksToTarget}',
-            ),
-
-            const SizedBox(height: 12),
-
-            Card(
-              child: Padding(
-                padding:
-                    const EdgeInsets.all(12),
-                child: Text(
-                  macro.rationale,
-                  style: TextStyle(
-                    color: colorScheme
-                        .onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
             _MacroDebugCard(
-              currentKg: currentKg,
-              targetKg: targetKg,
-              weightForCaloriesKg:
-                  macro.weightForCaloriesKg,
-              weightForProteinKg:
-                  macro.weightForProteinKg,
+              currentKg: profile.weight,
+              targetKg: profile.goal?.targetWeightKg,
+              weightForCaloriesKg: macro.weightForCaloriesKg,
+              weightForProteinKg: macro.weightForProteinKg,
               macro: macro,
             ),
-
-            const SizedBox(height: 12),
-
-            _ExportFolderCard(
-              
-              currentPath: _exportFolderPath,
-              isLoading:
-                  _loadingExportFolder,
-              isBusy:
-                  _changingExportFolder,
-              onPickFolder:
-                  _pickExportFolder,
-              onClearFolder:
-                  _clearExportFolder,
-            ),
-
-            const SizedBox(height: 24),
-
-            _fullWidthButton(
-              label: l10n.addMeasurement,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const AddMeasurementScreen(),
-                  ),
-                );
-              },
-            ),
-
-            _fullWidthButton(
-              label:
-                  l10n.bodyCircumference,
-              onPressed:
-                  openCircumferenceHistory,
-            ),
-
-            _fullWidthButton(
-              label:
-                  l10n.addCircumference,
-              onPressed:
-                  openAddCircumference,
-            ),
-
-            _fullWidthButton(
-              label: l10n.performance,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const PerformanceListScreen(),
-                  ),
-                );
-              },
-            ),
-
-            _fullWidthButton(
-              label: l10n.dailyMacros,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const MacrosScreen(),
-                  ),
-                );
-              },
-            ),
-
-            _fullWidthButton(
-              label: l10n.todayFood,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const FoodSummaryScreen(),
-                  ),
-                );
-              },
-            ),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const DietStrategyScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.fact_check,
-                ),
-                label: Text(
-                  l10n.dietPlanStyle,
-                  style: const TextStyle(
-                    fontWeight:
-                        FontWeight.bold,
-                  ),
-                ),
-                style:
-                    FilledButton.styleFrom(
-                  backgroundColor:
-                      colorScheme
-                          .tertiaryContainer,
-                  foregroundColor:
-                      colorScheme
-                          .onTertiaryContainer,
-                ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PhaseTestScreen()),
               ),
+              child: Text(l10n.phaseLogicTest),
             ),
-
-            const SizedBox(height: 12),
-
-            _fullWidthButton(
-              label: l10n.changeGoal,
-              onPressed: openChangeGoal,
-            ),
-
-            _fullWidthButton(
-              label:
-                  l10n.trainingMode,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const TrainingOverviewScreen(),
-                  ),
-                );
-              },
-            ),
-
-            if (kDebugMode)
-            _fullWidthButton(
-              label:
-                  l10n.phaseLogicTest,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const PhaseTestScreen(),
-                  ),
-                );
-              },
-              backgroundColor:
-                  colorScheme
-                      .secondaryContainer,
-              foregroundColor:
-                  colorScheme
-                      .onSecondaryContainer,
-            ),
-
-            const SizedBox(height: 40),
           ],
-        ),
+        ],
       ),
     );
-  }
 
-  Widget _fullWidthButton({
-    required String label,
-    required VoidCallback onPressed,
-    Color? backgroundColor,
-    Color? foregroundColor,
-  }) {
-    return Padding(
-      padding:
-          const EdgeInsets.only(bottom: 12),
-
-      child: SizedBox(
-        width: double.infinity,
-        height: 45,
-
-        child: ElevatedButton(
-          style: (backgroundColor != null ||
-                  foregroundColor != null)
-              ? ElevatedButton.styleFrom(
-                  backgroundColor:
-                      backgroundColor,
-                  foregroundColor:
-                      foregroundColor,
-                )
-              : null,
-
-          onPressed: onPressed,
-
-          child: Text(label),
+    return Scaffold(
+      body: SidePanelLayout(
+        side: [
+          week,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SideTitle('Rychlé akce'),
+              _QuickActions(items: actionItems, columns: 1),
+            ],
+          ),
+          details,
+        ],
+        main: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final wide = c.maxWidth >= 900;
+            const gap = SizedBox(height: 14);
+            final content = withSide
+                ? (wide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [goalCard, gap, trainingCard],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(child: foodCard),
+                        ],
+                      )
+                    : Column(
+                        children: [goalCard, gap, trainingCard, gap, foodCard],
+                      ))
+                : wide
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [goalCard, gap, trainingCard, gap, week],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          children: [foodCard, gap, actions, gap, details],
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      goalCard,
+                      gap,
+                      trainingCard,
+                      gap,
+                      foodCard,
+                      gap,
+                      week,
+                      gap,
+                      actions,
+                      gap,
+                      details,
+                    ],
+                  );
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(wide ? 28 : 16, 12, wide ? 28 : 16, 32),
+              child: PageWidth(
+                child: Column(
+                  children: [header, const SizedBox(height: 16), content],
+                ),
+              ),
+            );
+          },
         ),
+      ),
       ),
     );
   }
 }
 
-class _ExportFolderCard extends StatelessWidget {
-  
-  final String? currentPath;
+// =================================================================
+// Části obrazovky
+// =================================================================
 
-  final bool isLoading;
+class _Header extends StatelessWidget {
+  final String date;
+  final String greeting;
+  final String? initials;
 
-  final bool isBusy;
+  const _Header({required this.date, required this.greeting, this.initials});
 
-  final VoidCallback onPickFolder;
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                date,
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                greeting,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        const HelpButton(topic: 'today'),
+        if (initials != null) ...[
+          const SizedBox(width: 4),
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: cs.primary,
+            foregroundColor: cs.onPrimary,
+            child: Text(
+              initials!,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
-  final VoidCallback onClearFolder;
+/// Tmavá karta „Cesta k cíli“ s kruhem postupu.
+class _GoalCard extends StatelessWidget {
+  final UserProfile profile;
+  final String goalLabel;
+  final int weeksToTarget;
 
-  const _ExportFolderCard({
-    required this.currentPath,
-    required this.isLoading,
-    required this.isBusy,
-    required this.onPickFolder,
-    required this.onClearFolder,
+  const _GoalCard({
+    required this.profile,
+    required this.goalLabel,
+    required this.weeksToTarget,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
-    final l10n =
-        AppLocalizations.of(context)!;    
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final bg = dark ? cs.primaryContainer : const Color(0xFF13171C);
+    final fg = dark ? cs.onPrimaryContainer : Colors.white;
+    final muted = fg.withValues(alpha: 0.7);
 
-    final hasCustomPath =
-        currentPath != null &&
-            currentPath!.trim().isNotEmpty;
+    final ms = [...profile.measurements]..sort((a, b) => a.date.compareTo(b.date));
+    final current = ms.isNotEmpty ? ms.last.weight : profile.weight;
+    final start = ms.isNotEmpty ? ms.first.weight : profile.weight;
+    final target = profile.goal?.targetWeightKg;
+
+    double? progress;
+    if (target != null && (start - target).abs() > 0.1) {
+      progress = ((start - current) / (start - target)).clamp(0.0, 1.0);
+    }
+    final change = current - start;
+
+    Widget stat(String label, String value) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: fg.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 11, color: muted)),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: fg,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 78,
+                height: 78,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 78,
+                      height: 78,
+                      child: CircularProgressIndicator(
+                        value: progress ?? 0,
+                        strokeWidth: 8,
+                        strokeCap: StrokeCap.round,
+                        backgroundColor: fg.withValues(alpha: 0.15),
+                        color: dark ? cs.primary : cs.inversePrimary,
+                      ),
+                    ),
+                    Text(
+                      progress == null ? '–' : '${(progress * 100).round()} %',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: fg,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CESTA K CÍLI · ${goalLabel.toUpperCase()}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w800,
+                        color: muted,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      target == null
+                          ? 'Drž směr'
+                          : progress != null && progress >= 1
+                              ? 'Cíl splněn!'
+                              : 'Zbývá ${_DashboardScreenState._n((current - target).abs())} kg',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: fg,
+                      ),
+                    ),
+                    if (weeksToTarget > 0)
+                      Text(
+                        'přibližně $weeksToTarget týdnů',
+                        style: TextStyle(color: muted),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              stat('Váha teď', '${_DashboardScreenState._n(current)} kg'),
+              const SizedBox(width: 8),
+              stat(
+                'Od začátku',
+                '${change > 0 ? '+' : change < 0 ? '−' : ''}'
+                    '${_DashboardScreenState._n(change.abs())} kg',
+              ),
+              const SizedBox(width: 8),
+              stat(
+                'Cíl',
+                target == null ? '–' : '${_DashboardScreenState._n(target)} kg',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrainingCard extends StatelessWidget {
+  final TrainingDayPlan? plan;
+  const _TrainingCard({required this.plan});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final p = plan;
+    final rest = p == null || p.exercises.isEmpty;
 
     return Card(
-      elevation: 0,
-
-      shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(18),
-        side: BorderSide(
-          color:
-              colorScheme.outlineVariant,
-        ),
-      ),
-
       child: Padding(
-        padding:
-            const EdgeInsets.all(16),
-
+        padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.folder_copy_outlined,
-                  color:
-                      colorScheme.primary,
-                ),
-
-                const SizedBox(width: 10),
-
-                Expanded(
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: cs.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                   child: Text(
-                    l10n.clientArchiving,
+                    'DNEŠNÍ TRÉNINK',
                     style: TextStyle(
-                      fontSize: 17,
-                      fontWeight:
-                          FontWeight.bold,
-                      color: colorScheme
-                          .onSurface,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.8,
+                      color: cs.onTertiaryContainer,
                     ),
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 14),
-
-            Container(
-              width: double.infinity,
-
-              padding:
-                  const EdgeInsets.all(14),
-
-              decoration: BoxDecoration(
-                color: colorScheme
-                    .surfaceContainerHighest
-                    .withValues(alpha: 0.45),
-
-                borderRadius:
-                    BorderRadius.circular(
-                        14),
-
-                border: Border.all(
-                  color: colorScheme
-                      .outlineVariant,
-                ),
-              ),
-
-              child: SelectableText(
-                isLoading
-                    ? l10n.loadingExportFolder
-                    : hasCustomPath
-                        ? l10n.currentExportFolder(
-                            currentPath!,
-                          )
-                        : l10n.noCustomExportFolder,
-
-                style: TextStyle(
-                  color: colorScheme
-                      .onSurfaceVariant,
-                  height: 1.45,
-                  fontSize: 14,
-                ),
-              ),
+            const SizedBox(height: 10),
+            Text(
+              rest ? 'Dnes volno – regenerace' : p.dayLabel,
+              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
             ),
-
-            const SizedBox(height: 18),
-
+            const SizedBox(height: 2),
+            Text(
+              rest
+                  ? 'Procházka, protažení a dostatek spánku.'
+                  : '${p.focus.isEmpty ? '' : '${p.focus} · '}'
+                      '${p.exercises.length} cviků',
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-
+              height: 52,
               child: FilledButton.icon(
-                onPressed:
-                    isBusy
-                        ? null
-                        : onPickFolder,
-
-                icon: isBusy
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child:
-                            CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colorScheme
-                              .onPrimary,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.folder_open,
-                      ),
-
-                label: Padding(
-                  padding:
-                      EdgeInsets.symmetric(
-                    vertical: 14,
-                  ),
-                  child: Text(
-                    l10n.selectExportFolder,
-                    textAlign:
-                        TextAlign.center,
-                  ),
+                icon: Icon(rest ? Icons.fitness_center : Icons.play_arrow),
+                label: Text(rest ? 'Otevřít trénink' : 'Začít trénink'),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TodayTrainingScreen()),
                 ),
               ),
             ),
-
-            if (hasCustomPath) ...[
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-
-                child:
-                    OutlinedButton.icon(
-                  onPressed:
-                      isBusy
-                          ? null
-                          : onClearFolder,
-
-                  icon: const Icon(
-                    Icons.close,
-                  ),
-
-                  label: Padding(
-                    padding:
-                        EdgeInsets.symmetric(
-                      vertical: 14,
-                    ),
-                    child: Text(
-                      l10n.clearCustomPath,
-                      textAlign:
-                          TextAlign.center,
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -840,88 +559,253 @@ class _ExportFolderCard extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  final String title;
+class _FoodCard extends StatelessWidget {
+  final int eatenKcal;
+  final int targetKcal;
+  final (int, int) protein;
+  final (int, int) carbs;
+  final (int, int) fat;
+  final VoidCallback onOpenFood;
 
-  final String value;
-
-  final String subtitle;
-
-  const _MetricCard({
-    required this.title,
-    required this.value,
-    required this.subtitle,
+  const _FoodCard({
+    required this.eatenKcal,
+    required this.targetKcal,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+    required this.onOpenFood,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme =
-        Theme.of(context).colorScheme;
-       
+    final cs = Theme.of(context).colorScheme;
+    final left = targetKcal - eatenKcal;
 
-    return Card(
-      elevation: 0,
-
-      shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(18),
-
-        side: BorderSide(
-          color:
-              colorScheme.outlineVariant,
-        ),
-      ),
-
-      child: Padding(
-        padding:
-            const EdgeInsets.all(18),
-
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-
+    Widget bar(String label, (int, int) v, Color color) {
+      final ratio = v.$2 <= 0 ? 0.0 : math.min(v.$1 / v.$2, 1.0);
+      return Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Row(
           children: [
-            Text(
-              title,
-
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight:
-                    FontWeight.bold,
-                color:
-                    colorScheme.onSurface,
+            SizedBox(
+              width: 78,
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
             ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              value,
-
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight:
-                    FontWeight.w800,
-                color:
-                    colorScheme.primary,
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: ratio,
+                  minHeight: 9,
+                  color: color,
+                  backgroundColor: cs.surfaceContainerHighest,
+                ),
               ),
             ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              subtitle,
-
-              style: TextStyle(
-                color: colorScheme
-                    .onSurfaceVariant,
-                height: 1.4,
-                fontSize: 14,
+            SizedBox(
+              width: 76,
+              child: Text(
+                '${v.$1}/${v.$2} g',
+                textAlign: TextAlign.right,
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
               ),
             ),
           ],
         ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Jídlo dnes',
+                        style: TextStyle(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '${left.abs()} ',
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            TextSpan(
+                              text: left >= 0 ? 'kcal zbývá' : 'kcal nad cílem',
+                              style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: onOpenFood,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Zapsat jídlo'),
+                ),
+              ],
+            ),
+            bar('Bílkoviny', protein, cs.primary),
+            bar('Sacharidy', carbs, cs.tertiary),
+            bar('Tuky', fat, cs.secondary),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _WeekStrip extends StatelessWidget {
+  final Set<int> trainedWeekdays;
+  final int todayWeekday;
+
+  const _WeekStrip({required this.trainedWeekdays, required this.todayWeekday});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    const labels = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tento týden · ${trainedWeekdays.length}× trénink',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (var d = 1; d <= 7; d++)
+                  Column(
+                    children: [
+                      Text(
+                        labels[d - 1],
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight:
+                              d == todayWeekday ? FontWeight.w900 : FontWeight.w500,
+                          color: d == todayWeekday
+                              ? cs.onSurface
+                              : cs.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: trainedWeekdays.contains(d)
+                              ? cs.primary
+                              : cs.surfaceContainerHighest,
+                          border: d == todayWeekday &&
+                                  !trainedWeekdays.contains(d)
+                              ? Border.all(color: cs.primary, width: 2)
+                              : null,
+                        ),
+                        child: trainedWeekdays.contains(d)
+                            ? Icon(Icons.check, size: 18, color: cs.onPrimary)
+                            : null,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Action {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _Action(this.icon, this.label, this.onTap);
+}
+
+/// Rychlé akce – všechny hlavní funkce viditelně na jedno klepnutí.
+class _QuickActions extends StatelessWidget {
+  final List<_Action> items;
+  final int columns;
+  const _QuickActions({required this.items, this.columns = 2});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GridView.count(
+      crossAxisCount: columns,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: columns == 1 ? 5.0 : 2.6,
+      children: [
+        for (final a in items)
+          Material(
+            color: cs.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: a.onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(a.icon, color: cs.onPrimaryContainer, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        a.label,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1127,4 +1011,4 @@ class _MacroDebugCard extends StatelessWidget {
       ),
     );
   }
-}
+}

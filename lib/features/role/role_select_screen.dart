@@ -10,6 +10,8 @@ import '../../providers/user_profile_provider.dart';
 import '../../providers/locale_provider.dart';
 
 import '../paywall/paywall_screen.dart';
+import '../coaching/coaching_widgets.dart';
+import '../../services/coach/online_coaching_service.dart';
 
 import 'package:dart_application_1/l10n/app_localizations.dart';
 
@@ -24,6 +26,17 @@ class RoleSelectScreen extends ConsumerStatefulWidget {
 class _RoleSelectScreenState
     extends ConsumerState<RoleSelectScreen> {
   bool _switching = false;
+
+  /// Telefon klienta připojeného k trenérovi – bez trenérského režimu.
+  bool _linked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    OnlineCoachingService.localClientLink().then((l) {
+      if (mounted && l != null) setState(() => _linked = true);
+    });
+  }
 
   void _openPaywall(
     BuildContext context,
@@ -75,6 +88,18 @@ class _RoleSelectScreenState
       'currentGoal=${currentProfile?.goal?.type.name}/${currentProfile?.goal?.reason.name}',
     );
 
+    // Klient připojený k trenérovi pracuje vždy se svým profilem.
+    final link = await OnlineCoachingService.localClientLink();
+    if (link != null) {
+      await ref
+          .read(activeClientIdProvider.notifier)
+          .setActive(link.clientId);
+      await ref
+          .read(userProfileProvider.notifier)
+          .switchToClient(link.clientId);
+      return;
+    }
+
     await ref.read(activeClientIdProvider.notifier).clear();
 
     await ref
@@ -114,6 +139,14 @@ class _RoleSelectScreenState
     );
   }
 
+  /// Když byl výběr režimu otevřený nad jinou obrazovkou, zavře se –
+  /// jinak by po zvolení stejného režimu zůstal viset.
+  void _closeIfPushed() {
+    if (!mounted) return;
+    final nav = Navigator.of(context);
+    if (nav.canPop()) nav.popUntil((r) => r.isFirst);
+  }
+
   Future<void> _switchToUser(bool clientLocked) async {
     if (_switching) return;
 
@@ -139,6 +172,7 @@ class _RoleSelectScreenState
           .setRole(AppRole.user);
 
       debugPrint('ROLE USER SET DONE');
+      _closeIfPushed();
     } finally {
       if (mounted) {
         setState(() => _switching = false);
@@ -171,6 +205,7 @@ class _RoleSelectScreenState
           .setRole(AppRole.coach);
 
       debugPrint('ROLE COACH SET DONE');
+      _closeIfPushed();
     } finally {
       if (mounted) {
         setState(() => _switching = false);
@@ -280,17 +315,20 @@ class _RoleSelectScreenState
 
                         const SizedBox(height: 10),
 
-                        Text(
-                          statusText(),
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .secondary,
+                        // Stav předplatného jen když je placená verze
+                        // zapnutá (v bezplatné betě je vše odemčené).
+                        if (SubscriptionController.paywallEnabled) ...[
+                          Text(
+                            statusText(),
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .secondary,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-
-                        const SizedBox(height: 12),
+                          const SizedBox(height: 12),
+                        ],
 
                         Text(
                           l10n.modeDescription,
@@ -331,6 +369,13 @@ class _RoleSelectScreenState
                           ),
                         ),
 
+                        if (_linked) ...[
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Jsi propojený/á se svým trenérem.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ] else ...[
                         const SizedBox(height: 10),
 
                         SizedBox(
@@ -365,9 +410,30 @@ class _RoleSelectScreenState
                           ),
                         ),
 
+                        const SizedBox(height: 10),
+
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.phonelink_ring_outlined),
+                            label: const Text('Mám pozvánku od trenéra'),
+                            onPressed: _switching
+                                ? null
+                                : () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const JoinCoachScreen(),
+                                      ),
+                                    ),
+                          ),
+                        ),
+                        ],
+
                         const SizedBox(height: 12),
 
-                        if (!active) ...[
+                        if (!SubscriptionController.paywallEnabled)
+                          const SizedBox.shrink()
+                        else if (!active) ...[
                           TextButton(
                             onPressed: () => _openPaywall(
                               context,

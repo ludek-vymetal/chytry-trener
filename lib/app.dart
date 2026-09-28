@@ -6,7 +6,7 @@ import 'core/nav/active_client_profile_sync.dart';
 import 'features/coach/auth/coach_auth_screen.dart';
 import 'features/coach/coach_shell.dart';
 import 'features/coach/setup/coach_setup_screen.dart';
-import 'features/dashboard/dashboard_screen.dart';
+import 'features/home/user_shell.dart';
 import 'features/onboarding/onboarding_profile_screen.dart';
 import 'features/paywall/paywall_screen.dart';
 import 'features/role/role_select_screen.dart';
@@ -22,6 +22,8 @@ import 'providers/coach/coach_setup_provider.dart';
 import 'providers/daily_history_provider.dart';
 import 'providers/daily_intake_provider.dart';
 import 'providers/subscription/subscription_provider.dart';
+import 'providers/accent_provider.dart';
+import 'providers/food_exclusions_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/training_session_provider.dart';
 import 'providers/user_profile_provider.dart';
@@ -31,6 +33,8 @@ import 'package:dart_application_1/l10n/app_localizations.dart';
 
 
 import 'providers/locale_provider.dart';
+import 'features/coaching/coaching_widgets.dart';
+import 'features/coach/auth/coach_pin_gate.dart';
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
@@ -39,6 +43,9 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final role = ref.watch(appRoleProvider);
     final themeMode = ref.watch(themeProvider);
+    final accent = ref.watch(accentProvider).color;
+    // Alergie aktivního klienta platí pro všechny jídelníčky.
+    ref.watch(activeFoodExclusionsProvider);
 
     return MaterialApp(
       key: ValueKey(role),
@@ -52,12 +59,14 @@ class MyApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
 
       themeMode: themeMode,
-      theme: AppTheme.build(Brightness.light),
-      darkTheme: AppTheme.build(Brightness.dark),
+      theme: AppTheme.build(Brightness.light, accent),
+      darkTheme: AppTheme.build(Brightness.dark, accent),
 
       builder: (context, child) {
         return ActiveClientProfileSync(
-          child: child ?? const SizedBox.shrink(),
+          child: CoachingSyncListener(
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
 
@@ -66,31 +75,52 @@ class MyApp extends ConsumerWidget {
   }
   }
 class AppTheme {
-  static ThemeData build(Brightness brightness) {
-    final base = ThemeData(
-      useMaterial3: true,
-      colorSchemeSeed: Colors.deepOrange,
+  /// Teplý „papírový“ podklad a karty; v tmavém režimu grafit.
+  static const _paper = Color(0xFFF5F3EE);
+  static const _night = Color(0xFF0E1215);
+  static const _nightCard = Color(0xFF192026);
+
+  /// [accent] = barva zvolená v nastavení (výchozí smaragdová).
+  static ThemeData build(Brightness brightness, [Color? accent]) {
+    final isDark = brightness == Brightness.dark;
+    final seed = accent ?? const Color(0xFF0F766E);
+    final generated = ColorScheme.fromSeed(
+      seedColor: seed,
       brightness: brightness,
     );
+    // Ve světlém režimu přesně zvolená barva, v tmavém světlejší odstín
+    // ze stejné palety (kvůli kontrastu).
+    final colorScheme = isDark
+        ? generated.copyWith(surface: _nightCard)
+        : generated.copyWith(
+            primary: seed,
+            onPrimary: Colors.white,
+            surface: Colors.white,
+          );
+    final background = isDark ? _night : _paper;
 
-    final colorScheme = base.colorScheme;
-    final isDark = brightness == Brightness.dark;
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+    );
 
     return base.copyWith(
-      scaffoldBackgroundColor: colorScheme.surface,
-      canvasColor: colorScheme.surface,
+      scaffoldBackgroundColor: background,
+      canvasColor: background,
       cardTheme: CardThemeData(
         elevation: 0,
         color: colorScheme.surface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+          ),
         ),
       ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
-        backgroundColor: colorScheme.surface,
+        backgroundColor: background,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -438,7 +468,7 @@ class RoleGate extends ConsumerWidget {
 
         if (role == AppRole.user) {
           if (profile != null && profile.goal != null) {
-            return const DashboardScreen();
+            return const UserShell();
           }
           return const OnboardingProfileScreen();
         }
@@ -451,7 +481,9 @@ class RoleGate extends ConsumerWidget {
           data: (user) {
             debugPrint('ROLE GATE -> coach auth user=${user?.uid}');
 
-            if (user == null) {
+            // Anonymní účet má jen klient připojený k trenérovi –
+            // do trenérského režimu se s ním nepustí.
+            if (user == null || user.isAnonymous) {
               return const CoachAuthScreen();
             }
 
@@ -568,7 +600,10 @@ class _CoachSessionBootstrapState
         if (setup == null || !setup.isComplete) {
           return const CoachSetupScreen();
         }
-        return const CoachShell();
+        return CoachPinGate(
+          pin: setup.securityPin,
+          child: const CoachShell(),
+        );
       },
     );
   }

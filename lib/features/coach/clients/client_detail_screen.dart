@@ -9,6 +9,7 @@ import 'package:dart_application_1/l10n/app_localizations.dart';
 // Modely
 import '../../../models/coach/coach_client.dart';
 import '../../../models/coach/coach_circumference_entry.dart';
+import '../../../core/body/inbody_analysis.dart';
 import '../../../models/coach/coach_inbody_entry.dart';
 import '../../../models/custom_training_plan.dart';
 import '../../../models/exercise_performance.dart';
@@ -38,15 +39,34 @@ import '../../../services/coach/client_import_service.dart';
 import '../../../services/local_storage_service.dart';
 
 // Obrazovky
+import '../../diet_plans/diet_strategy_screen.dart';
+import '../../food/food_summary_screen.dart';
+import '../../onboarding/onboarding_goal_screen.dart';
+import '../../training/custom_training_plan_screen.dart';
+import '../../training/training_overview_screen.dart';
 import 'edit_client_details_screen.dart';
 import 'add_circumference_entry_screen.dart';
 import 'add_inbody_entry_screen.dart';
+import 'inbody_report_screen.dart';
 import 'client_monthly_report_screen.dart';
+import '../widgets/client_pulse.dart';
+import '../../coaching/coaching_widgets.dart';
+import '../../diet_plans/widgets/food_exclusions_card.dart';
+import '../../../core/body/coach_recommendations.dart';
+import '../../../services/pdf/client_report_data.dart';
+import '../../../services/pdf/client_report_pdf_service.dart';
 
 class ClientDetailScreen extends ConsumerWidget {
   final CoachClient client;
 
-  const ClientDetailScreen({super.key, required this.client});
+  /// `true` = zobrazeno vedle seznamu klientů (počítač) – bez šipky zpět.
+  final bool embedded;
+
+  const ClientDetailScreen({
+    super.key,
+    required this.client,
+    this.embedded = false,
+  });
 
   bool _isValidEmail(String email) {
     if (email.trim().isEmpty) return true;
@@ -581,127 +601,73 @@ class ClientDetailScreen extends ConsumerWidget {
     final compliance7d = liveStats?.compliance7d ?? 0.0;
     final completedDaysInLast7 = liveStats?.completedDaysInLast7 ?? 0;
     final lastSession = liveStats?.lastSessionAt;
-    final isInactive7d = liveStats?.isInactive7d ?? true;
 
     final workoutDoneToday = _containsToday(liveClient.completedDays);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${liveClient.firstName} ${liveClient.lastName}'),
-        actions: [
-          IconButton(
-            tooltip: l10n.clientAnalysis,
-            icon: const Icon(Icons.assessment),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ClientMonthlyReportScreen(client: liveClient),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: l10n.openExportFolder,
-            icon: const Icon(Icons.folder_open),
-            onPressed: () => _openConfiguredExportFolder(context),
-          ),
-          IconButton(
-            tooltip: l10n.importRestoreClient,
-            icon: const Icon(Icons.download),
-            onPressed: () => _showImportSourceDialog(context, ref),
-          ),
-          IconButton(
-            tooltip: l10n.exportClient,
-            icon: const Icon(Icons.ios_share),
-            onPressed: () async {
-              try {
-                final result = await ClientExportService.archiveClientExport(
-                  client: liveClient,
-                  details: detailsAsync.valueOrNull,
-                  notes: notesAsync.valueOrNull ?? const [],
-                  inbody: inbodyAsync.valueOrNull ?? const [],
-                  circumferences: circsAsync.valueOrNull ?? const [],
-                  performances: performances,
-                  customPlans: clientPlans,
-                  sessions: history,
-                );
+    final inbodyItems = inbodyAsync.valueOrNull ?? const <CoachInbodyEntry>[];
+    final pulse = liveStats == null
+        ? null
+        : ClientPulse.of(liveStats, inbodyItems.firstOrNull);
 
-                if (context.mounted) {
-                  await _showExportSuccessDialog(
+    final planSection = _section(context, l10n.clientPlanTitle, [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: () => _openForClient(
                     context,
-                    result: result,
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${l10n.exportError}: $e'),
-                      backgroundColor: colorScheme.error,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-          IconButton(
-            tooltip: l10n.archiveAndDeleteClient,
-            icon: Icon(Icons.delete_forever, color: colorScheme.error),
-            onPressed: () => _deleteClientFlow(
-              context,
-              ref,
-              liveClient: liveClient,
-              exportBeforeDelete: true,
-              details: detailsAsync.valueOrNull,
-              notes: notesAsync.valueOrNull ?? const [],
-              inbody: inbodyAsync.valueOrNull ?? const [],
-              circumferences: circsAsync.valueOrNull ?? const [],
-              performances: performances,
-              clientPlans: clientPlans,
-              history: history,
+                    ref,
+                    liveClient,
+                    const OnboardingGoalScreen(),
+                  ),
+                  icon: const Icon(Icons.flag_outlined),
+                  label: Text(l10n.clientGoalButton),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: () => _openForClient(
+                    context,
+                    ref,
+                    liveClient,
+                    const DietStrategyScreen(),
+                  ),
+                  icon: const Icon(Icons.restaurant_menu),
+                  label: Text(l10n.clientDietButton),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: () => _openForClient(
+                    context,
+                    ref,
+                    liveClient,
+                    const TrainingOverviewScreen(),
+                  ),
+                  icon: const Icon(Icons.fitness_center),
+                  label: Text(l10n.clientTrainingButton),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: () => _openForClient(
+                    context,
+                    ref,
+                    liveClient,
+                    const CustomTrainingPlanScreen(),
+                  ),
+                  icon: const Icon(Icons.list_alt),
+                  label: Text(l10n.clientProgramsButton),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: () => _openForClient(
+                    context,
+                    ref,
+                    liveClient,
+                    const FoodSummaryScreen(),
+                  ),
+                  icon: const Icon(Icons.today),
+                  label: Text(l10n.clientFoodTodayButton),
+                ),
+              ],
             ),
-          ),
-          IconButton(
-            tooltip: l10n.deleteClient,
-            icon: const Icon(Icons.delete),
-            onPressed: () => _deleteClientFlow(
-              context,
-              ref,
-              liveClient: liveClient,
-              exportBeforeDelete: false,
-              details: detailsAsync.valueOrNull,
-              notes: notesAsync.valueOrNull ?? const [],
-              inbody: inbodyAsync.valueOrNull ?? const [],
-              circumferences: circsAsync.valueOrNull ?? const [],
-              performances: performances,
-              clientPlans: clientPlans,
-              history: history,
-            ),
-          ),
-          IconButton(
-            tooltip: l10n.editClient,
-            icon: const Icon(Icons.edit),
-            onPressed: () => _editClientBasicsDialog(context, ref, liveClient),
-          ),
-          IconButton(
-            tooltip: l10n.editClientCard,
-            icon: const Icon(Icons.edit_note),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) =>
-                    EditClientDetailsScreen(clientId: liveClient.clientId),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: l10n.addNote,
-            icon: const Icon(Icons.note_add),
-            onPressed: () => _addNoteDialog(context, ref, liveClient.clientId),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _section(context, l10n.basicInformation, [
+          ]);
+    final basicSection = _section(context, l10n.basicInformation, [
             _row(context, l10n.name, liveClient.displayName),
             _row(context, l10n.clientId, liveClient.clientId),
             _rowWithAction(
@@ -749,32 +715,8 @@ class ClientDetailScreen extends ConsumerWidget {
                 l10n.compliance7Days,
                 '${(compliance7d * 100).round()} %',
               ),
-          ]),
-
-          if (isSensitive) ...[
-            const SizedBox(height: 12),
-            _warningBox(
-              context,
-              l10n.recoveryMode,
-              colorScheme.tertiaryContainer,
-              colorScheme.onTertiaryContainer,
-            ),
-          ],
-
-          if (isInactive7d) ...[
-            const SizedBox(height: 12),
-            _warningBox(
-              context,
-              l10n.clientInactive7Days,
-              colorScheme.errorContainer,
-              colorScheme.onErrorContainer,
-            ),
-          ],
-          
-
-          const SizedBox(height: 16),
-
-          _section(context, l10n.today, [
+          ]);
+    final todaySection = _section(context, l10n.today, [
             CheckboxListTile(
               value: workoutDoneToday,
               controlAffinity: ListTileControlAffinity.leading,
@@ -802,11 +744,8 @@ class ClientDetailScreen extends ConsumerWidget {
                       );
                     },
             ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section(context, l10n.statusCheck, [
+          ]);
+    final statusSection = _section(context, l10n.statusCheck, [
             _binaryStatusRow(
               context,
               label: l10n.sentComparisonPhotos,
@@ -884,11 +823,8 @@ class ClientDetailScreen extends ConsumerWidget {
                 l10n.responseRequestPlaceholder,
               ),
             ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section(context, l10n.clientTrainingPlans, [
+          ]);
+    final plansSection = _section(context, l10n.clientTrainingPlans, [
             Row(
               children: [
                 Expanded(
@@ -918,11 +854,8 @@ class ClientDetailScreen extends ConsumerWidget {
                     _planTile(context, ref, plan, liveClient.clientId),
                 ],
               ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section(context, l10n.coachData, [
+          ]);
+    final coachDataSection = _section(context, l10n.coachData, [
             detailsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('${l10n.error}: $e'),
@@ -938,11 +871,8 @@ class ClientDetailScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section(context, l10n.inbody, [
+          ]);
+    final inbodySection = _section(context, l10n.inbody, [
             if (isSensitive)
               Text(l10n.dataHiddenRecoveryMode)
             else
@@ -958,7 +888,7 @@ class ClientDetailScreen extends ConsumerWidget {
                       _row(context, l10n.fat, '${latest.percentBodyFat} %'),
                       _row(context, l10n.muscles, '${latest.skeletalMuscleMassKg} kg'),
                       const SizedBox(height: 10),
-                      _interpretationCard(context, latest),
+                      _interpretationCard(context, liveClient, items),
                       if (items.length > 1) ...[
                         const SizedBox(height: 10),
                         _compareInbodyCard(context, latest, items[1]),
@@ -981,11 +911,8 @@ class ClientDetailScreen extends ConsumerWidget {
               ),
               child: Text(l10n.addInbody),
             ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section(context, l10n.circumferences, [
+          ]);
+    final circSection = _section(context, l10n.circumferences, [
             if (isSensitive)
               Text(l10n.hiddenRecoveryMode)
             else
@@ -1006,11 +933,8 @@ class ClientDetailScreen extends ConsumerWidget {
               ),
               child: Text(l10n.addCircumferences),
             ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section(context, l10n.coachNotes, [
+          ]);
+    final notesSection = _section(context, l10n.coachNotes, [
             notesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('${l10n.error}: $e'),
@@ -1021,26 +945,13 @@ class ClientDetailScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          ]),
-
-          const SizedBox(height: 32),
-
-          Padding(
+          ]);
+    final openAsClient =           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.tertiaryContainer,
-                foregroundColor: colorScheme.onTertiaryContainer,
-                minimumSize: const Size(double.infinity, 60),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              
+            child: TextButton.icon(
+              icon: const Icon(Icons.open_in_new),
 
-              icon: const Icon(Icons.rocket_launch),
-
-              label: Text(l10n.switchToThisProfile),
+              label: Text(l10n.openAsClient),
 
               onPressed: () async {
                 try {
@@ -1072,10 +983,452 @@ class ClientDetailScreen extends ConsumerWidget {
                 }
               },
             ),
+          );
+
+    void openPdf() => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ClientMonthlyReportScreen(client: liveClient),
           ),
-          const SizedBox(height: 50),
+        );
+    void addInbody() => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AddInbodyEntryScreen(
+              clientId: liveClient.clientId,
+              heightCm: liveClient.heightCm,
+            ),
+          ),
+        );
+
+    Widget tabList(List<Widget> children) => ListView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 48),
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) const SizedBox(height: 16),
+              children[i],
+            ],
+          ],
+        );
+
+    final sinceMonth = _monthsGen[liveClient.linkedAt.month - 1];
+    final meta = [
+      _genderLabel(liveClient.gender),
+      if (liveClient.age > 0) '${liveClient.age} let',
+      if (liveClient.heightCm > 0) '${liveClient.heightCm} cm',
+      'klientem od $sinceMonth ${liveClient.linkedAt.year}',
+    ].join(' · ');
+
+    final sessionsDesc = [...history]..sort((a, b) => b.date.compareTo(a.date));
+    final recentSessions = _RecentSessionsCard(sessions: sessionsDesc.take(6).toList());
+
+    final attention = AttentionCard(
+      alerts: pulse?.alerts ?? const [],
+      title: 'POZORNOST',
+      showNames: false,
+      emptyText: 'Klient je v rytmu – nic nehoří.',
+    );
+
+    return LayoutBuilder(builder: (context, box) {
+      final wide = box.maxWidth >= 720;
+      final twoCols = box.maxWidth >= 980;
+
+      final overview = tabList([
+        if (isSensitive)
+          _warningBox(
+            context,
+            l10n.recoveryMode,
+            colorScheme.tertiaryContainer,
+            colorScheme.onTertiaryContainer,
+          ),
+        _KpiTiles(
+          client: liveClient,
+          inbody: inbodyItems,
+          completedLast7: completedDaysInLast7,
+          lastSession: lastSession,
+        ),
+        CoachingInviteCard(client: liveClient),
+        _ActionPlanCard(client: liveClient),
+        if (twoCols)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    todaySection,
+                    const SizedBox(height: 16),
+                    statusSection,
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 300,
+                child: Column(
+                  children: [
+                    attention,
+                    const SizedBox(height: 16),
+                    recentSessions,
+                  ],
+                ),
+              ),
+            ],
+          )
+        else ...[
+          attention,
+          todaySection,
+          statusSection,
+          recentSessions,
         ],
-      ),
+        planSection,
+        basicSection,
+      ]);
+
+      final bodyTab = tabList([inbodySection, circSection]);
+
+      final trainingTab = tabList([
+        _section(context, 'Trénink klienta', [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => _openForClient(
+                  context,
+                  ref,
+                  liveClient,
+                  const TrainingOverviewScreen(),
+                ),
+                icon: const Icon(Icons.fitness_center),
+                label: Text(l10n.clientTrainingButton),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => _openForClient(
+                  context,
+                  ref,
+                  liveClient,
+                  const CustomTrainingPlanScreen(),
+                ),
+                icon: const Icon(Icons.list_alt),
+                label: Text(l10n.clientProgramsButton),
+              ),
+            ],
+          ),
+        ]),
+        recentSessions,
+        plansSection,
+      ]);
+
+      final foodTab = tabList([
+        _section(context, 'Strava klienta', [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => _openForClient(
+                  context,
+                  ref,
+                  liveClient,
+                  const DietStrategyScreen(),
+                ),
+                icon: const Icon(Icons.restaurant_menu),
+                label: Text(l10n.clientDietButton),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => _openForClient(
+                  context,
+                  ref,
+                  liveClient,
+                  const FoodSummaryScreen(),
+                ),
+                icon: const Icon(Icons.today),
+                label: Text(l10n.clientFoodTodayButton),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => _openForClient(
+                  context,
+                  ref,
+                  liveClient,
+                  const OnboardingGoalScreen(),
+                ),
+                icon: const Icon(Icons.flag_outlined),
+                label: Text(l10n.clientGoalButton),
+              ),
+            ],
+          ),
+        ]),
+        FoodExclusionsCard(clientId: liveClient.clientId),
+        coachDataSection,
+      ]);
+
+      final notesTab = tabList([
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.icon(
+            onPressed: () => _addNoteDialog(context, ref, liveClient.clientId),
+            icon: const Icon(Icons.note_add_outlined),
+            label: Text(l10n.addNote),
+          ),
+        ),
+        notesSection,
+        openAsClient,
+      ]);
+
+      return DefaultTabController(
+        length: 5,
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: !embedded,
+            toolbarHeight: 84,
+            titleSpacing: embedded ? 20 : 0,
+            title: Row(
+              children: [
+                if (pulse != null) ...[
+                  ScoreRing(score: pulse.score, size: 56),
+                  const SizedBox(width: 14),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        liveClient.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              if (wide) ...[
+                OutlinedButton.icon(
+                  onPressed: addInbody,
+                  icon: const Icon(Icons.monitor_weight_outlined),
+                  label: Text(l10n.addInbody),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: openPdf,
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  label: const Text('Souhrn PDF'),
+                ),
+                const SizedBox(width: 4),
+              ] else ...[
+                IconButton(
+                  tooltip: l10n.addInbody,
+                  icon: const Icon(Icons.monitor_weight_outlined),
+                  onPressed: addInbody,
+                ),
+                IconButton(
+                  tooltip: 'Souhrn PDF',
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  onPressed: openPdf,
+                ),
+              ],
+          IconButton(
+            tooltip: l10n.editClient,
+            icon: const Icon(Icons.edit),
+            onPressed: () => _editClientBasicsDialog(context, ref, liveClient),
+          ),
+          IconButton(
+            tooltip: l10n.addNote,
+            icon: const Icon(Icons.note_add),
+            onPressed: () => _addNoteDialog(context, ref, liveClient.clientId),
+          ),
+          // Méně časté a nebezpečné akce v menu – mazání odděleně dole.
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              switch (value) {
+                case 'card':
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          EditClientDetailsScreen(clientId: liveClient.clientId),
+                    ),
+                  );
+                  break;
+                case 'export':
+                  try {
+                    final result = await ClientExportService.archiveClientExport(
+                      client: liveClient,
+                      details: detailsAsync.valueOrNull,
+                      notes: notesAsync.valueOrNull ?? const [],
+                      inbody: inbodyAsync.valueOrNull ?? const [],
+                      circumferences: circsAsync.valueOrNull ?? const [],
+                      performances: performances,
+                      customPlans: clientPlans,
+                      sessions: history,
+                    );
+
+                    if (context.mounted) {
+                      await _showExportSuccessDialog(
+                        context,
+                        result: result,
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${l10n.exportError}: $e'),
+                          backgroundColor: colorScheme.error,
+                        ),
+                      );
+                    }
+                  }
+                  break;
+                case 'folder':
+                  await _openConfiguredExportFolder(context);
+                  break;
+                case 'import':
+                  await _showImportSourceDialog(context, ref);
+                  break;
+                case 'archiveDelete':
+                case 'delete':
+                  await _deleteClientFlow(
+                    context,
+                    ref,
+                    exportBeforeDelete: value == 'archiveDelete',
+                  liveClient: liveClient,
+                  details: detailsAsync.valueOrNull,
+                  notes: notesAsync.valueOrNull ?? const [],
+                  inbody: inbodyAsync.valueOrNull ?? const [],
+                  circumferences: circsAsync.valueOrNull ?? const [],
+                  performances: performances,
+                  clientPlans: clientPlans,
+                  history: history,
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'card',
+                child: ListTile(
+                  leading: const Icon(Icons.edit_note),
+                  title: Text(l10n.editClientCard),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'export',
+                child: ListTile(
+                  leading: const Icon(Icons.ios_share),
+                  title: Text(l10n.exportClient),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'folder',
+                child: ListTile(
+                  leading: const Icon(Icons.folder_open),
+                  title: Text(l10n.openExportFolder),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'import',
+                child: ListTile(
+                  leading: const Icon(Icons.download),
+                  title: Text(l10n.importRestoreClient),
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                value: 'archiveDelete',
+                child: ListTile(
+                  leading: Icon(Icons.delete_forever, color: colorScheme.error),
+                  title: Text(
+                    l10n.archiveAndDeleteClient,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: ListTile(
+                  leading: Icon(Icons.delete, color: colorScheme.error),
+                  title: Text(
+                    l10n.deleteClient,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
+                ),
+              ),
+            ],
+          ),
+              const SizedBox(width: 8),
+            ],
+            bottom: const TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              tabs: [
+                Tab(text: 'Přehled'),
+                Tab(text: 'Postava'),
+                Tab(text: 'Trénink'),
+                Tab(text: 'Strava'),
+                Tab(text: 'Poznámky'),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            children: [overview, bodyTab, trainingTab, foodTab, notesTab],
+          ),
+        ),
+      );
+    });
+  }
+
+  /// Otevře obrazovku (cíl, jídelníček, trénink…) pro tohoto klienta
+  /// přímo v trenérském režimu: klient se nastaví jako aktivní a načte se
+  /// jeho profil, pak se obrazovka otevře. Po návratu je trenér zpět
+  /// v detailu klienta.
+  Future<void> _openForClient(
+    BuildContext context,
+    WidgetRef ref,
+    CoachClient client,
+    Widget screen,
+  ) async {
+    await ref.read(activeClientIdProvider.notifier).setActive(client.clientId);
+
+    final notifier = ref.read(userProfileProvider.notifier);
+    await notifier.switchToClient(client.clientId);
+
+    final profile = ref.read(userProfileProvider);
+    if (profile == null ||
+        profile.clientId != client.clientId ||
+        profile.height == 0 ||
+        profile.weight == 0) {
+      await notifier.setProfileBasics(
+        clientId: client.clientId,
+        firstName: client.firstName,
+        lastName: client.lastName,
+        age: client.age,
+        gender: client.gender,
+        heightCm: client.heightCm,
+        weightKg: client.weightKg,
+      );
+    }
+
+    if (!context.mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 
@@ -1358,21 +1711,24 @@ class ClientDetailScreen extends ConsumerWidget {
 
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       color: colorScheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
                 color: colorScheme.onSurface,
               ),
             ),
@@ -1577,29 +1933,27 @@ class ClientDetailScreen extends ConsumerWidget {
 
   Widget _interpretationCard(
     BuildContext context,
-    CoachInbodyEntry e,
+    CoachClient client,
+    List<CoachInbodyEntry> items,
   ) {
-
-    final l10n = AppLocalizations.of(context)!;
-
     final colorScheme = Theme.of(context).colorScheme;
-    final muscleRatio = e.skeletalMuscleMassKg / e.weightKg;
-    final fatP = e.percentBodyFat;
-    final lines = <String>[];
+    final report = InbodyAnalysis.analyze(
+      latest: items.first,
+      previous: items.length > 1 ? items[1] : null,
+      gender: client.gender,
+      age: client.age,
+    );
 
-    if (fatP >= 25) {
-      lines.add('l10n.highBodyFatInterpretation.');
-    } else if (fatP >= 18) {
-      lines.add('l10n.mediumBodyFatInterpretation.');
-    } else {
-      lines.add('l10n.lowBodyFatInterpretation.');
-    }
-
-    if (muscleRatio >= 0.48) {
-      lines.add('l10n.goodMuscleBase.');
-    } else if (muscleRatio < 0.40) {
-      lines.add('l10n.lowMuscleMassInterpretation.');
-    }
+    // Nejdůležitější zjištění: nejdřív problémy, pak zbytek.
+    int rank(InbodyStatus s) => switch (s) {
+          InbodyStatus.bad => 0,
+          InbodyStatus.warn => 1,
+          InbodyStatus.good => 2,
+          InbodyStatus.ok => 3,
+          InbodyStatus.info => 4,
+        };
+    final top = report.sections.expand((s) => s.findings).toList()
+      ..sort((x, y) => rank(x.status).compareTo(rank(y.status)));
 
     return Card(
       elevation: 0,
@@ -1609,32 +1963,62 @@ class ClientDetailScreen extends ConsumerWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: colorScheme.onPrimaryContainer),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.automaticInterpretation,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onPrimaryContainer,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              report.bodyType,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onPrimaryContainer,
               ),
-              const SizedBox(height: 8),
-              for (final t in lines)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    '• $t',
-                    style: TextStyle(
-                      fontSize: 13,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              report.summary,
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 8),
+            for (final f in top.take(3))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      inbodyStatusStyle(context, f.status).icon,
+                      size: 16,
                       color: colorScheme.onPrimaryContainer,
                     ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${f.title}: ${f.value}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonalIcon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => InbodyReportScreen(client: client),
                   ),
                 ),
-            ],
-          ),
+                icon: const Icon(Icons.analytics_outlined),
+                label: const Text('Podrobný rozbor'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1824,6 +2208,13 @@ class ClientDetailScreen extends ConsumerWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
+        // Otevře plán k úpravám (dny, cviky).
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CustomPlanDetailScreen(planId: plan.id),
+          ),
+        ),
         title: Row(
           children: [
             Expanded(
@@ -1876,6 +2267,24 @@ class ClientDetailScreen extends ConsumerWidget {
             } else if (value == 'rename') {
               await _renamePlanDialog(context, ref, plan);
             } else if (value == 'delete') {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: Text(l10n.reallyDeletePlan),
+                  content: Text(l10n.confirmDeletePlan(plan.name)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: Text(l10n.cancel),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      child: Text(l10n.delete),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed != true) return;
               await ref
                   .read(customTrainingPlanProvider.notifier)
                   .deletePlan(plan.id);
@@ -2068,11 +2477,11 @@ class ClientDetailScreen extends ConsumerWidget {
   static String _genderLabel(String g) {
     switch (g.toLowerCase()) {
       case 'male':
-        return 'Male';
+        return 'Muž';
       case 'female':
-        return 'Female';
+        return 'Žena';
       default:
-        return 'Other';
+        return 'Jiné';
     }
   }
 
@@ -2086,6 +2495,398 @@ class ClientDetailScreen extends ConsumerWidget {
     final now = DateTime.now();
     return days.any(
       (d) => d.year == now.year && d.month == now.month && d.day == now.day,
+    );
+  }
+}
+
+const _monthsGen = [
+  'ledna', 'února', 'března', 'dubna', 'května', 'června',
+  'července', 'srpna', 'září', 'října', 'listopadu', 'prosince',
+];
+
+String _num(double v, [int digits = 1]) =>
+    v.toStringAsFixed(digits).replaceAll('.', ',');
+
+/// Akční plán (stejný jako v PDF) za posledních 30 dní.
+final _clientActionPlanProvider = FutureProvider.autoDispose
+    .family<List<CoachActionGroup>, CoachClient>((ref, client) async {
+  final id = client.clientId;
+  final inbody = ref.watch(coachInbodyForClientProvider(id)).valueOrNull ??
+      const <CoachInbodyEntry>[];
+  final perf = ref.watch(performancesForClientProvider(id));
+  final to = DateTime.now();
+  final from = to.subtract(const Duration(days: 30));
+  final extras =
+      await ClientReportExtras.load(client: client, from: from, to: to);
+  return ClientReportPdfService.actionPlan(
+    client: client,
+    extras: extras,
+    inbody: inbody,
+    performances: perf,
+    from: from,
+    to: to,
+  );
+});
+
+/// Čtyři hlavní čísla klienta nahoře v Přehledu.
+class _KpiTiles extends StatelessWidget {
+  final CoachClient client;
+
+  /// Seřazeno od nejnovějšího.
+  final List<CoachInbodyEntry> inbody;
+  final int completedLast7;
+  final DateTime? lastSession;
+
+  const _KpiTiles({
+    required this.client,
+    required this.inbody,
+    required this.completedLast7,
+    required this.lastSession,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    const good = Color(0xFF16A34A);
+    const bad = Color(0xFFDC2626);
+    final sensitive = client.isEatingDisorderSupport;
+    final latest = inbody.isEmpty ? null : inbody.first;
+    final first = inbody.length > 1 ? inbody.last : null;
+
+    (String, Color)? delta(double now, double then, String unit,
+        {required bool higherIsBetter}) {
+      final d = now - then;
+      if (d.abs() < 0.05) return ('beze změny od začátku', cs.onSurfaceVariant);
+      final better = higherIsBetter ? d > 0 : d < 0;
+      final sign = d > 0 ? '+' : '−';
+      return (
+        '$sign${_num(d.abs())} $unit od začátku',
+        better ? good : bad,
+      );
+    }
+
+    final tiles = <(String, String, (String, Color)?)>[];
+    if (!sensitive && latest != null) {
+      tiles.add((
+        'Tělesný tuk',
+        '${_num(latest.bodyFatPercent)} %',
+        first == null
+            ? null
+            : delta(latest.bodyFatPercent, first.bodyFatPercent, '%',
+                higherIsBetter: false),
+      ));
+      tiles.add((
+        'Svaly',
+        '${_num(latest.smmKg)} kg',
+        first == null
+            ? null
+            : delta(latest.smmKg, first.smmKg, 'kg', higherIsBetter: true),
+      ));
+    }
+    final days = lastSession == null
+        ? null
+        : DateTime.now().difference(lastSession!).inDays;
+    tiles.add((
+      'Docházka',
+      '$completedLast7× týdně',
+      (
+        days == null
+            ? 'zatím bez tréninku'
+            : days == 0
+                ? 'poslední trénink dnes'
+                : 'poslední před $days ${czDays(days)}',
+        days != null && days > 7 ? bad : cs.onSurfaceVariant,
+      ),
+    ));
+    if (!sensitive) {
+      final w = latest?.weightKg ?? client.weightKg;
+      tiles.add((
+        'Váha',
+        w > 0 ? '${_num(w)} kg' : '—',
+        latest == null
+            ? ('bez měření InBody', cs.onSurfaceVariant)
+            : (
+                'měřeno ${latest.date.day}. ${latest.date.month}. ${latest.date.year}',
+                cs.onSurfaceVariant,
+              ),
+      ));
+    }
+
+    return LayoutBuilder(builder: (context, c) {
+      final cols = c.maxWidth >= 640 ? tiles.length : 2;
+      const spacing = 12.0;
+      final w = (c.maxWidth - spacing * (cols - 1)) / cols;
+      return Wrap(
+        spacing: spacing,
+        runSpacing: spacing,
+        children: [
+          for (final t in tiles)
+            Container(
+              width: w,
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              decoration: BoxDecoration(
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: cs.outlineVariant.withValues(alpha: 0.6),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.$1,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      t.$2,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  if (t.$3 != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      t.$3!.$1,
+                      maxLines: 2,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: t.$3!.$2,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      );
+    });
+  }
+}
+
+/// „Akční plán na další období“ – karty Strava / Trénink / Regenerace.
+class _ActionPlanCard extends ConsumerWidget {
+  final CoachClient client;
+  const _ActionPlanCard({required this.client});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final async = ref.watch(_clientActionPlanProvider(client));
+
+    Widget body;
+    if (async.isLoading && !async.hasValue) {
+      body = const Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else if (async.hasError) {
+      body = Text(
+        'Plán se nepodařilo spočítat.',
+        style: TextStyle(color: cs.onSurfaceVariant),
+      );
+    } else {
+      final groups = (async.valueOrNull ?? const <CoachActionGroup>[])
+          .where((g) => g.actions.isNotEmpty)
+          .toList();
+      if (groups.isEmpty) {
+        body = Text(
+          'Zatím málo dat. Přidej měření InBody a nech klienta zapisovat '
+          'tréninky a jídlo – plán se pak doplní sám.',
+          style: TextStyle(color: cs.onSurfaceVariant),
+        );
+      } else {
+        final cards = [
+          for (final g in groups)
+            for (final a in g.actions.take(2)) (g.title, a),
+        ].take(6).toList();
+        body = LayoutBuilder(builder: (context, c) {
+          final cols = c.maxWidth >= 760 ? 3 : (c.maxWidth >= 480 ? 2 : 1);
+          const spacing = 12.0;
+          final w = (c.maxWidth - spacing * (cols - 1)) / cols;
+          return Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: [
+              for (final (title, a) in cards)
+                Container(
+                  width: w,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 1.1,
+                          fontWeight: FontWeight.w800,
+                          color: cs.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        a.headline,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        a.detail,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: cs.onSurfaceVariant,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          );
+        });
+      }
+    }
+
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: cs.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Akční plán na další období',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'POSLEDNÍCH 30 DNÍ',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: cs.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            body,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Poslední zapsané tréninky klienta.
+class _RecentSessionsCard extends StatelessWidget {
+  final List<TrainingSession> sessions;
+  const _RecentSessionsCard({required this.sessions});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: cs.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Poslední tréninky',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 10),
+            if (sessions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  'Zatím žádný zapsaný trénink.',
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
+              )
+            else
+              for (final s in sessions)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 54,
+                        child: Text(
+                          '${s.date.day}. ${s.date.month}.',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          [
+                            s.dayPlan.dayLabel,
+                            if (s.dayPlan.focus.isNotEmpty) s.dayPlan.focus,
+                          ].join(' – '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: cs.onSurfaceVariant),
+                        ),
+                      ),
+                      Icon(
+                        s.completed
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
+                        size: 18,
+                        color: s.completed ? cs.primary : cs.outline,
+                      ),
+                    ],
+                  ),
+                ),
+          ],
+        ),
+      ),
     );
   }
 }

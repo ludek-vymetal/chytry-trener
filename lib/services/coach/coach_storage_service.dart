@@ -16,6 +16,7 @@ import '../../models/coach/coach_goal.dart';
 import '../../models/coach/coach_inbody_entry.dart';
 import '../../models/coach/coach_note.dart';
 import '../../models/coach/coach_overrides.dart';
+import 'online_coaching_service.dart';
 
 class CoachStorageService {
   static const clientsKey = 'coach_clients_v1';
@@ -167,6 +168,9 @@ class CoachStorageService {
         debugPrint('CLOUD SNAPSHOT SKIPPED -> no signed-in coach for key=$key');
         return;
       }
+
+      // Změna dat → zároveň synchronizace s propojenými klienty.
+      OnlineCoachingService.scheduleSync();
 
       final deviceId = await _ensureDeviceId();
       final now = DateTime.now();

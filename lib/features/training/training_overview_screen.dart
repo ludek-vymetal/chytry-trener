@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../help/help_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -85,6 +86,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
         title: Text(
           l10n.trainingMode,
         ),
+        actions: const [HelpButton(topic: 'training')],
       ),
 
       body: SingleChildScrollView(

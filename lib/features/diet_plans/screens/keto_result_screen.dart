@@ -115,7 +115,7 @@ class _KetoResultScreenState
                   Icons.shopping_cart,
                 ),
                 label: Text(
-                  l10n.generateShoppingList,
+                  l10n.shoppingList,
                 ),
                 onPressed: () {
                   Navigator.push(

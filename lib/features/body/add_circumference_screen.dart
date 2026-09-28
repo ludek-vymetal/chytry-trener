@@ -247,16 +247,8 @@ class _AddCircumferenceScreenState
               child: ElevatedButton(
                 onPressed: _save,
 
-                style:
-                    ElevatedButton.styleFrom(
-                  backgroundColor:
-                      Colors.blue,
-                  foregroundColor:
-                      Colors.white,
-                ),
-
                 child: const Text(
-                  'ULOŽIT OBVODY',
+                  'Uložit obvody',
 
                   style: TextStyle(
                     fontWeight:

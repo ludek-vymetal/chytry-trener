@@ -4,6 +4,10 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
+import 'pdf_author.dart';
+import '../../features/diet_plans/logic/food_catalog.dart';
 
 import '../../features/diet_plans/models/carb_cycling_plan.dart';
 import '../../l10n/app_localizations.dart';
@@ -16,8 +20,12 @@ class DietPlanPdfService {
     String? documentTitle,
     String? subtitle,
   }) async {
-    final regularFont = await PdfGoogleFonts.notoSansRegular();
-    final boldFont = await PdfGoogleFonts.notoSansBold();
+    // Písma přibalená v aplikaci – tisk funguje i bez internetu.
+    final regularFont = pw.Font.ttf(
+        await rootBundle.load('assets/fonts/NotoSans-Regular.ttf'));
+    final boldFont =
+        pw.Font.ttf(await rootBundle.load('assets/fonts/NotoSans-Bold.ttf'));
+    final author = await PdfAuthor.load();
 
     final pdf = pw.Document();
 
@@ -54,6 +62,31 @@ class DietPlanPdfService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
 
+        footer: (ctx) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 8),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Expanded(
+                child: pw.Text(
+                  PdfAuthor.footerText(author),
+                  style: const pw.TextStyle(
+                    fontSize: 7,
+                    color: PdfColors.grey600,
+                  ),
+                ),
+              ),
+              pw.Text(
+                '${ctx.pageNumber} / ${ctx.pagesCount}',
+                style: const pw.TextStyle(
+                  fontSize: 7,
+                  color: PdfColors.grey600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
         theme: pw.ThemeData.withFont(
           base: regularFont,
           bold: boldFont,
@@ -77,6 +110,15 @@ class DietPlanPdfService {
               pw.Text(
                 normalizedSubtitle,
                 style: baseStyle,
+              ),
+            ],
+
+            if (FoodCatalog.activeExclusions.isNotEmpty) ...[
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Bez: ${FoodCatalog.activeExclusions.join(', ')} '
+                '(alergie / nesnášenlivost / nechce jíst)',
+                style: baseStyle.copyWith(font: boldFont),
               ),
             ],
 
@@ -307,6 +349,8 @@ class DietPlanPdfService {
 
               style: baseStyle,
             ),
+
+            PdfAuthor.signatureBlock(author),
           ];
         },
       ),

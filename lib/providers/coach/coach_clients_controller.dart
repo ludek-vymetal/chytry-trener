@@ -158,7 +158,8 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
     state = AsyncData(await _mapWithStats(_visibleClients(updated)));
   }
 
-  Future<void> addClientManual({
+  /// Vrací ID nového klienta.
+  Future<String> addClientManual({
     required String firstName,
     required String lastName,
     required String email,
@@ -203,6 +204,7 @@ class CoachClientsController extends AsyncNotifier<List<CoachClientWithStats>> {
     await CoachStorageService.saveClients(updated);
 
     state = AsyncData(await _mapWithStats(_visibleClients(updated)));
+    return newId;
   }
 
   Future<int> importArchivedClientsFromCsv(String csvString) async {
