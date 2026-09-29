@@ -1,5 +1,11 @@
 import 'carb_cycling_plan.dart';
 
+/// Uložený jídelníček. Každý uložený jídelníček je zároveň šablona:
+/// dá se kdykoli přepočítat a použít pro jiného klienta.
+///
+/// * [clientId] == null → obecná šablona v knihovně,
+/// * [clientId] != null → jídelníček konkrétního klienta (i ten jde
+///   použít jako šablona pro další klienty).
 class SavedMealPlan {
   final String id;
   final String name;
@@ -12,6 +18,13 @@ class SavedMealPlan {
   final DateTime updatedAt;
   final DietMealPlan plan;
 
+  /// Klient, pro kterého je jídelníček připravený (null = šablona).
+  final String? clientId;
+  final String? clientName;
+
+  /// Z jaké šablony jídelníček vznikl (pro přehled).
+  final String? sourceId;
+
   const SavedMealPlan({
     required this.id,
     required this.name,
@@ -23,7 +36,12 @@ class SavedMealPlan {
     required this.updatedAt,
     required this.plan,
     this.trainerNote,
+    this.clientId,
+    this.clientName,
+    this.sourceId,
   });
+
+  bool get isTemplate => clientId == null || clientId!.isEmpty;
 
   DateTime get recommendedNextCheckDate =>
       createdAt.add(const Duration(days: 30));
@@ -39,6 +57,10 @@ class SavedMealPlan {
     DateTime? createdAt,
     DateTime? updatedAt,
     DietMealPlan? plan,
+    String? clientId,
+    String? clientName,
+    bool clearClient = false,
+    String? sourceId,
   }) {
     return SavedMealPlan(
       id: id ?? this.id,
@@ -51,6 +73,9 @@ class SavedMealPlan {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       plan: plan ?? this.plan,
+      clientId: clearClient ? null : (clientId ?? this.clientId),
+      clientName: clearClient ? null : (clientName ?? this.clientName),
+      sourceId: sourceId ?? this.sourceId,
     );
   }
 
@@ -65,9 +90,17 @@ class SavedMealPlan {
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
         'plan': plan.toJson(),
+        'clientId': clientId,
+        'clientName': clientName,
+        'sourceId': sourceId,
       };
 
   factory SavedMealPlan.fromJson(Map<String, dynamic> json) {
+    String? str(Object? v) {
+      final s = v?.toString().trim();
+      return (s == null || s.isEmpty) ? null : s;
+    }
+
     return SavedMealPlan(
       id: (json['id'] ?? '').toString(),
       name: (json['name'] ?? '').toString(),
@@ -83,6 +116,9 @@ class SavedMealPlan {
       plan: DietMealPlan.fromJson(
         Map<String, dynamic>.from(json['plan'] as Map),
       ),
+      clientId: str(json['clientId']),
+      clientName: str(json['clientName']),
+      sourceId: str(json['sourceId']),
     );
   }
 }

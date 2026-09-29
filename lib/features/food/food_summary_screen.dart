@@ -13,6 +13,7 @@ import '../../providers/food_combo_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/food_combo_service.dart';
 import '../diet_plans/diet_strategy_screen.dart';
+import '../diet_plans/widgets/trainer_meal_plans_card.dart';
 import '../../services/macro_service.dart';
 import '../../services/meal_suggestion_service.dart';
 import '../../services/metabolism_service.dart';
@@ -1473,6 +1474,8 @@ Widget build(BuildContext context, WidgetRef ref) {
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        const TrainerMealPlansCard(),
+
         _HeaderCard(date: date),
 
         const SizedBox(height: 12),

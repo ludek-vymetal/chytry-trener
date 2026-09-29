@@ -404,9 +404,9 @@ class _CreateFoodComboScreenState extends ConsumerState<CreateFoodComboScreen> {
                 runSpacing: 12,
                 children: [
                   _macroChip('Celkem', '${_totalCalories.round()} kcal'),
-                  _macroChip('B', '${_totalProtein.toStringAsFixed(1)} g'),
-                  _macroChip('S', '${_totalCarbs.toStringAsFixed(1)} g'),
-                  _macroChip('T', '${_totalFats.toStringAsFixed(1)} g'),
+                  _macroChip('B', '${_totalProtein.round()} g'),
+                  _macroChip('S', '${_totalCarbs.round()} g'),
+                  _macroChip('T', '${_totalFats.round()} g'),
                   _macroChip('Gramáž', '$_totalGrams g'),
                   _macroChip(
                     'Na 100 g',

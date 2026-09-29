@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../logic/meal_plan_scaling_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/user_profile_provider.dart';
 import '../../../services/pdf/diet_plan_pdf_service.dart';
 import '../models/carb_cycling_food_logic.dart';
 import '../models/carb_cycling_plan.dart';
 import '../models/saved_meal_plan.dart';
-import '../providers/saved_meal_plans_provider.dart';
+import '../../coaching/workout_widgets.dart';
+import '../logic/meal_plan_math.dart';
+import '../widgets/meal_plan_actions.dart';
+import 'custom_meal_plan_editor_screen.dart';
 import 'saved_meal_plans_screen.dart';
 import 'shopping_list_screen.dart';
 import '../../paywall/paywall_screen.dart';
@@ -93,10 +94,18 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
 
     final colorScheme = Theme.of(context).colorScheme;
-    final profile = ref.watch(userProfileProvider);
-    final resolvedPlan = _resolvePlan(l10n);
+    // Klient od trenéra jídelníček jen čte (neupravuje ani neukládá).
+    final readOnly = ref.watch(clientLinkProvider).valueOrNull != null;
+    // Vždy celé gramy a makra spočítaná z potravin.
+    final resolvedPlan = MealPlanMath.normalizePlan(_resolvePlan(l10n));
+    final pdfTitle = savedTemplate?.name ?? titleOverride;
+    final pdfSubtitle = savedTemplate?.clientName == null
+        ? null
+        : 'Pro: ${savedTemplate!.clientName}';
     // Zkušební verze: první den celý, zbytek týdne zamčený.
-    final locked = !ref.watch(accessProvider).fullMealPlan &&
+    // Jídelníček od trenéra (online koučink) je vždy celý.
+    final locked = !readOnly &&
+        !ref.watch(accessProvider).fullMealPlan &&
         resolvedPlan.days.length > 1;
     final shownDays =
         locked ? resolvedPlan.days.take(1).toList() : resolvedPlan.days;
@@ -120,22 +129,66 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
             },
             icon: const Icon(Icons.bookmarks_outlined),
           ),
-          IconButton(
-            tooltip: l10n.saveTemplate,
-            onPressed: () => _showSaveDialog(
-              context,
-              ref,
-              resolvedPlan,
-              profile,
+          if (!readOnly) ...[
+            IconButton(
+              tooltip: 'Upravit jídelníček',
+              onPressed: () async {
+                final saved = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomMealPlanEditorScreen(
+                      initialPlan: resolvedPlan,
+                      existing: savedTemplate,
+                      suggestedName: titleOverride,
+                    ),
+                  ),
+                );
+                if (saved is SavedMealPlan && context.mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WeeklyMealPlanScreen(
+                        mealPlan: saved.plan,
+                        titleOverride: saved.name,
+                        savedTemplate: saved,
+                      ),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.edit_outlined),
             ),
-            icon: const Icon(Icons.save_outlined),
-          ),
+            IconButton(
+              tooltip: 'Uložit s vlastním názvem',
+              onPressed: () async {
+                final saved = await MealPlanActions.saveDialog(
+                  context,
+                  ref,
+                  resolvedPlan,
+                  existing: savedTemplate,
+                  suggestedName: titleOverride ??
+                      '${resolvedPlan.planType} '
+                          '${DateTime.now().day}. ${DateTime.now().month}.',
+                );
+                if (saved != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Uloženo jako „${saved.name}“.'),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.save_outlined),
+            ),
+          ],
           IconButton(
             tooltip: l10n.printPdf,
             onPressed: () => DietPlanPdfService.printPlan(
               resolvedPlan,
               l10n,
               trainerNote: savedTemplate?.trainerNote,
+              documentTitle: pdfTitle,
+              subtitle: pdfSubtitle,
             ),
             icon: const Icon(Icons.print_outlined),
           ),
@@ -145,6 +198,8 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
               resolvedPlan,
               l10n,
               trainerNote: savedTemplate?.trainerNote,
+              documentTitle: pdfTitle,
+              subtitle: pdfSubtitle,
             ),
             icon: const Icon(Icons.picture_as_pdf_outlined),
           ),
@@ -229,14 +284,17 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                       collapsedIconColor:
                           colorScheme.onSurfaceVariant,
                       title: Text(
-                        '${day.dayName} - ${day.carbs.toStringAsFixed(0)} g S',
+                        day.dayName,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: colorScheme.primary,
                         ),
                       ),
                       subtitle: Text(
-                        'B ${day.protein.round()} g • T ${day.fats.round()} g',
+                        '${MealPlanMath.dayKcal(day).round()} kcal • '
+                        'B ${day.protein.round()} g • '
+                        'S ${day.carbs.round()} g • '
+                        'T ${day.fats.round()} g',
                       ),
                       children: day.meals.map((meal) {
                         return ListTile(
@@ -263,6 +321,18 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
                                   color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
+                              if (meal.calories != null)
+                                Text(
+                                  '${meal.calories!.round()} kcal · '
+                                  'B ${(meal.protein ?? 0).round()} g · '
+                                  'S ${(meal.carbs ?? 0).round()} g · '
+                                  'T ${(meal.fats ?? 0).round()} g',
+                                  style: TextStyle(
+                                    color: colorScheme.primary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               if (meal.ingredients.isNotEmpty) ...[
                                 const SizedBox(height: 6),
                                 Text(
@@ -316,104 +386,5 @@ class WeeklyMealPlanScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _showSaveDialog(
-    BuildContext context,
-    WidgetRef ref,
-    DietMealPlan plan,
-    dynamic profile,
-  ) async {
-    final nameController = TextEditingController(
-      text:
-          '${plan.planType} • ${DateTime.now().day}.${DateTime.now().month}.',
-    );
-
-    final trainerNoteController = TextEditingController(
-      text: 'Další kontrola a vážení za 30 dní.',
-    );
-
-    final durationController = TextEditingController(
-      text: plan.days.length.toString(),
-    );
-
-    final approved = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text(
-          'Uložit kompletní jídelníček',
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Název jídelníčku',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: durationController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Počet dní',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: trainerNoteController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Poznámka trenéra',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zrušit'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Uložit'),
-          ),
-        ],
-      ),
-    );
-
-    if (approved == true) {
-      await ref
-          .read(savedMealPlansProvider.notifier)
-          .saveTemplate(
-            name: nameController.text.trim().isEmpty
-                ? 'Jídelníček'
-                : nameController.text.trim(),
-            plan: plan.copyWith(
-              note: trainerNoteController.text.trim(),
-            ),
-            baseWeight:
-                (profile?.weight as double?) ?? 0,
-            baseCalories:
-                MealPlanScalingService.planAverageCalories(plan),
-            durationDays:
-                int.tryParse(durationController.text.trim()) ??
-                    plan.days.length,
-            trainerNote:
-                trainerNoteController.text.trim(),
-          );
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Jídelníček byl uložen do databanky plánů.',
-            ),
-          ),
-        );
-      }
-    }
   }
 }

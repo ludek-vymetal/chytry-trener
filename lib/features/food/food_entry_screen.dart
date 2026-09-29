@@ -489,11 +489,11 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
                                   final c = filtered[i];
                                   final kcal = _comboCalories(c, bank).round();
                                   final protein =
-                                      _comboProtein(c, bank).toStringAsFixed(1);
+                                      _comboProtein(c, bank).round().toString();
                                   final carbs =
-                                      _comboCarbs(c, bank).toStringAsFixed(1);
+                                      _comboCarbs(c, bank).round().toString();
                                   final fats =
-                                      _comboFats(c, bank).toStringAsFixed(1);
+                                      _comboFats(c, bank).round().toString();
                                   final missing = _comboMissingItems(c, bank);
 
                                   return ListTile(

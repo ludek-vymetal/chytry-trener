@@ -52,6 +52,7 @@ import 'client_monthly_report_screen.dart';
 import '../widgets/client_pulse.dart';
 import '../../coaching/coaching_widgets.dart';
 import '../../diet_plans/widgets/food_exclusions_card.dart';
+import '../../diet_plans/widgets/client_meal_plans_card.dart';
 import '../../../core/body/coach_recommendations.dart';
 import '../../../services/pdf/client_report_data.dart';
 import '../../../services/pdf/client_report_pdf_service.dart';
@@ -1159,6 +1160,7 @@ class ClientDetailScreen extends ConsumerWidget {
             ],
           ),
         ]),
+        ClientMealPlansCard(client: liveClient),
         FoodExclusionsCard(clientId: liveClient.clientId),
         coachDataSection,
       ]);

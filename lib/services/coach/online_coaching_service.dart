@@ -474,6 +474,58 @@ class OnlineCoachingService {
       }
     }
 
+    // ---- jídelníčky klienta (připravuje trenér, klient je jen čte) ----
+    {
+      const key = 'saved_meal_plans_v1';
+      List<Map<String, dynamic>> parse(String? s) {
+        if (s == null || s.isEmpty) return const [];
+        try {
+          final d = jsonDecode(s);
+          return d is List
+              ? [for (final e in d) if (e is Map) Map<String, dynamic>.from(e)]
+              : const [];
+        } catch (_) {
+          return const [];
+        }
+      }
+
+      final all = parse(prefs.getString(key));
+      final mine = [for (final p in all) if (p['clientId'] == clientId) p];
+      final others = [for (final p in all) if (p['clientId'] != clientId) p];
+      final mineJson = jsonEncode(mine);
+      final cloudRaw = await _read(dataRef, 'meal_plans');
+      final isClientDevice = await localClientLink() != null;
+
+      Future<void> takeCloud() async {
+        final cloud = parse(cloudRaw);
+        await prefs.setString(key, jsonEncode([...others, ...cloud]));
+        changed = true;
+      }
+
+      if (isClientDevice) {
+        if (cloudRaw != null && jsonEncode(parse(cloudRaw)) != mineJson) {
+          await takeCloud();
+        }
+      } else {
+        // Trenér: posílá jen když se jídelníčky u něj změnily; když je
+        // mezitím změnil na jiném svém zařízení, převezme verzi z cloudu.
+        final pushedKey = 'coaching_meal_plans_pushed_$linkId';
+        final lastPushed = prefs.getString(pushedKey);
+        final changedHere = lastPushed == null
+            ? mine.isNotEmpty || cloudRaw == null
+            : mineJson != lastPushed;
+        if (changedHere) {
+          if (mineJson != cloudRaw) {
+            await _write(dataRef, 'meal_plans', mineJson, me);
+          }
+          await prefs.setString(pushedKey, mineJson);
+        } else if (cloudRaw != null && cloudRaw != mineJson) {
+          await takeCloud();
+          await prefs.setString(pushedKey, cloudRaw);
+        }
+      }
+    }
+
     // ---- profil klienta (novější vyhrává) ----
     {
       final profileKey = 'user_profile_storage_$clientId';

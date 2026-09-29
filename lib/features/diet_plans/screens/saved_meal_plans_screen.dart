@@ -1,398 +1,389 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../l10n/app_localizations.dart';
-import '../../../providers/user_profile_provider.dart';
-import '../logic/meal_plan_scaling_service.dart';
+import '../../coaching/workout_widgets.dart';
 import '../models/custom_meal_plan_models.dart';
 import '../models/saved_meal_plan.dart';
 import '../providers/custom_meal_plan_templates_provider.dart';
-import '../providers/diet_plan_provider.dart';
 import '../providers/saved_meal_plans_provider.dart';
+import '../widgets/meal_plan_actions.dart';
+import 'custom_meal_plan_editor_screen.dart';
 import 'daily_meal_plan_editor_screen.dart';
-import 'weekly_meal_plan_screen.dart';
 
-class SavedMealPlansScreen extends ConsumerWidget {
+enum _Filter { all, templates, clients }
+
+/// Knihovna jídelníčků. Každý uložený jídelníček (obecná šablona i
+/// jídelníček klienta) jde otevřít, upravit, vytisknout a přepočítat
+/// pro jiného klienta.
+class SavedMealPlansScreen extends ConsumerStatefulWidget {
   const SavedMealPlansScreen({super.key});
+
+  @override
+  ConsumerState<SavedMealPlansScreen> createState() =>
+      _SavedMealPlansScreenState();
+}
+
+class _SavedMealPlansScreenState extends ConsumerState<SavedMealPlansScreen> {
+  String _query = '';
+  _Filter _filter = _Filter.all;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final plans = ref.watch(savedMealPlansProvider);
+    final dailyTemplates = ref.watch(customMealPlanTemplatesProvider);
+    final readOnly = ref.watch(clientLinkProvider).valueOrNull != null;
+    final coach = MealPlanActions.isCoach(ref);
+
+    final q = _query.trim().toLowerCase();
+    final shown = plans.where((p) {
+      if (_filter == _Filter.templates && !p.isTemplate) return false;
+      if (_filter == _Filter.clients && p.isTemplate) return false;
+      if (q.isEmpty) return true;
+      return p.name.toLowerCase().contains(q) ||
+          (p.clientName ?? '').toLowerCase().contains(q) ||
+          (p.trainerNote ?? '').toLowerCase().contains(q);
+    }).toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(readOnly ? 'Moje jídelníčky' : 'Knihovna jídelníčků'),
+      ),
+      floatingActionButton: readOnly
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CustomMealPlanEditorScreen(),
+                ),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Nový jídelníček'),
+            ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+        children: [
+          if (!readOnly)
+            Card(
+              elevation: 0,
+              color: cs.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Text(
+                  coach
+                      ? 'Každý uložený jídelníček je zároveň šablona. Tlačítkem '
+                          '„Použít pro klienta“ ho přepočítáš na kalorie jiného '
+                          'klienta – porce se zaokrouhlí a makra spočítají v '
+                          'celých gramech.'
+                      : 'Uložené jídelníčky můžeš kdykoli otevřít, upravit '
+                          'nebo přepočítat na svůj aktuální cíl.',
+                  style: TextStyle(color: cs.onSecondaryContainer),
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          TextField(
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Hledat podle názvu, klienta nebo poznámky',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            onChanged: (v) => setState(() => _query = v),
+          ),
+          if (coach && !readOnly) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final f in _Filter.values)
+                  ChoiceChip(
+                    label: Text(switch (f) {
+                      _Filter.all => 'Vše (${plans.length})',
+                      _Filter.templates =>
+                        'Šablony (${plans.where((p) => p.isTemplate).length})',
+                      _Filter.clients =>
+                        'Klientské (${plans.where((p) => !p.isTemplate).length})',
+                    }),
+                    selected: _filter == f,
+                    onSelected: (_) => setState(() => _filter = f),
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (plans.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Text(
+                readOnly
+                    ? 'Trenér ti zatím žádný jídelníček neposlal.'
+                    : 'Zatím tu nic není. Vytvoř vlastní jídelníček '
+                        'tlačítkem „Nový jídelníček“, nebo otevři svůj '
+                        'jídelníček a ulož ho ikonou diskety.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+            )
+          else if (shown.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'Nic neodpovídá hledání.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+            ),
+          for (final p in shown)
+            _PlanCard(plan: p, readOnly: readOnly, coach: coach),
+          if (!readOnly && dailyTemplates.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Denní šablony (starší)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            for (final t in dailyTemplates) _DailyTemplateTile(item: t),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCard extends ConsumerWidget {
+  final SavedMealPlan plan;
+  final bool readOnly;
+  final bool coach;
+
+  const _PlanCard({
+    required this.plan,
+    required this.readOnly,
+    required this.coach,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final p = plan;
+
+    Widget chip(String text, {Color? bg, Color? fg, IconData? icon}) =>
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: bg ?? cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 14, color: fg),
+                const SizedBox(width: 4),
+              ],
+              Text(text, style: TextStyle(fontSize: 12, color: fg)),
+            ],
+          ),
+        );
+
+    Future<void> edit() async {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CustomMealPlanEditorScreen(existing: p),
+        ),
+      );
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => MealPlanActions.open(context, ref, p),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      p.name,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (v) async {
+                      switch (v) {
+                        case 'pdf':
+                          await MealPlanActions.printPlan(context, p);
+                        case 'share':
+                          await MealPlanActions.printPlan(context, p,
+                              share: true);
+                        case 'edit':
+                          await edit();
+                        case 'rename':
+                          await MealPlanActions.rename(context, ref, p);
+                        case 'template':
+                          await ref
+                              .read(savedMealPlansProvider.notifier)
+                              .duplicateAsTemplate(p);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Uloženo jako obecná šablona.'),
+                              ),
+                            );
+                          }
+                        case 'delete':
+                          await MealPlanActions.confirmDelete(context, ref, p);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'pdf',
+                        child: Text('Tisk / PDF'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'share',
+                        child: Text('Sdílet PDF'),
+                      ),
+                      if (!readOnly) ...[
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Upravit'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'rename',
+                          child: Text('Přejmenovat'),
+                        ),
+                        if (!p.isTemplate)
+                          const PopupMenuItem(
+                            value: 'template',
+                            child: Text('Uložit jako obecnou šablonu'),
+                          ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Smazat'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  if (!readOnly)
+                    p.isTemplate
+                        ? chip('Šablona',
+                            icon: Icons.bookmark_outline,
+                            bg: cs.tertiaryContainer,
+                            fg: cs.onTertiaryContainer)
+                        : chip(p.clientName ?? 'Klient',
+                            icon: Icons.person_outline,
+                            bg: cs.primaryContainer,
+                            fg: cs.onPrimaryContainer),
+                  chip(MealPlanActions.summary(p)),
+                  chip('Upraveno ${MealPlanActions.date(p.updatedAt)}'),
+                ],
+              ),
+              if ((p.trainerNote ?? '').trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  p.trainerNote!.trim(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
+              ],
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.tonalIcon(
+                    onPressed: () => MealPlanActions.open(context, ref, p),
+                    icon: const Icon(Icons.menu_book_outlined),
+                    label: const Text('Otevřít'),
+                  ),
+                  if (!readOnly)
+                    FilledButton.icon(
+                      onPressed: () =>
+                          MealPlanActions.useForClient(context, ref, p),
+                      icon: const Icon(Icons.person_add_alt_1_outlined),
+                      label: Text(
+                        coach ? 'Použít pro klienta' : 'Přepočítat na můj cíl',
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyTemplateTile extends ConsumerWidget {
+  final DailyMealTemplate item;
+  const _DailyTemplateTile({required this.item});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-
-    final savedPlans = ref.watch(savedMealPlansProvider);
-    final dailyTemplates = ref.watch(customMealPlanTemplatesProvider);
-    final profile = ref.watch(userProfileProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final hasWeeklyPlans = savedPlans.isNotEmpty;
-    final hasDailyTemplates = dailyTemplates.isNotEmpty;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.savedMealPlans),
-      ),
-      body: (!hasWeeklyPlans && !hasDailyTemplates)
-          ? Center(
-              child: Text(
-                l10n.noSavedMealPlans,
+    return Card(
+      child: ListTile(
+        title: Text(item.title.isEmpty ? l10n.untitled : item.title),
+        subtitle: Text('${l10n.meals}: ${item.entries.length}'
+            '${(item.clientName ?? '').isEmpty ? '' : ' · ${item.clientName}'}'),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DailyMealPlanEditorScreen(initialTemplate: item),
+          ),
+        ),
+        trailing: IconButton(
+          tooltip: l10n.delete,
+          icon: const Icon(Icons.delete_outline),
+          onPressed: () async {
+            final ok = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.deleteDailyTemplateQuestion),
+                content: Text(l10n.confirmDeleteTemplate(
+                  item.title.isEmpty ? l10n.untitled : item.title,
+                )),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: Text(l10n.no),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text(l10n.yes),
+                  ),
+                ],
               ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(
-                  l10n.dailyTemplates ,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (!hasDailyTemplates)
-                  Card(
-                    elevation: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        l10n.noDailyTemplates,
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  ...dailyTemplates.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title.isEmpty
-                                    ? l10n.untitled
-                                    : item.title,
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  _chip(
-                                    context,
-                                    '${l10n.phase}: ${item.phaseLabel}',
-                                  ),
-                                  _chip(
-                                    context,
-                                    '${l10n.meals}: ${item.entries.length}',
-                                  ),
-                                  if ((item.clientName ?? '').trim().isNotEmpty)
-                                    _chip(
-                                      context,
-                                      '${l10n.client}: ${item.clientName}',
-                                    ),
-                                ],
-                              ),
-                              if (item.note.trim().isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                Text(
-                                  '${l10n.coachNote}: ${item.note}',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 14),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  FilledButton.tonalIcon(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              DailyMealPlanEditorScreen(
-                                            initialTemplate: item,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.edit_outlined),
-                                    label: Text(l10n.openEdit),
-                                  ),
-                                  OutlinedButton.icon(
-                                    onPressed: () => _confirmDeleteDailyTemplate(
-                                      context,
-                                      ref,
-                                      item,
-                                    ),
-                                    icon: const Icon(Icons.delete_outline),
-                                    label: Text(l10n.delete),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 24),
-                Divider(color: colorScheme.outlineVariant),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.completeMealPlans,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (!hasWeeklyPlans)
-                  Card(
-                    elevation: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        l10n.noCompleteMealPlans,
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  ...savedPlans.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.name,
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  _chip(context, '${l10n.type}: ${item.planType}'),
-                                  _chip(
-                                    context,
-                                    '${l10n.duration}: ${item.durationDays} ${l10n.days}',
-                                  ),
-                                  _chip(
-                                    context,
-                                    '${l10n.baseWeight}: ${item.baseWeight.toStringAsFixed(1)} kg',
-                                  ),
-                                  _chip(
-                                    context,
-                                    '${l10n.calories}: ${item.baseCalories.toStringAsFixed(0)}',
-                                  ),
-                                ],
-                              ),
-                              if ((item.trainerNote ?? '').isNotEmpty) ...[
-                                const SizedBox(height: 10),
-                                Text(
-                                  'Poznámka trenéra: ${item.trainerNote}',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 14),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  FilledButton.icon(
-                                    onPressed: () {
-                                      ref.read(dietPlanProvider.notifier).state =
-                                          item.plan;
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => WeeklyMealPlanScreen(
-                                            mealPlan: item.plan,
-                                            titleOverride: item.name,
-                                            savedTemplate: item,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.content_copy),
-                                    label: Text(l10n.useOneToOne),
-                                  ),
-                                  FilledButton.tonalIcon(
-                                    onPressed: profile == null
-                                        ? null
-                                        : () {
-                                            final scaled =
-                                                MealPlanScalingService
-                                                    .scaleTemplateToProfile(
-                                              template: item,
-                                              profile: profile,
-                                              l10n: AppLocalizations.of(context)!,
-                                            );
-
-                                            ref
-                                                .read(dietPlanProvider.notifier)
-                                                .state = scaled;
-
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    WeeklyMealPlanScreen(
-                                                  mealPlan: scaled,
-                                                  titleOverride:
-                                                      '${item.name} • ${profile.displayName}',
-                                                  savedTemplate: item,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                    icon: const Icon(Icons.scale),
-                                    label: Text(l10n.scaleToProfile),
-                                  ),
-                                  OutlinedButton.icon(
-                                    onPressed: () => _confirmDeleteWeeklyPlan(
-                                      context,
-                                      ref,
-                                      item,
-                                    ),
-                                    icon: const Icon(Icons.delete_outline),
-                                    label: Text(l10n.delete),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-    );
-  }
-
-  Widget _chip(BuildContext context, String text) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(text),
-    );
-  }
-
-  Future<void> _confirmDeleteWeeklyPlan(
-    BuildContext context,
-    WidgetRef ref,
-    SavedMealPlan item,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final approved = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(
-          l10n.deleteMealPlanQuestion,
+            );
+            if (ok == true) {
+              await ref
+                  .read(customMealPlanTemplatesProvider.notifier)
+                  .remove(item.id);
+            }
+          },
         ),
-        content: Text(
-          l10n.confirmDeleteTemplate(
-            item.name,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context, false),
-            child: Text(
-              l10n.no,
-            ),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, true),
-            child: Text(
-              l10n.yes,
-            ),
-          ),
-        ],
       ),
     );
-
-    if (approved == true) {
-      await ref
-          .read(savedMealPlansProvider.notifier)
-          .deleteTemplate(item.id);
-    }
   }
-
-  Future<void> _confirmDeleteDailyTemplate(
-    BuildContext context,
-    WidgetRef ref,
-    DailyMealTemplate item,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    final approved = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(
-          l10n.deleteDailyTemplateQuestion,
-        ),
-        content: Text(
-          l10n.confirmDeleteTemplate(
-            item.title.isEmpty
-                ? l10n.untitled
-                : item.title,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context, false),
-            child: Text(
-              l10n.no,
-            ),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, true),
-            child: Text(
-              l10n.yes,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (approved == true) {
-      await ref
-          .read(customMealPlanTemplatesProvider.notifier)
-          .remove(item.id);
-    }
-  }
-}  
+}

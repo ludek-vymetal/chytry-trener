@@ -21,6 +21,7 @@ import '../../providers/training_session_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/coach/online_coaching_service.dart';
 import '../../services/pdf/pdf_author.dart';
+import '../diet_plans/providers/saved_meal_plans_provider.dart';
 import 'workout_widgets.dart';
 
 // =====================================================================
@@ -78,6 +79,7 @@ class _CoachingSyncListenerState extends ConsumerState<CoachingSyncListener>
     ref.invalidate(dailyIntakeProvider);
     ref.invalidate(performanceProvider);
     ref.invalidate(customTrainingPlanProvider);
+    ref.invalidate(savedMealPlansProvider);
     ref.invalidate(clientLinkProvider);
     ref.invalidate(myWorkoutsProvider);
     final cid = ref.read(userProfileProvider)?.clientId;

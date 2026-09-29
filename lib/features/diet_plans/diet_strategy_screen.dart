@@ -19,6 +19,8 @@ import 'screens/carb_cycling_survey_screen.dart';
 import 'screens/daily_menu_screen.dart';
 import 'screens/keto_result_screen.dart';
 import 'screens/saved_meal_plans_screen.dart';
+import 'screens/custom_meal_plan_editor_screen.dart';
+import 'widgets/meal_plan_actions.dart';
 import 'screens/shopping_list_screen.dart';
 import 'screens/weekly_meal_plan_screen.dart';
 import 'screens/choice_meal_plan_screen.dart';
@@ -678,6 +680,35 @@ class DietStrategyScreen extends ConsumerWidget {
                   icon: const Icon(Icons.shopping_cart_outlined),
                   label: Text(l10n.shoppingList),
                 ),
+                if (!MealPlanActions.isLinkedClient(ref)) ...[
+                  FilledButton.tonalIcon(
+                    onPressed: () {
+                      final plan = _currentMealPlan(ref, profile, l10n);
+                      if (plan == null) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CustomMealPlanEditorScreen(
+                            initialPlan: plan,
+                            suggestedName: _planName(profile.selectedPlan, l10n),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Upravit a uložit'),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CustomMealPlanEditorScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Vlastní jídelníček'),
+                  ),
+                ],
                 OutlinedButton.icon(
                   onPressed: () => Navigator.push(
                     context,
@@ -686,7 +717,7 @@ class DietStrategyScreen extends ConsumerWidget {
                     ),
                   ),
                   icon: const Icon(Icons.bookmark_outline),
-                  label: Text(l10n.savedMealPlans),
+                  label: const Text('Knihovna jídelníčků'),
                 ),
               ],
             ),

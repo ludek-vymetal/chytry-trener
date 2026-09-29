@@ -279,9 +279,9 @@ class _FoodComboLibraryScreenState
 
               final kcal = _totalCaloriesForBank(combo, bank).round();
               final protein =
-                  _totalProteinForBank(combo, bank).toStringAsFixed(1);
-              final carbs = _totalCarbsForBank(combo, bank).toStringAsFixed(1);
-              final fats = _totalFatsForBank(combo, bank).toStringAsFixed(1);
+                  _totalProteinForBank(combo, bank).round().toString();
+              final carbs = _totalCarbsForBank(combo, bank).round().toString();
+              final fats = _totalFatsForBank(combo, bank).round().toString();
               final missing = _missingItemsForBank(combo, bank);
 
               return Card(

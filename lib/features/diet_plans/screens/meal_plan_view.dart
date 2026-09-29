@@ -145,7 +145,7 @@ class MealPlanView extends StatelessWidget {
                           context,
                           label: 'B',
                           value:
-                              '${meal.protein!.toStringAsFixed(1)} g',
+                              '${meal.protein!.round()} g',
                         ),
 
                       if (meal.carbs != null)
@@ -153,7 +153,7 @@ class MealPlanView extends StatelessWidget {
                           context,
                           label: 'S',
                           value:
-                              '${meal.carbs!.toStringAsFixed(1)} g',
+                              '${meal.carbs!.round()} g',
                         ),
 
                       if (meal.fats != null)
@@ -161,7 +161,7 @@ class MealPlanView extends StatelessWidget {
                           context,
                           label: 'T',
                           value:
-                              '${meal.fats!.toStringAsFixed(1)} g',
+                              '${meal.fats!.round()} g',
                         ),
                     ],
                   ),
