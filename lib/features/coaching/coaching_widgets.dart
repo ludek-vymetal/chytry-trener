@@ -127,9 +127,13 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
       });
     } catch (e) {
       if (!mounted) return;
+      final text = e.toString();
       setState(() {
         _loading = false;
-        _error = 'Nepodařilo se načíst stav (jsi online a přihlášená?).';
+        _error = text.contains('permission-denied')
+            ? 'Cloud odmítl přístup – ve Firebase ještě nejsou publikovaná '
+                'nová pravidla (Firestore → Pravidla).'
+            : 'Nepodařilo se načíst stav: $text';
       });
     }
   }

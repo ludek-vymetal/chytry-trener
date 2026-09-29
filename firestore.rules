@@ -26,7 +26,9 @@ service cloud.firestore {
     // Dokument coaching/{linkId} a vše pod ním vidí jen trenér a klient.
     // ---------------------------------------------------------------
     match /coaching/{linkId} {
+      // resource == null: dotaz na propojení, které ještě neexistuje.
       allow read: if signedIn() && (
+        resource == null ||
         resource.data.coachUid == request.auth.uid ||
         resource.data.clientUid == request.auth.uid
       );
