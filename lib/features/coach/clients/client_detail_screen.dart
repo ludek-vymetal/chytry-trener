@@ -55,6 +55,7 @@ import '../../diet_plans/widgets/food_exclusions_card.dart';
 import '../../../core/body/coach_recommendations.dart';
 import '../../../services/pdf/client_report_data.dart';
 import '../../../services/pdf/client_report_pdf_service.dart';
+import '../../coaching/workout_widgets.dart';
 
 class ClientDetailScreen extends ConsumerWidget {
   final CoachClient client;
@@ -1086,6 +1087,7 @@ class ClientDetailScreen extends ConsumerWidget {
       final bodyTab = tabList([inbodySection, circSection]);
 
       final trainingTab = tabList([
+        AssignedWorkoutsCard(client: liveClient),
         _section(context, 'Trénink klienta', [
           Wrap(
             spacing: 8,

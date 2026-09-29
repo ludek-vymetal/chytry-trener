@@ -23,6 +23,7 @@ import '../diet_plans/diet_strategy_screen.dart';
 import '../help/help_button.dart';
 import '../help/help_screen.dart';
 import '../training/today_training_screen.dart';
+import '../coaching/workout_widgets.dart';
 
 /// Obrazovka „Dnes“ – přehled dne pro klienta: cesta k cíli, dnešní
 /// trénink, jídlo, týden a rychlé akce.
@@ -114,7 +115,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       weeksToTarget: macro.weeksToTarget,
     );
 
-    final trainingCard = _TrainingCard(plan: todayPlan);
+    final linked = ref.watch(clientLinkProvider).valueOrNull != null;
+    final Widget trainingCard = linked
+        ? const ClientTodayWorkoutCard()
+        : _TrainingCard(plan: todayPlan);
 
     final foodCard = _FoodCard(
       eatenKcal: intake.calories,

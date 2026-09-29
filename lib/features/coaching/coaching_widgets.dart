@@ -21,6 +21,7 @@ import '../../providers/training_session_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/coach/online_coaching_service.dart';
 import '../../services/pdf/pdf_author.dart';
+import 'workout_widgets.dart';
 
 // =====================================================================
 // Obnova dat po synchronizaci + pravidelná synchronizace
@@ -49,7 +50,10 @@ class _CoachingSyncListenerState extends ConsumerState<CoachingSyncListener>
     OnlineCoachingService.scheduleSync(delay: const Duration(seconds: 4));
     _periodic = Timer.periodic(
       const Duration(minutes: 2),
-      (_) => OnlineCoachingService.syncNow(),
+      (_) {
+        OnlineCoachingService.syncNow();
+        if (mounted) ref.invalidate(myWorkoutsProvider);
+      },
     );
   }
 
@@ -74,6 +78,8 @@ class _CoachingSyncListenerState extends ConsumerState<CoachingSyncListener>
     ref.invalidate(dailyIntakeProvider);
     ref.invalidate(performanceProvider);
     ref.invalidate(customTrainingPlanProvider);
+    ref.invalidate(clientLinkProvider);
+    ref.invalidate(myWorkoutsProvider);
     final cid = ref.read(userProfileProvider)?.clientId;
     if (cid != null && cid.isNotEmpty) {
       ref.read(userProfileProvider.notifier).switchToClient(cid);
@@ -599,6 +605,7 @@ class _ClientCoachCardState extends State<ClientCoachCard> {
     );
     if (ok != true) return;
     await OnlineCoachingService.leave();
+    OnlineCoachingService.revision.value++;
     if (mounted) setState(() => _info = null);
   }
 

@@ -9,19 +9,12 @@ import '../food/food_summary_screen.dart';
 import '../training/training_overview_screen.dart';
 import 'profile_hub_screen.dart';
 import 'progress_hub_screen.dart';
+import '../coaching/workout_widgets.dart';
 
 /// Hlavní obrazovka klienta: Dnes · Jídlo · Trénink · Pokrok · Profil.
 /// Na mobilu spodní lišta, na tabletu a počítači boční.
 class UserShell extends ConsumerWidget {
   const UserShell({super.key});
-
-  static const _pages = <Widget>[
-    DashboardScreen(),
-    FoodSummaryScreen(),
-    TrainingOverviewScreen(),
-    ProgressHubScreen(),
-    ProfileHubScreen(),
-  ];
 
   static const _topics = ['today', 'food', 'training', 'progress', 'settings'];
 
@@ -29,12 +22,21 @@ class UserShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final index = ref.watch(userTabProvider);
+    // Klient s trenérem vidí jen tréninky, které mu trenér poslal.
+    final linked = ref.watch(clientLinkProvider).valueOrNull != null;
+    final pages = <Widget>[
+      const DashboardScreen(),
+      const FoodSummaryScreen(),
+      linked ? const ClientWorkoutsScreen() : const TrainingOverviewScreen(),
+      const ProgressHubScreen(),
+      const ProfileHubScreen(),
+    ];
 
     return AdaptiveShell(
       index: index,
       onSelect: (i) => ref.read(userTabProvider.notifier).state = i,
       helpTopic: _topics[index],
-      pages: _pages,
+      pages: pages,
       destinations: [
         ShellDestination(Icons.home_outlined, Icons.home, l10n.navToday),
         ShellDestination(

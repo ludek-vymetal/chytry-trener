@@ -105,7 +105,8 @@ class OnlineCoachingService {
     CoachStorageService.overridesKey,
     CoachStorageService.trainingSessionsKey,
     CoachStorageService.dailyHistoryKey,
-    CoachStorageService.customTrainingPlansKey,
+    // Tréninkové plány se záměrně NESDÍLEJÍ – klient dostává jen
+    // jednotlivé tréninky, které mu trenér pošle (WorkoutAssignmentService).
   ];
 
   static const _performanceKey = 'exercise_performance_storage';
@@ -265,6 +266,12 @@ class OnlineCoachingService {
     }
     try {
       final auth = FirebaseAuth.instance;
+      // Telefon klienta: případný trenérský účet (omyl při výběru režimu)
+      // se odhlásí – klient se připojuje vlastním anonymním účtem.
+      final current = auth.currentUser;
+      if (current != null && !current.isAnonymous) {
+        await auth.signOut();
+      }
       final user = auth.currentUser ?? (await auth.signInAnonymously()).user!;
 
       final inviteRef = _db.collection(_invites).doc(code);
@@ -414,6 +421,22 @@ class OnlineCoachingService {
       }
       if (cloudRaw == null || mergedJson != cloudRaw) {
         await _write(dataRef, key, mergedJson, me);
+      }
+    }
+
+    // ---- celý tréninkový plán klient nevidí ----
+    final plansDoc = dataRef.doc(CoachStorageService.customTrainingPlansKey);
+    if ((await plansDoc.get()).exists) await plansDoc.delete();
+    if (await localClientLink() != null) {
+      const key = CoachStorageService.customTrainingPlansKey;
+      final all = await CoachStorageService.loadRawItemsForKey(key);
+      final kept = [for (final i in all) if (i['clientId'] != clientId) i];
+      if (kept.length != all.length) {
+        await CoachStorageService.saveRawItemsForKeyLocalOnly(
+          key: key,
+          items: kept,
+        );
+        changed = true;
       }
     }
 

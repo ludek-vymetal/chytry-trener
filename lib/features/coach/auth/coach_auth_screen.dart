@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/app_localizations.dart';
 
 import '../../../providers/coach/coach_auth_provider.dart';
+import '../../../core/nav/switch_mode.dart';
 
 class CoachAuthScreen
     extends ConsumerStatefulWidget {
@@ -230,6 +231,11 @@ class _CoachAuthScreenState
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Zpět na výběr režimu',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => switchToRoleSelect(context, ref),
+        ),
         title: Text(
           _isRegisterMode
               ? l10n.coachRegistration

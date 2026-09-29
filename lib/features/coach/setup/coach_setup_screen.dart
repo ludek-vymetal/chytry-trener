@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/coach/coach_auth_provider.dart';
 import '../../../providers/coach/coach_setup_provider.dart';
+import '../../../core/nav/switch_mode.dart';
 
 class CoachSetupScreen extends ConsumerStatefulWidget {
   const CoachSetupScreen({super.key});
@@ -346,6 +347,11 @@ class _CoachSetupScreenState
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          tooltip: 'Zpět na výběr režimu',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => switchToRoleSelect(context, ref),
+        ),
         title: Text(l10n.coachSetup),
         actions: [
           TextButton(
