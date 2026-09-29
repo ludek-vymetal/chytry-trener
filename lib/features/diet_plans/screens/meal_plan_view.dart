@@ -10,6 +10,9 @@ class MealPlanView extends StatelessWidget {
   final bool isKeto;
   final PlannedDay? day;
 
+  /// Klepnutí na „Vyměnit“ u jídla (index jídla ve dni).
+  final ValueChanged<int>? onSwapMeal;
+
   const MealPlanView({
     super.key,
     this.dailyCarbs,
@@ -18,6 +21,7 @@ class MealPlanView extends StatelessWidget {
     this.dayName,
     this.isKeto = false,
     this.day,
+    this.onSwapMeal,
   });
 
   @override
@@ -47,14 +51,10 @@ class MealPlanView extends StatelessWidget {
         ),
       ),
       child: Column(
-        children: resolvedDay.meals
-            .map(
-              (meal) => _buildMealItem(
-                context,
-                meal,
-              ),
-            )
-            .toList(),
+        children: [
+          for (var i = 0; i < resolvedDay.meals.length; i++)
+            _buildMealItem(context, resolvedDay.meals[i], i),
+        ],
       ),
     );
   }
@@ -62,6 +62,7 @@ class MealPlanView extends StatelessWidget {
   Widget _buildMealItem(
     BuildContext context,
     PlannedMeal meal,
+    int index,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -180,6 +181,13 @@ class MealPlanView extends StatelessWidget {
               ],
             ),
           ),
+          if (onSwapMeal != null)
+            IconButton(
+              tooltip: 'Vyměnit jídlo',
+              visualDensity: VisualDensity.compact,
+              onPressed: () => onSwapMeal!(index),
+              icon: Icon(Icons.swap_horiz, color: accentColor),
+            ),
         ],
       ),
     );

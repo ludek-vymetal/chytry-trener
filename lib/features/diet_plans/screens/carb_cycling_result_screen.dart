@@ -4,6 +4,7 @@ import 'package:dart_application_1/l10n/app_localizations.dart';
 import '../../../core/nutrition/hollywood_prep.dart';
 import '../../../services/pdf/diet_plan_pdf_service.dart';
 import '../models/carb_cycling_plan.dart';
+import 'custom_meal_plan_editor_screen.dart';
 import 'meal_plan_view.dart';
 import 'shopping_list_screen.dart';
 import 'weekly_meal_plan_screen.dart';
@@ -64,6 +65,19 @@ class CarbCyclingResultScreen extends StatelessWidget {
         ),
         actions: [
           if (resolvedMealPlan != null) ...[
+            IconButton(
+              tooltip: 'Upravit jídelníček',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CustomMealPlanEditorScreen(
+                    initialPlan: resolvedMealPlan,
+                    suggestedName: pdfTitle,
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.edit_outlined),
+            ),
             IconButton(
               tooltip: l10n.printPdf,
               onPressed: () => DietPlanPdfService.printPlan(
@@ -276,7 +290,21 @@ class CarbCyclingResultScreen extends StatelessWidget {
                       ),
                     ),
                     if (day != null)
-                      MealPlanView(day: day, isKeto: isKeto)
+                      MealPlanView(
+                        day: day,
+                        isKeto: isKeto,
+                        onSwapMeal: (mealIndex) => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CustomMealPlanEditorScreen(
+                              initialPlan: resolvedMealPlan,
+                              suggestedName: pdfTitle,
+                              initialDay: index,
+                              swapMealIndex: mealIndex,
+                            ),
+                          ),
+                        ),
+                      )
                     else
                       MealPlanView(
                         dailyCarbs: grams,

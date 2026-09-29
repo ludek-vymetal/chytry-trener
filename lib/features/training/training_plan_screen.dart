@@ -1,3 +1,4 @@
+import '../common/missing_goal_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,6 +33,7 @@ class TrainingPlanScreen extends ConsumerWidget {
 
     if (profile == null) {
       return Scaffold(
+        appBar: AppBar(),
         body: Center(
           child: Text(l10n.setupProfileFirst),
         ),
@@ -105,11 +107,7 @@ class TrainingPlanScreen extends ConsumerWidget {
     );
 
     if (activeCustomPlan == null && effectiveProfile.goal == null) {
-      return Scaffold(
-        body: Center(
-          child: Text(l10n.setupGoalFirst),
-        ),
-      );
+      return const MissingGoalScaffold();
     }
 
     final List<TrainingDayPlan> basePlan =

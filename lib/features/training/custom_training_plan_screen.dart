@@ -35,8 +35,9 @@ class CustomTrainingPlanScreen extends ConsumerWidget {
     final sharedTemplates = ref.watch(sharedTrainingTemplatesProvider);
 
     return activeClientAsync.when(
-      loading: () => const Scaffold(
-        body: Center(
+      loading: () => Scaffold(
+        appBar: AppBar(),
+        body: const Center(
           child: CircularProgressIndicator(),
         ),
       ),

@@ -12,8 +12,9 @@ class SplitSelectorScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null) {
-      return const Scaffold(
-        body: Center(child: Text('Profil nenalezen')),
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('Profil nenalezen')),
       );
     }
 

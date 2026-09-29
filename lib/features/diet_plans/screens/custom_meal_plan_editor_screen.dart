@@ -4,11 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/food_exclusions_provider.dart';
 import '../../../providers/user_profile_provider.dart';
 import '../logic/diet_macro_service.dart';
+import '../logic/custom_food_store.dart';
 import '../logic/food_catalog.dart';
+import '../logic/meal_composer.dart';
+import '../../../models/diet_preference.dart';
+import '../providers/custom_foods_provider.dart';
 import '../logic/meal_plan_math.dart';
 import '../models/carb_cycling_plan.dart';
 import '../models/saved_meal_plan.dart';
 import '../widgets/meal_plan_actions.dart';
+import '../../help/help_button.dart';
 
 /// Editor vlastního jídelníčku: dny → jídla → potraviny.
 ///
@@ -24,11 +29,19 @@ class CustomMealPlanEditorScreen extends ConsumerStatefulWidget {
 
   final String? suggestedName;
 
+  /// Který den otevřít (index).
+  final int initialDay;
+
+  /// Po otevření rovnou nabídnout náhradu tohoto jídla (index ve dni).
+  final int? swapMealIndex;
+
   const CustomMealPlanEditorScreen({
     super.key,
     this.initialPlan,
     this.existing,
     this.suggestedName,
+    this.initialDay = 0,
+    this.swapMealIndex,
   });
 
   @override
@@ -87,6 +100,13 @@ class _CustomMealPlanEditorScreenState
             ],
           ),
       ];
+    }
+    _day = widget.initialDay.clamp(0, _days.length - 1);
+    final swap = widget.swapMealIndex;
+    if (swap != null && swap >= 0 && swap < _current.meals.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _swapMeal(swap);
+      });
     }
   }
 
@@ -252,11 +272,17 @@ class _CustomMealPlanEditorScreenState
         builder: (ctx, setLocal) {
           final cs = Theme.of(ctx).colorScheme;
           final q = query.trim().toLowerCase();
-          final foods = FoodCatalog.all
+          final foods = MealPlanMath.allFoods
               .where((f) =>
                   q.isEmpty || f.displayName.toLowerCase().contains(q))
               .toList()
-            ..sort((a, b) => a.displayName.compareTo(b.displayName));
+            // Vlastní potraviny nahoře, pak abecedně.
+            ..sort((a, b) {
+              final ma = a.id.startsWith('my_') ? 0 : 1;
+              final mb = b.id.startsWith('my_') ? 0 : 1;
+              if (ma != mb) return ma - mb;
+              return a.displayName.compareTo(b.displayName);
+            });
           return SizedBox(
             height: MediaQuery.of(ctx).size.height * 0.85,
             child: Padding(
@@ -284,8 +310,12 @@ class _CustomMealPlanEditorScreenState
                       itemBuilder: (_, i) {
                         final f = foods[i];
                         final banned = FoodCatalog.isExcluded(f, excluded);
+                        final mine = f.id.startsWith('my_');
                         return ListTile(
                           dense: true,
+                          leading: mine
+                              ? Icon(Icons.star_outline, color: cs.primary)
+                              : null,
                           title: Text(f.displayName),
                           subtitle: Text(
                             '${f.kcal.round()} kcal · B ${f.protein.round()} · '
@@ -300,7 +330,18 @@ class _CustomMealPlanEditorScreenState
                                   labelStyle:
                                       TextStyle(color: cs.onErrorContainer),
                                 )
-                              : null,
+                              : mine
+                                  ? IconButton(
+                                      tooltip: 'Smazat z mých potravin',
+                                      icon: const Icon(Icons.delete_outline),
+                                      onPressed: () async {
+                                        await ref
+                                            .read(customFoodsProvider.notifier)
+                                            .remove(f.id);
+                                        setLocal(() {});
+                                      },
+                                    )
+                                  : null,
                           onTap: () => Navigator.pop(ctx, _Pick(f)),
                         );
                       },
@@ -309,8 +350,8 @@ class _CustomMealPlanEditorScreenState
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: () => Navigator.pop(ctx, const _Pick(null)),
-                    icon: const Icon(Icons.edit_note),
-                    label: const Text('Vlastní položka (mimo katalog)'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nová vlastní potravina'),
                   ),
                 ],
               ),
@@ -322,14 +363,8 @@ class _CustomMealPlanEditorScreenState
     if (pick == null || !mounted) return;
 
     final items = [..._current.meals[mealIndex].ingredients];
-    final food = pick.food;
-    if (food == null) {
-      final item = await _customItemDialog();
-      if (item == null) return;
-      items.add(item);
-      _setIngredients(mealIndex, items);
-      return;
-    }
+    final food = pick.food ?? await _newFoodDialog();
+    if (food == null || !mounted) return;
 
     if (FoodCatalog.isExcluded(food, excluded)) {
       final go = await _confirm(
@@ -350,64 +385,92 @@ class _CustomMealPlanEditorScreenState
     _setIngredients(mealIndex, items);
   }
 
-  Future<MealIngredient?> _customItemDialog() async {
+  /// Nová vlastní potravina (makra na 100 g) – uloží se natrvalo.
+  Future<NutritionFood?> _newFoodDialog() async {
     final nameCtrl = TextEditingController();
-    final amountCtrl = TextEditingController(text: '100');
-    var unit = 'g';
+    final pCtrl = TextEditingController();
+    final cCtrl = TextEditingController();
+    final fCtrl = TextEditingController();
+    final kcalCtrl = TextEditingController();
+    final pieceCtrl = TextEditingController();
+    String? error;
+
+    double? val(TextEditingController c) =>
+        double.tryParse(c.text.trim().replaceAll(',', '.'));
+
+    Widget field(TextEditingController c, String label, {String? suffix}) =>
+        Expanded(
+          child: TextField(
+            controller: c,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: label,
+              suffixText: suffix,
+              border: const OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+        );
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('Vlastní položka'),
+          title: const Text('Nová vlastní potravina'),
           content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Název (např. Protein tyčinka)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: amountCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Množství',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
+            width: 440,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Název (např. Protein tyčinka Nutrend)',
+                      border: OutlineInputBorder(),
                     ),
-                    const SizedBox(width: 10),
-                    SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'g', label: Text('g')),
-                        ButtonSegment(value: 'ml', label: Text('ml')),
-                        ButtonSegment(value: 'ks', label: Text('ks')),
-                      ],
-                      selected: {unit},
-                      onSelectionChanged: (s) =>
-                          setLocal(() => unit = s.first),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Hodnoty na 100 g (z obalu):'),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      field(pCtrl, 'Bílkoviny', suffix: 'g'),
+                      const SizedBox(width: 8),
+                      field(cCtrl, 'Sacharidy', suffix: 'g'),
+                      const SizedBox(width: 8),
+                      field(fCtrl, 'Tuky', suffix: 'g'),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      field(kcalCtrl, 'Kalorie (nepovinné)', suffix: 'kcal'),
+                      const SizedBox(width: 8),
+                      field(pieceCtrl, '1 kus (nepovinné)', suffix: 'g'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Když vyplníš váhu 1 kusu, bude se potravina zadávat '
+                    'v kusech. Uloží se do tvých potravin a můžeš ji použít '
+                    'v každém jídelníčku.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      error!,
+                      style: TextStyle(color: Theme.of(ctx).colorScheme.error),
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Položka není v katalogu, proto makra tohoto jídla '
-                  'zadáš ručně (menu jídla → Makra ručně).',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -416,22 +479,38 @@ class _CustomMealPlanEditorScreenState
               child: const Text('Zrušit'),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Přidat'),
+              onPressed: () {
+                final p = val(pCtrl) ?? 0;
+                final c = val(cCtrl) ?? 0;
+                final f = val(fCtrl) ?? 0;
+                if (nameCtrl.text.trim().isEmpty) {
+                  setLocal(() => error = 'Vyplň název.');
+                  return;
+                }
+                if (p + c + f <= 0 || p + c + f > 100) {
+                  setLocal(() => error =
+                      'Zadej makra na 100 g (součet 1–100 g).');
+                  return;
+                }
+                Navigator.pop(ctx, true);
+              },
+              child: const Text('Uložit potravinu'),
             ),
           ],
         ),
       ),
     );
-    final name = nameCtrl.text.trim();
-    final amount =
-        double.tryParse(amountCtrl.text.trim().replaceAll(',', '.')) ?? 0;
-    if (ok != true || name.isEmpty || amount <= 0) return null;
-    return MealIngredient(
-      name: name,
-      amount: MealPlanMath.roundAmount(amount, unit),
-      unit: unit,
+    if (ok != true) return null;
+    final food = CustomFoodStore.create(
+      name: nameCtrl.text,
+      protein: val(pCtrl) ?? 0,
+      carbs: val(cCtrl) ?? 0,
+      fat: val(fCtrl) ?? 0,
+      kcal: val(kcalCtrl),
+      pieceGrams: val(pieceCtrl),
     );
+    await ref.read(customFoodsProvider.notifier).add(food);
+    return food;
   }
 
   void _stepIngredient(int mealIndex, int i, int dir) {
@@ -647,6 +726,127 @@ class _CustomMealPlanEditorScreenState
     _setMeals(meals);
   }
 
+  static MealKind _kindFor(String label) {
+    final l = label.toLowerCase();
+    if (l.contains('snídan')) return MealKind.breakfast;
+    if (l.contains('svačin') || l.contains('trénink')) return MealKind.snack;
+    return MealKind.main;
+  }
+
+  /// Nabídne až 10 jiných jídel se stejnými makroživinami.
+  Future<void> _swapMeal(int index) async {
+    final m = _current.meals[index];
+    final mm = MealPlanMath.macrosOfMeal(m);
+    if (mm.kcal <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Jídlo je prázdné – nejdřív přidej potraviny.'),
+        ),
+      );
+      return;
+    }
+    final day = MealPlanMath.totalsOf(_current.meals);
+    double share(double part, double whole) =>
+        whole <= 0 ? 0 : (part / whole).clamp(0.0, 1.0).toDouble();
+    final slot = MealSlot(
+      label: m.label,
+      kind: _kindFor(m.label),
+      proteinShare: share(mm.protein, day.protein),
+      carbsShare: share(mm.carbs, day.carbs),
+      fatShare: share(mm.fats, day.fats),
+      time: m.time,
+    );
+    final profile = ref.read(userProfileProvider);
+    final keto = (profile?.selectedPlan ?? '').toLowerCase() == 'keto';
+    final options = MealComposer.composeOptions(
+      slot: slot,
+      protein: day.protein,
+      carbs: day.carbs,
+      fats: day.fats,
+      style: keto ? DietStyle.keto : DietStyle.standard,
+      preference: profile?.diet ?? DietPreference.none,
+      count: 10,
+      offset: DateTime.now().second,
+    ).map((o) => MealPlanMath.normalizeMeal(o)).toList();
+
+    if (!mounted) return;
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nenašla jsem žádnou vhodnou náhradu.')),
+      );
+      return;
+    }
+
+    final picked = await showModalBottomSheet<PlannedMeal>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return SizedBox(
+          height: MediaQuery.of(ctx).size.height * 0.8,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                child: Text(
+                  'Náhrada: ${m.label}',
+                  style: Theme.of(ctx).textTheme.titleLarge,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(
+                  'Původní: ${mm.kcal.round()} kcal · B ${mm.protein.round()} · '
+                  'S ${mm.carbs.round()} · T ${mm.fats.round()} g',
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                  itemCount: options.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final o = options[i];
+                    return ListTile(
+                      title: Text(o.name),
+                      subtitle: Text(
+                        '${o.description}\n'
+                        '${(o.calories ?? 0).round()} kcal · '
+                        'B ${(o.protein ?? 0).round()} · '
+                        'S ${(o.carbs ?? 0).round()} · '
+                        'T ${(o.fats ?? 0).round()} g',
+                      ),
+                      isThreeLine: true,
+                      onTap: () => Navigator.pop(ctx, o),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (picked == null) return;
+    final meals = [..._current.meals];
+    meals[index] = PlannedMeal(
+      label: m.label,
+      name: picked.name,
+      description: picked.description,
+      ingredients: picked.ingredients,
+      time: m.time,
+      calories: picked.calories,
+      protein: picked.protein,
+      carbs: picked.carbs,
+      fats: picked.fats,
+      grams: picked.grams,
+    );
+    _setMeals(meals);
+  }
+
   void _moveMeal(int index, int dir) {
     final to = index + dir;
     if (to < 0 || to >= _current.meals.length) return;
@@ -850,6 +1050,7 @@ class _CustomMealPlanEditorScreenState
         appBar: AppBar(
           title: Text(widget.existing?.name ?? 'Vlastní jídelníček'),
           actions: [
+            const HelpButton(topic: 'meal_editor'),
             IconButton(
               tooltip: 'Uložit',
               onPressed: _save,
@@ -1015,6 +1216,8 @@ class _CustomMealPlanEditorScreenState
                         _editMealHeader(index);
                       case 'macros':
                         _manualMacros(index);
+                      case 'swap':
+                        _swapMeal(index);
                       case 'up':
                         _moveMeal(index, -1);
                       case 'down':
@@ -1026,6 +1229,9 @@ class _CustomMealPlanEditorScreenState
                     }
                   },
                   itemBuilder: (_) => [
+                    const PopupMenuItem(
+                        value: 'swap',
+                        child: Text('Vyměnit za podobné jídlo')),
                     const PopupMenuItem(
                         value: 'edit', child: Text('Název a čas')),
                     if (!known)

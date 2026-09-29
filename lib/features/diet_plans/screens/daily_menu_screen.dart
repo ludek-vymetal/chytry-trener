@@ -22,8 +22,9 @@ class DailyMenuScreen extends ConsumerWidget {
     final excluded = ref.watch(excludedIngredientsProvider);
 
     if (profile == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 

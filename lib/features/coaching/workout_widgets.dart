@@ -9,6 +9,7 @@ import '../../providers/coach/custom_training_plan_provider.dart';
 import '../../providers/performance_provider.dart';
 import '../../services/coach/online_coaching_service.dart';
 import '../../services/coach/workout_assignment_service.dart';
+import '../help/help_button.dart';
 
 /// Propojení tohoto telefonu s trenérem (`null` = nepropojeno).
 final clientLinkProvider = FutureProvider<ClientLinkInfo?>(
@@ -263,6 +264,7 @@ class _AssignedWorkoutsCardState extends ConsumerState<AssignedWorkoutsCard> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                   ),
                 ),
+                const HelpButton(topic: 'workouts'),
                 IconButton(
                   tooltip: 'Obnovit',
                   onPressed: _load,
@@ -473,6 +475,7 @@ class ClientWorkoutsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Moje tréninky'),
         actions: [
+          const HelpButton(topic: 'online_client'),
           IconButton(
             tooltip: 'Obnovit',
             onPressed: () => ref.invalidate(myWorkoutsProvider),

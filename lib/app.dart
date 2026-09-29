@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/nav/active_client_profile_sync.dart';
+import 'core/nav/switch_mode.dart';
 import 'features/coach/auth/coach_auth_screen.dart';
 import 'features/coach/coach_shell.dart';
 import 'features/coach/setup/coach_setup_screen.dart';
@@ -24,6 +25,7 @@ import 'providers/daily_intake_provider.dart';
 import 'providers/subscription/subscription_provider.dart';
 import 'providers/accent_provider.dart';
 import 'providers/food_exclusions_provider.dart';
+import 'features/diet_plans/providers/custom_foods_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/training_session_provider.dart';
 import 'providers/user_profile_provider.dart';
@@ -45,7 +47,11 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final accent = ref.watch(accentProvider).color;
     // Alergie aktivního klienta platí pro všechny jídelníčky.
-    ref.watch(activeFoodExclusionsProvider);
+    // listen místo watch: změna alergií nesmí přestavět celý MaterialApp
+    // (padalo to při otevřeném dialogu).
+    ref.listen(activeFoodExclusionsProvider, (_, __) {});
+    // Vlastní potraviny trenéra (pro výpočet maker v jídelníčcích).
+    ref.listen(customFoodsProvider, (_, __) {});
 
     return MaterialApp(
       key: ValueKey(role),
@@ -637,7 +643,7 @@ class _FullscreenLoader extends StatelessWidget {
   }
 }
 
-class _FullscreenError extends StatelessWidget {
+class _FullscreenError extends ConsumerWidget {
   final String message;
 
   const _FullscreenError({
@@ -645,17 +651,31 @@ class _FullscreenError extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: colorScheme.onSurface),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 40, color: colorScheme.error),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: colorScheme.onSurface),
+              ),
+              const SizedBox(height: 20),
+              // Vždy cesta ven – nikdy nezůstat v pasti.
+              OutlinedButton.icon(
+                onPressed: () => switchToRoleSelect(context, ref),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Zpět na výběr režimu'),
+              ),
+            ],
           ),
         ),
       ),
@@ -663,7 +683,7 @@ class _FullscreenError extends StatelessWidget {
   }
 }
 
-class _RetryableErrorCard extends StatelessWidget {
+class _RetryableErrorCard extends ConsumerWidget {
   final String message;
   final VoidCallback onRetry;
   final IconData icon;
@@ -675,7 +695,7 @@ class _RetryableErrorCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -707,6 +727,12 @@ class _RetryableErrorCard extends StatelessWidget {
                   FilledButton(
                     onPressed: onRetry,
                     child: Text(l10n.retry),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () => switchToRoleSelect(context, ref),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Zpět na výběr režimu'),
                   ),
                 ],
               ),

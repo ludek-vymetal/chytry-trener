@@ -577,7 +577,8 @@ class _FoodEntryScreenState extends ConsumerState<FoodEntryScreen> {
       ),
     );
 
-    ctrl.dispose();
+    // Uvolnit až po animaci zavření dialogu (jinak pád).
+    Future<void>.delayed(const Duration(milliseconds: 500), ctrl.dispose);
     return res;
   }
 

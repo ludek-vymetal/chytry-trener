@@ -328,7 +328,8 @@ class _PdfSignatureCardState extends State<_PdfSignatureCard> {
         ],
       ),
     );
-    ctrl.dispose();
+    // Uvolnit až po animaci zavření dialogu (jinak pád).
+    Future<void>.delayed(const Duration(milliseconds: 500), ctrl.dispose);
     if (result == null) return;
     await PdfAuthor.save(result);
     if (mounted) setState(() => _saved = result.trim());

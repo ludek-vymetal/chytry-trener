@@ -1,3 +1,4 @@
+import '../common/missing_goal_view.dart';
 import 'package:flutter/material.dart';
 import '../help/help_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -589,7 +590,8 @@ class FoodSummaryScreen extends ConsumerWidget {
     ),
   );
 
-  ctrl.dispose();
+  // Uvolnit až po animaci zavření dialogu (jinak pád).
+  Future<void>.delayed(const Duration(milliseconds: 500), ctrl.dispose);
   return res;
 }
 
@@ -1353,11 +1355,7 @@ Widget build(BuildContext context, WidgetRef ref) {
   final profile = ref.watch(userProfileProvider);
 
   if (profile == null || profile.goal == null) {
-    return Scaffold(
-      body: Center(
-        child: Text(l10n.profileNotFound),
-      ),
-    );
+    return MissingGoalScaffold(title: l10n.todayFood);
   }
 
   final date = ref.watch(selectedFoodDateProvider);

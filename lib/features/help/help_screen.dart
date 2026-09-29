@@ -26,17 +26,169 @@ const helpArticles = <HelpArticle>[
     summary: 'Jak aplikaci nastavit a co kde najdeš.',
     steps: [
       ('Vyber režim', 'Klient používá aplikaci pro sebe – jídlo, trénink a '
-          'pokrok. Trenér/ka spravuje své klienty, jejich plány a měření.'),
+          'pokrok. Trenér/ka spravuje klienty, jejich plány, měření a online '
+          'koučink. Trenérský režim je chráněný přihlášením a PINem.'),
+      ('Mám pozvánku od trenéra', 'Když ti trenér/ka poslal/a kód, zvol na '
+          'úvodní obrazovce „Mám pozvánku od trenéra“. Víc v návodu '
+          '„Připojení k trenérovi“.'),
       ('Vyplň základní údaje', 'Pohlaví, věk, výška a váha. Z nich aplikace '
           'spočítá energii, makra i tréninkovou zátěž.'),
       ('Zvol cíl', 'Síla, postava, hubnutí nebo vytrvalost. Podle cíle se '
           'nastaví jídelníček i trénink.'),
-      ('Hlavní lišta', 'Dnes · Jídlo · Trénink · Pokrok · Profil. Na tabletu '
-          'a počítači je lišta po levé straně.'),
+      ('Hlavní lišta', 'Klient: Dnes · Jídlo · Trénink · Pokrok · Profil. '
+          'Trenér: Přehled · Klienti · Nastavení. Na tabletu a počítači je '
+          'lišta vlevo a vpravo je panel s přehledem.'),
       ('Nápověda všude', 'Otazník v horní liště otevře návod k obrazovce, '
-          'na které právě jsi.'),
+          'na které právě jsi. Nahoře v nápovědě můžeš i vyhledávat.'),
     ],
   ),
+
+  // ----------------------------------------------------------------
+  // ONLINE KOUČINK
+  // ----------------------------------------------------------------
+  HelpArticle(
+    id: 'online',
+    icon: Icons.phonelink_ring_outlined,
+    title: 'Online koučink – propojení s klientem (trenér)',
+    summary: 'Jak klienta pozvat, co uvidí a co se sdílí.',
+    steps: [
+      ('Co to je', 'Klient má aplikaci ve svém telefonu a je propojený s '
+          'tebou. Posíláš mu tréninky a jídelníčky, on zapisuje výkony, jídlo '
+          'a váhu a vy dva si píšete zprávy. Všechno se synchronizuje přes '
+          'zabezpečený cloud.'),
+      ('1. Pozvánka', 'Klienti → vyber klienta → záložka Přehled → karta '
+          '„Online coaching“ → „Pozvat klienta do aplikace“. Vytvoří se kód '
+          've tvaru KL-XXXX-XXXX.'),
+      ('2. Pošli kód', 'V okně pozvánky klikni na „Kopírovat zprávu“ a vlož '
+          'ji klientovi do WhatsAppu, Messengeru nebo SMS. Zpráva obsahuje '
+          'návod i kód. Kód platí jen pro tohoto klienta a jde použít jednou.'),
+      ('3. Klient se připojí', 'Klient si nainstaluje aplikaci, zvolí „Mám '
+          'pozvánku od trenéra“, zadá kód a potvrdí souhlas se sdílením. '
+          'Karta u klienta se pak přepne na zelené „Připojeno“.'),
+      ('Co klient uvidí', 'Tréninky, které mu pošleš (jen na dny, které '
+          'určíš – nikdy celý plán), jídelníčky, které mu uložíš, své cíle, '
+          'měření a zprávy od tebe. Tvoje šablony, poznámky a ostatní '
+          'klienty nevidí.'),
+      ('Co uvidíš ty', 'Odcvičené tréninky s váhami a opakováními, jeho '
+          'poznámky, zapsané jídlo, váhu a zprávy. Na Přehledu trenéra je '
+          'karta „Online klienti“ s tím, co je potřeba řešit.'),
+      ('Synchronizace', 'Probíhá sama – po každé změně, při otevření '
+          'aplikace a každé 2 minuty. Tlačítko „Synchronizovat teď“ ji '
+          'spustí hned.'),
+      ('Nový kód / zrušení', 'Dokud se klient nepřipojí, můžeš vytvořit '
+          'nový kód nebo pozvánku zrušit. „Ukončit coaching“ klienta odpojí; '
+          'data u tebe zůstanou.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'online_client',
+    icon: Icons.link,
+    title: 'Připojení k trenérovi (klient)',
+    summary: 'Jak se připojit kódem a jak spolupráce funguje.',
+    steps: [
+      ('Instalace', 'Nainstaluj si aplikaci Chytrý trenér podle odkazu, '
+          'který ti poslal/a trenér/ka.'),
+      ('Zadej kód', 'Na úvodní obrazovce zvol „Mám pozvánku od trenéra“ '
+          '(nebo Profil → „Mám pozvánku od trenéra“). Opiš kód '
+          'KL-XXXX-XXXX – na velikosti písmen a pomlčkách nezáleží.'),
+      ('Souhlas', 'Potvrď, že trenér uvidí, co zapíšeš (jídlo, tréninky, '
+          'váha, měření). Souhlas můžeš kdykoli odvolat odpojením.'),
+      ('Dnešní trénink', 'Na obrazovce Dnes a v záložce Trénink uvidíš '
+          'tréninky od trenéra. Klepni na „Začít trénink“, u každé série '
+          'zapiš kg a opakování, zaškrtni ji a nakonec „Odeslat trenérovi“.'),
+      ('Jídelníček od trenéra', 'Najdeš ho nahoře v záložce Jídlo. Můžeš '
+          'si ho vytisknout nebo uložit jako PDF.'),
+      ('Zprávy', 'Karta „Zprávy s trenérem“ na obrazovce Dnes. Číslo '
+          'u ikony ukazuje nepřečtené zprávy.'),
+      ('Na co nezapomenout', 'Na obrazovce Dnes tě aplikace upozorní na '
+          'týdenní check-in a na tréninky, které jsi ještě neodeslal/a.'),
+      ('Nic nového nevidím?', 'Stáhni obrazovku dolů, nebo Profil → '
+          '„Synchronizovat“. Potřebuješ připojení k internetu.'),
+      ('Odpojení', 'Profil → karta trenéra → „Odpojit“. Data v telefonu '
+          'ti zůstanou.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'workouts',
+    icon: Icons.send_outlined,
+    title: 'Posílání tréninků online klientovi',
+    summary: 'Trénink na dnešek nebo na týden dopředu – po kouskách.',
+    steps: [
+      ('Proč po kouskách', 'Klient nikdy nedostane celý plán najednou – '
+          'jen jednotlivé tréninky na konkrétní dny (max. 7 dní dopředu). '
+          'Plán tak nejde „odnést“ a zneužít.'),
+      ('Kde', 'Klienti → klient → záložka Trénink → karta „Tréninky pro '
+          'klienta“ → „Poslat trénink“. Klient musí mít tréninkový plán '
+          '(Trénink → Programy).'),
+      ('Co poslat', 'Vyber den plánu (např. Trénink A), datum (Dnes, '
+          'zítra…) a případně vzkaz. Můžeš vybrat víc dní a víc tréninků '
+          'najednou – spárují se v pořadí, jak je vybereš.'),
+      ('Výsledky', 'Když klient trénink odešle, objeví se „✓ odcvičeno“. '
+          'Klepnutím uvidíš série, váhy a jeho poznámku. Nejlepší výkony se '
+          'mu uloží do výkonů u cviků.'),
+      ('Neodcvičené', 'Tréninky z minulých dnů, které klient neodeslal, '
+          'uvidíš v kartě „Online klienti“ na Přehledu.'),
+      ('Smazání', 'Poslaný trénink, který ještě nebyl odcvičený, můžeš '
+          'smazat ikonou koše.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'checkin',
+    icon: Icons.fact_check_outlined,
+    title: 'Týdenní check-in',
+    summary: 'Jednou týdně váha a jak se klient cítí.',
+    steps: [
+      ('Klient', 'Na obrazovce Dnes se po 7 dnech objeví „Týdenní check-in“ '
+          '(nebo Profil → „Týdenní check-in“). Vyplní váhu, spánek, energii, '
+          'hlad, stres a dodržování jídelníčku (1–5) a vzkaz.'),
+      ('Váha', 'Váha z check-inu se uloží i do profilu klienta, takže se '
+          'podle ní počítají jídelníčky.'),
+      ('Trenér', 'Klient → Přehled → karta „Týdenní check-in“: posledních '
+          '6 check-inů, změna váhy a barevné hodnocení (zelená = dobré, '
+          'oranžová = průměr, červená = problém).'),
+      ('Chybí check-in', 'Na Přehledu v kartě „Online klienti“ uvidíš „Check-in '
+          'chybí“. Tlačítko „Připomenout“ otevře zprávy s klientem.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'chat',
+    icon: Icons.chat_bubble_outline,
+    title: 'Zprávy trenér ↔ klient',
+    summary: 'Psaní si přímo v aplikaci.',
+    steps: [
+      ('Trenér', 'V detailu klienta ikona bubliny vpravo nahoře, nebo '
+          'v kartě „Online klienti“ na Přehledu. Číslo = nepřečtené zprávy.'),
+      ('Klient', 'Obrazovka Dnes → „Zprávy s trenérem“, nebo Profil → '
+          '„Napsat trenérovi“.'),
+      ('Přečteno', 'Jedna fajfka = odesláno, dvě = druhá strana si zprávu '
+          'přečetla.'),
+      ('Soukromí', 'Zprávy vidí jen trenér a daný klient. Nejsou vidět '
+          'jiným klientům ani v PDF.'),
+      ('Upozornění', 'Nové zprávy uvidíš po otevření aplikace (číslo '
+          'u ikony). Upozornění na zamčeném telefonu zatím nejsou.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'coach_home',
+    icon: Icons.dashboard_outlined,
+    title: 'Přehled trenéra',
+    summary: 'Co znamenají karty na úvodní obrazovce.',
+    steps: [
+      ('Čísla nahoře', 'Aktivní klienti, kdo tento týden trénoval, průměrné '
+          'skóre a kolik klientů potřebuje pozornost.'),
+      ('Online klienti', 'Nové zprávy, jestli dnes odcvičil, kolik tréninků '
+          'neodcvičil a komu chybí naplánovaný trénink. Kdo potřebuje '
+          'reakci, je nahoře. Klepnutím otevřeš klienta.'),
+      ('Potřebuje pozornost', 'Klienti bez tréninku, bez měření nebo '
+          's poklesem skóre.'),
+      ('Záloha', 'Stav cloudové zálohy a tlačítka pro ruční zálohu / '
+          'obnovu.'),
+    ],
+  ),
+
+  // ----------------------------------------------------------------
+  // DEN, JÍDLO, TRÉNINK
+  // ----------------------------------------------------------------
   HelpArticle(
     id: 'today',
     icon: Icons.home_outlined,
@@ -45,14 +197,12 @@ const helpArticles = <HelpArticle>[
     steps: [
       ('Cesta k cíli', 'Karta nahoře ukazuje, kolik ti chybí do cílové váhy '
           'a jak se ti daří od začátku.'),
-      ('Dnešní trénink', 'Tlačítko „Začít trénink“ otevře dnešní cviky. Po '
-          'každém cviku zapíšeš váhu a opakování – aplikace navrhne zátěž '
-          'na příště.'),
+      ('Dnešní trénink', 'Tlačítko „Začít trénink“ otevře dnešní cviky. Když '
+          'máš trenéra online, uvidíš tu trénink, který ti poslal.'),
+      ('Zprávy s trenérem', 'U online klientů – nové zprávy jsou zvýrazněné.'),
       ('Jídlo dnes', 'Kolik kalorií ti ještě zbývá a jak jsi na tom s '
           'bílkovinami, sacharidy a tuky.'),
       ('Týden', 'Kolečka ukazují, které dny jsi už odtrénoval/a.'),
-      ('Rychlé akce', 'Jídelníček, zápis váhy, pokrok a nápověda – vše '
-          'jedním klepnutím.'),
     ],
   ),
   HelpArticle(
@@ -63,30 +213,92 @@ const helpArticles = <HelpArticle>[
     steps: [
       ('Zapsat jídlo', 'Na záložce Jídlo přidáš potravinu nebo hotové jídlo. '
           'Aplikace sčítá kalorie a makra.'),
-      ('Dopočítat zbytek dne', 'Aplikace navrhne jídla, která doplní přesně '
-          'to, co ti ještě chybí.'),
-      ('Styl jídelníčku', 'Lineární, sacharidové vlny, keto nebo přerušovaný '
-          'půst. Programy (Hollywood, Bikini…) mají vlastní jídelníček.'),
-      ('Vegetarián, vegan, levná varianta', 'Přepínače ve stylu jídelníčku. '
-          'Levná varianta používá levné suroviny a večeře je z oběda.'),
+      ('Styl jídelníčku', 'Jídlo → ikona knihy „Můj jídelníček“. Lineární, '
+          'sacharidové vlny, keto, přerušovaný půst nebo jídelníček '
+          'k programu (Hollywood, Bikini…).'),
+      ('Výběrový plán', 'Ke každému jídlu dne 10 možností se stejnými '
+          'makry – klient si vybírá podle chuti. Dá se vytisknout po '
+          'jednotlivých jídlech.'),
+      ('Vegetarián, vegan, levná varianta', 'Přepínače ve stylu jídelníčku.'),
       ('Nákupní seznam', 'Z týdenního jídelníčku se sám vytvoří seznam '
-          's gramážemi – můžeš ho sdílet.'),
+          's gramážemi.'),
+      ('Celá čísla', 'Makra a kalorie jsou vždy v celých gramech, vejce '
+          'v celých kusech, porce po 5 g.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'meal_editor',
+    icon: Icons.edit_note,
+    title: 'Vlastní jídelníčky a šablony',
+    summary: 'Vlastní název, úpravy, výměna jídel a přepočet na klienta.',
+    steps: [
+      ('Nový jídelníček', 'Klient → záložka Strava → karta „Jídelníčky '
+          'klienta“ → „Nový jídelníček“. Nebo Jídlo → Můj jídelníček → '
+          '„Vlastní jídelníček“.'),
+      ('Upravit vygenerovaný', 'V zobrazení jídelníčku ikona tužky, nebo '
+          'u jídla ikona ⇄ „Vyměnit jídlo“. Upravená verze se uloží jako '
+          'nový jídelníček.'),
+      ('Dny, jídla, potraviny', 'Nahoře přepínáš dny (+ Den přidá kopii nebo '
+          'prázdný den). U jídla „+ Potravina“, množství měníš −/+ nebo '
+          'klepnutím na číslo, × potravinu odebere.'),
+      ('Cíl klienta', 'Horní lišta ukazuje součet dne proti cíli: zelená = '
+          'do 5 %, oranžová = do 12 %, červená = víc. Menu dne (⋮) → '
+          '„Doladit den na cíl“ přepočítá porce přesně na jeho kalorie.'),
+      ('Vyměnit za podobné', 'Menu jídla (⋮) → „Vyměnit za podobné jídlo“ '
+          'nabídne až 10 jídel se stejnými makry. Alergie klienta se '
+          'respektují.'),
+      ('Vlastní potraviny', 'V seznamu potravin „Nová vlastní potravina“ – '
+          'název a makra na 100 g z obalu (případně váha 1 kusu). Uloží se '
+          'natrvalo, jsou nahoře s hvězdičkou.'),
+      ('Uložení a název', 'Tlačítko „Uložit jídelníček“ – zadáš vlastní '
+          'název a poznámku. Přepínač „Jídelníček klienta“ ho přiřadí '
+          'klientovi (online klient ho hned uvidí), vypnutý = obecná šablona.'),
+      ('Šablona pro jiného klienta', 'Každý uložený jídelníček je šablona. '
+          'U klienta „Ze šablony“, nebo v Knihovně „Použít pro klienta“. '
+          'Aplikace nabídne kalorie podle cíle klienta, porce přepočítá '
+          'a zaokrouhlí a makra spočítá znovu.'),
+      ('Knihovna', 'Všechny jídelníčky s hledáním a filtrem Šablony / '
+          'Klientské. Menu karty: tisk, PDF, upravit, přejmenovat, uložit '
+          'jako šablonu, smazat.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'allergies',
+    icon: Icons.no_food_outlined,
+    title: 'Alergie a vyloučené potraviny',
+    summary: 'Co klient nejí, se do jídelníčku nedostane.',
+    steps: [
+      ('Kde zadat', 'Při přidání klienta, nebo klient → Strava → karta '
+          '„Alergie a co klient nejí“. Piš oddělené čárkou, např. '
+          '„laktóza, ořechy, vejce“.'),
+      ('Skupiny', 'Aplikace zná skupiny – laktóza/mléko, lepek, ořechy, '
+          'sója, ryby… vyřadí všechny potraviny ze skupiny.'),
+      ('Kde to platí', 'Všechny generované jídelníčky, výběrový plán '
+          'i výměna jídla. V editoru jsou vyloučené potraviny červeně '
+          'a aplikace se před přidáním zeptá.'),
+      ('PDF', 'Na jídelníčku v PDF je řádek „Bez: …“.'),
     ],
   ),
   HelpArticle(
     id: 'training',
     icon: Icons.fitness_center_outlined,
     title: 'Trénink a programy',
-    summary: 'Tréninkové plány, programy a zapisování výkonů.',
+    summary: 'Tréninkové plány, knihovna programů a zapisování výkonů.',
     steps: [
-      ('Vlastní plán', 'Vytvoř plán s dny a cviky, nebo vlož hotový program.'),
-      ('Programy', 'Hollywood training, Bikini fitness, Kulatý zadek, Ruský '
-          'cyklus (bench press) a příprava na trojboj. Stačí zadat datum akce '
-          '– váhy a fáze se spočítají samy a jídelníček se nastaví k tomu.'),
+      ('Vlastní plán', 'Vytvoř plán s dny a cviky, nebo vlož hotový program '
+          'z knihovny.'),
+      ('Knihovna programů', 'Kulturistika a postava, Síla a vzpírání, Běh, '
+          'Příprava na fyzické testy (policie, hasiči, armáda) a Kondice. '
+          'Náhled ukáže dny a cviky před vložením.'),
+      ('Programy s datem', 'Hollywood training, Bikini fitness, Kulatý '
+          'zadek, Ruský cyklus a příprava na trojboj – zadáš datum akce '
+          'a fáze i váhy se spočítají samy.'),
       ('Zapisování', 'U každého cviku zapiš váhu a opakování. Z toho se '
           'počítá progres a odhad maxima.'),
-      ('Aktivní plán', 'Vždy je aktivní jeden plán – ten se ukazuje na '
-          'obrazovce Dnes.'),
+      ('Tisk plánu', 'V detailu plánu tlačítka Tisk / Uložit PDF – '
+          's podpisem a upozorněním.'),
+      ('Online klient', 'Online klientovi plán neposíláš celý – viz návod '
+          '„Posílání tréninků“.'),
     ],
   ),
   HelpArticle(
@@ -97,7 +309,8 @@ const helpArticles = <HelpArticle>[
     steps: [
       ('Zapsat měření', 'Váhu zapisuj ideálně ráno nalačno, jednou týdně.'),
       ('Obvody', 'Pas, boky, stehno, paže… Měř vždy na stejném místě.'),
-      ('Výkony', 'Nejlepší výkony u cviků a jejich vývoj v grafu.'),
+      ('Výkony', 'Nejlepší výkony u cviků a jejich vývoj v grafu. Výkony '
+          'z tréninků od trenéra se sem ukládají samy.'),
     ],
   ),
   HelpArticle(
@@ -111,8 +324,7 @@ const helpArticles = <HelpArticle>[
       ('Kdy měřit', 'Jednou za měsíc, ráno, nalačno, po toaletě a bez '
           'tréninku předem – jen tak jsou měření srovnatelná.'),
       ('Podrobný rozbor', 'Složení těla, zdravotní rizika, symetrie stran, '
-          'hydratace, vývoj od minula a cílová váha. Barva ukazuje, co je '
-          'v pořádku a co zlepšit.'),
+          'hydratace, vývoj od minula a cílová váha.'),
       ('Akční plán', 'Konkrétní kroky pro stravu, trénink a regeneraci podle '
           'výsledků.'),
     ],
@@ -121,11 +333,15 @@ const helpArticles = <HelpArticle>[
     id: 'clients',
     icon: Icons.groups_outlined,
     title: 'Klienti (pro trenéry)',
-    summary: 'Přidání klienta, jeho plán a práce za něj.',
+    summary: 'Přidání klienta, jeho detail a práce za něj.',
     steps: [
-      ('Přidat klienta', 'Na záložce Klienti tlačítko „Přidat klienta“.'),
-      ('Plán klienta', 'V detailu klienta nastavíš cíl, jídelníček, trénink '
-          'i programy – vše pro daného klienta.'),
+      ('Přidat klienta', 'Záložka Klienti → tlačítko +. Rovnou můžeš zadat '
+          'i alergie.'),
+      ('Seznam a detail', 'Na počítači je vlevo seznam a vpravo detail '
+          'vybraného klienta. Hledání a filtry jsou nahoře.'),
+      ('Záložky klienta', 'Přehled (skóre, akční plán, online coaching), '
+          'Postava (InBody, obvody), Trénink (tréninky pro klienta, plány), '
+          'Strava (jídelníčky, alergie), Poznámky.'),
       ('Otevřít jako klient', 'Uvidíš aplikaci očima klienta a můžeš za něj '
           'zapisovat.'),
       ('Import / export', 'Zálohy klientů a přenos mezi zařízeními najdeš '
@@ -135,17 +351,39 @@ const helpArticles = <HelpArticle>[
   HelpArticle(
     id: 'pdf',
     icon: Icons.picture_as_pdf_outlined,
-    title: 'PDF souhrn pro klienta',
-    summary: 'Profesionální přehled postavy, tréninku a stravy.',
+    title: 'PDF a tisk',
+    summary: 'Souhrn klienta, jídelníčky a tréninkové plány.',
     steps: [
-      ('Kde', 'Detail klienta → Analýza. Vyber období (doporučeno „Od '
-          'začátku“).'),
-      ('Tisk nebo PDF', 'Ikona tiskárny otevře tisk – můžeš zvolit i „Uložit '
-          'jako PDF“. Ikona sdílení pošle PDF e-mailem nebo zprávou.'),
-      ('Černobílý tisk', 'Přepínač pro černobílou tiskárnu – bez barevných '
-          'ploch, šetří toner.'),
+      ('Souhrn klienta', 'Detail klienta → „Souhrn PDF“. Vyber období '
+          '(doporučeno „Od začátku“).'),
+      ('Jídelníček a trénink', 'Ikona tiskárny u jídelníčku nebo plánu. '
+          'V tisku můžeš zvolit i „Uložit jako PDF“; druhá ikona PDF sdílí.'),
+      ('Podpis', 'Nastavení → „Podpis na dokumentech“. Na každém PDF je '
+          '„Vypracoval/a: …“ a upozornění, že nejde o lékařskou radu.'),
+      ('Černobílý tisk', 'Přepínač pro černobílou tiskárnu – šetří toner.'),
     ],
   ),
+  HelpArticle(
+    id: 'security',
+    icon: Icons.lock_outline,
+    title: 'Zabezpečení a soukromí',
+    summary: 'PIN, trenérský účet a kdo co vidí.',
+    steps: [
+      ('Trenérský účet', 'Trenérský režim vyžaduje přihlášení e-mailem '
+          'a heslem. Heslo nikomu neposílej a nefoť.'),
+      ('PIN', 'Po spuštění aplikace a po každém přepnutí režimu se trenérský '
+          'režim zamkne PINem – když se k zařízení dostane někdo jiný, data '
+          'klientů neuvidí.'),
+      ('Klient s trenérem', 'Na telefonu propojeného klienta je trenérský '
+          'režim skrytý.'),
+      ('Cloud', 'Data jsou v cloudu Google Firebase, přístup mají jen '
+          'přihlášený trenér a jeho propojený klient.'),
+    ],
+  ),
+
+  // ----------------------------------------------------------------
+  // OSTATNÍ
+  // ----------------------------------------------------------------
   HelpArticle(
     id: 'plan',
     icon: Icons.workspace_premium_outlined,
@@ -164,11 +402,12 @@ const helpArticles = <HelpArticle>[
     id: 'settings',
     icon: Icons.palette_outlined,
     title: 'Vzhled a nastavení',
-    summary: 'Tmavý režim, barva aplikace a jazyk.',
+    summary: 'Tmavý režim, barva aplikace a podpis.',
     steps: [
-      ('Světlý / tmavý / auto', 'Auto se řídí nastavením telefonu.'),
+      ('Světlý / tmavý / auto', 'Auto se řídí nastavením zařízení.'),
       ('Barva aplikace', 'Smaragdová, růžová, fialová, modrá, oranžová nebo '
           'grafitová – změní se celá aplikace.'),
+      ('Podpis na dokumentech', 'Jméno, které se tiskne na PDF.'),
     ],
   ),
   HelpArticle(
@@ -177,14 +416,35 @@ const helpArticles = <HelpArticle>[
     title: 'Data a zálohy',
     summary: 'Kde jsou data a jak o ně nepřijít.',
     steps: [
-      ('Ukládání', 'Data se ukládají přímo v zařízení. Trenérský účet se po '
-          'přihlášení zálohuje i do cloudu.'),
-      ('Export klienta', 'Záloha obsahuje data, PDF souhrn a tabulky. Dělej '
-          'ji pravidelně, hlavně před většími změnami.'),
-      ('Import', 'Klienta lze načíst ze zálohy. Při shodě ID se vytvoří nové, '
-          'aby se nic nepřepsalo.'),
-      ('Tovární nastavení', 'Nevratně smaže všechna data v zařízení. Předtím '
-          'vždy exportuj důležité klienty.'),
+      ('Automatická záloha', 'Trenérská data (klienti, měření, plány, '
+          'jídelníčky, vlastní potraviny, výkony) se po každé změně zálohují '
+          'do cloudu k tvému účtu.'),
+      ('Druhé zařízení', 'Na jiném počítači se stačí přihlásit stejným '
+          'trenérským účtem – data se stáhnou z cloudu.'),
+      ('Export klienta', 'Záloha do souboru s PDF souhrnem a tabulkami. '
+          'Hodí se před většími změnami.'),
+      ('Tovární nastavení', 'Nevratně smaže všechna data v zařízení.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'problems',
+    icon: Icons.build_outlined,
+    title: 'Když něco nefunguje',
+    summary: 'Nejčastější potíže a jejich řešení.',
+    steps: [
+      ('Klient nevidí trénink / jídelníček', 'Ať stáhne obrazovku dolů nebo '
+          'dá Profil → Synchronizovat. Zkontroluj, že je u něj v kartě '
+          '„Online coaching“ zelené „Připojeno“ a že má internet.'),
+      ('Kód nefunguje', 'Kód jde použít jen jednou. Vytvoř u klienta „Nový '
+          'kód“ a pošli ho znovu.'),
+      ('„Přihlášení klientů není zapnuté“', 'Ve Firebase konzoli → '
+          'Authentication → Sign-in method musí být zapnuté „Anonymous“.'),
+      ('„Cloud odmítl přístup“', 'Ve Firebase konzoli → Firestore → '
+          'Pravidla nejsou publikovaná aktuální pravidla ze souboru '
+          'firestore.rules.'),
+      ('Telefon se po přeinstalaci vrací do trenéra', 'Na úvodní obrazovce '
+          'použij šipku zpět a zvol „Mám pozvánku od trenéra“ – připojení '
+          'kódem trenérský účet v telefonu odhlásí.'),
     ],
   ),
 ];

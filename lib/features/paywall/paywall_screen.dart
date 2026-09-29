@@ -170,7 +170,8 @@ Future<bool> showRedeemCodeDialog(BuildContext context, WidgetRef ref) async {
     ),
   );
 
-  ctrl.dispose();
+  // Uvolnit až po animaci zavření dialogu (jinak pád).
+  Future<void>.delayed(const Duration(milliseconds: 500), ctrl.dispose);
   if (ok == true && context.mounted) {
     final until = ref.read(accessProvider).validUntil;
     ScaffoldMessenger.of(context).showSnackBar(

@@ -177,6 +177,7 @@ class _OnboardingProfileScreenState
           }
 
           return Scaffold(
+            appBar: AppBar(),
             body: Center(
               child: Column(
                 mainAxisSize:

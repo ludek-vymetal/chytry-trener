@@ -23,6 +23,11 @@ import '../../services/coach/online_coaching_service.dart';
 import '../../services/pdf/pdf_author.dart';
 import '../diet_plans/providers/saved_meal_plans_provider.dart';
 import 'workout_widgets.dart';
+import 'chat_screen.dart';
+import 'coach_online_panel.dart';
+import 'checkin_widgets.dart';
+import '../help/help_button.dart';
+import '../help/help_screen.dart';
 
 // =====================================================================
 // Obnova dat po synchronizaci + pravidelná synchronizace
@@ -53,7 +58,10 @@ class _CoachingSyncListenerState extends ConsumerState<CoachingSyncListener>
       const Duration(minutes: 2),
       (_) {
         OnlineCoachingService.syncNow();
-        if (mounted) ref.invalidate(myWorkoutsProvider);
+        if (mounted) {
+          ref.invalidate(myWorkoutsProvider);
+          ref.invalidate(coachOnlineOverviewProvider);
+        }
       },
     );
   }
@@ -82,6 +90,8 @@ class _CoachingSyncListenerState extends ConsumerState<CoachingSyncListener>
     ref.invalidate(savedMealPlansProvider);
     ref.invalidate(clientLinkProvider);
     ref.invalidate(myWorkoutsProvider);
+    ref.invalidate(coachOnlineOverviewProvider);
+    ref.invalidate(myCheckInsProvider);
     final cid = ref.read(userProfileProvider)?.clientId;
     if (cid != null && cid.isNotEmpty) {
       ref.read(userProfileProvider.notifier).switchToClient(cid);
@@ -196,9 +206,12 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Klient si stáhne aplikaci, zvolí „Mám pozvánku od trenéra“ '
-              'a zadá kód. Kód platí jen pro tohoto klienta a jde použít '
-              'jednou.',
+              '1. Klikni na „Kopírovat zprávu“ a pošli ji klientovi '
+              '(WhatsApp, Messenger, SMS) – je v ní návod i kód.\n'
+              '2. Klient si nainstaluje aplikaci a zvolí „Mám pozvánku od '
+              'trenéra“.\n'
+              '3. Zadá kód. Jakmile se připojí, uvidíš tu „Připojeno“.\n\n'
+              'Kód platí jen pro tohoto klienta a jde použít jednou.',
             ),
           ],
         ),
@@ -218,6 +231,17 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
             },
             icon: const Icon(Icons.copy),
             label: const Text('Kopírovat zprávu'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: code));
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(content: Text('Kód zkopírován.')),
+                );
+              }
+            },
+            child: const Text('Jen kód'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx),
@@ -287,10 +311,11 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Pošli klientovi pozvánku do aplikace. Uvidí svůj trénink, '
-            'jídelníček a pokrok, bude zapisovat jídlo a tréninky a ty to '
-            'hned uvidíš tady.',
+            'Klient bude mít aplikaci ve svém telefonu: posíláš mu tréninky '
+            'a jídelníčky, on zapisuje výkony, jídlo a váhu a můžete si psát.',
           ),
+          const SizedBox(height: 12),
+          const _Steps(current: 0),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _busy ? null : _invite,
@@ -308,10 +333,13 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
               Icon(Icons.hourglass_top, color: cs.tertiary),
               const SizedBox(width: 8),
               const Expanded(
-                child: Text('Pozvánka odeslaná – čeká se na připojení.'),
+                child: Text('Pozvánka vytvořená – čeká se, až klient '
+                    'zadá kód.'),
               ),
             ],
           ),
+          const SizedBox(height: 10),
+          const _Steps(current: 1),
           if (link.inviteCode != null) ...[
             const SizedBox(height: 6),
             SelectableText(
@@ -366,8 +394,9 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Plány, jídelníček a změny se klientovi posílají samy. '
-            'Jeho jídlo, tréninky a váhu tu vidíš do pár minut.',
+            'Tréninky posíláš v záložce Trénink („Tréninky pro klienta“), '
+            'jídelníčky v záložce Strava („Jídelníčky klienta“). Jeho jídlo, '
+            'tréninky a váhu tu vidíš do pár minut.',
             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
           ),
           const SizedBox(height: 10),
@@ -385,6 +414,19 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
                       )
                     : const Icon(Icons.sync),
                 label: const Text('Synchronizovat teď'),
+              ),
+              FilledButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CoachingChatScreen(
+                      linkId: link.linkId,
+                      asCoach: true,
+                      title: widget.client.displayName,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('Zprávy'),
               ),
               TextButton(
                 onPressed: _busy ? null : _unlink,
@@ -407,9 +449,20 @@ class _CoachingInviteCardState extends State<CoachingInviteCard> {
               children: [
                 Icon(Icons.phonelink_ring_outlined, color: cs.primary),
                 const SizedBox(width: 10),
-                const Text(
-                  'Online coaching',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                const Expanded(
+                  child: Text(
+                    'Online coaching',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const HelpScreen(topic: 'online'),
+                    ),
+                  ),
+                  icon: const Icon(Icons.help_outline, size: 18),
+                  label: const Text('Jak to funguje?'),
                 ),
               ],
             ),
@@ -463,6 +516,31 @@ class _JoinCoachScreenState extends ConsumerState<JoinCoachScreen> {
     await ref.read(activeClientIdProvider.notifier).setActive(info.clientId);
     await ref.read(userProfileProvider.notifier).switchToClient(info.clientId);
     OnlineCoachingService.revision.value++;
+    if (!mounted) return;
+    final coach = (info.coachName ?? '').trim();
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 48),
+        title: Text(coach.isEmpty
+            ? 'Jsi připojen/a k trenérovi'
+            : 'Jsi připojen/a: $coach'),
+        content: const Text(
+          'Co tě čeká:\n'
+          '• Dnes – trénink, který ti trenér pošle, a zprávy s trenérem.\n'
+          '• Trénink – po odcvičení zapiš kg a opakování a dej „Odeslat '
+          'trenérovi“.\n'
+          '• Jídlo – nahoře najdeš jídelníček od trenéra.\n\n'
+          'Nejdřív si prosím zkontroluj údaje v profilu (váha, výška, cíl).',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Začít'),
+          ),
+        ],
+      ),
+    );
     await ref.read(appRoleProvider.notifier).setRole(AppRole.user);
     if (!mounted) return;
     Navigator.of(context).popUntil((r) => r.isFirst);
@@ -472,7 +550,10 @@ class _JoinCoachScreenState extends ConsumerState<JoinCoachScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Připojení k trenérovi')),
+      appBar: AppBar(
+        title: const Text('Připojení k trenérovi'),
+        actions: const [HelpButton(topic: 'online_client')],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
@@ -664,7 +745,28 @@ class _ClientCoachCardState extends State<ClientCoachCard> {
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
+              runSpacing: 8,
               children: [
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CoachingChatScreen(
+                        linkId: info.linkId,
+                        asCoach: false,
+                        title: info.coachName ?? 'Trenér',
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline),
+                  label: const Text('Napsat trenérovi'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const CheckInScreen()),
+                  ),
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: const Text('Týdenní check-in'),
+                ),
                 FilledButton.tonalIcon(
                   onPressed: _busy ? null : _sync,
                   icon: const Icon(Icons.sync),
@@ -679,6 +781,83 @@ class _ClientCoachCardState extends State<ClientCoachCard> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Tři kroky propojení s klientem (pozvánka → připojení → spolupráce).
+class _Steps extends StatelessWidget {
+  /// 0 = pozvat, 1 = čeká se na klienta.
+  final int current;
+  const _Steps({required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    const steps = [
+      ('Pozvi klienta', 'Vytvoří se kód a zpráva s návodem.'),
+      ('Klient zadá kód', 'V aplikaci zvolí „Mám pozvánku od trenéra“.'),
+      ('Spolupráce', 'Posíláš tréninky a jídelníčky, píšete si.'),
+    ];
+    return Column(
+      children: [
+        for (var i = 0; i < steps.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: i < current
+                        ? const Color(0xFF16A34A)
+                        : i == current
+                            ? cs.primary
+                            : cs.surfaceContainerHighest,
+                  ),
+                  child: i < current
+                      ? const Icon(Icons.check, size: 16, color: Colors.white)
+                      : Text(
+                          '${i + 1}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: i == current
+                                ? cs.onPrimary
+                                : cs.onSurfaceVariant,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        steps[i].$1,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: i > current ? cs.onSurfaceVariant : null,
+                        ),
+                      ),
+                      Text(
+                        steps[i].$2,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

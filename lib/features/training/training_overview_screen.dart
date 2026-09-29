@@ -1,3 +1,4 @@
+import '../common/missing_goal_view.dart';
 import 'package:flutter/material.dart';
 import '../help/help_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,13 +24,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
-      return Scaffold(
-        body: Center(
-          child: Text(
-            l10n.setGoalFirst,
-          ),
-        ),
-      );
+      return MissingGoalScaffold(title: l10n.trainingMode);
     }
 
     if (profile.trainingIntake == null) {

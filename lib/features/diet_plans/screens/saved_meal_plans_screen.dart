@@ -8,6 +8,7 @@ import '../models/saved_meal_plan.dart';
 import '../providers/custom_meal_plan_templates_provider.dart';
 import '../providers/saved_meal_plans_provider.dart';
 import '../widgets/meal_plan_actions.dart';
+import '../../help/help_button.dart';
 import 'custom_meal_plan_editor_screen.dart';
 import 'daily_meal_plan_editor_screen.dart';
 
@@ -49,6 +50,7 @@ class _SavedMealPlansScreenState extends ConsumerState<SavedMealPlansScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(readOnly ? 'Moje jídelníčky' : 'Knihovna jídelníčků'),
+        actions: const [HelpButton(topic: 'meal_editor')],
       ),
       floatingActionButton: readOnly
           ? null

@@ -1,3 +1,4 @@
+import '../common/missing_goal_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -50,11 +51,7 @@ class _TrainingSetupScreenState
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
-      return Scaffold(
-        body: Center(
-          child: Text(l10n.setupProfileAndGoalFirst),
-        ),
-      );
+      return MissingGoalScaffold(message: l10n.setupProfileAndGoalFirst);
     }
 
     final isStrengthCompetition =

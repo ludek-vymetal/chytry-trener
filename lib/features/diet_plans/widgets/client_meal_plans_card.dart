@@ -6,6 +6,7 @@ import '../models/saved_meal_plan.dart';
 import '../providers/saved_meal_plans_provider.dart';
 import '../screens/custom_meal_plan_editor_screen.dart';
 import '../screens/saved_meal_plans_screen.dart';
+import '../../help/help_button.dart';
 import 'meal_plan_actions.dart';
 
 /// Karta v detailu klienta (záložka Strava): jídelníčky s vlastním
@@ -63,6 +64,7 @@ class ClientMealPlansCard extends ConsumerWidget {
                 if (plans.isNotEmpty)
                   Text('${plans.length}',
                       style: TextStyle(color: cs.onSurfaceVariant)),
+                const HelpButton(topic: 'meal_editor'),
               ],
             ),
             const SizedBox(height: 4),

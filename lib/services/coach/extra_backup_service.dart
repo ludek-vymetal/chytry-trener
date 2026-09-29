@@ -26,6 +26,7 @@ class ExtraBackupService {
   static const _plainKeys = <String>[
     'saved_meal_plans_v1',
     'custom_food_combos_v1',
+    'custom_foods_v1',
     'food_bank_v1',
     'pdf_author_line',
     'app_accent',

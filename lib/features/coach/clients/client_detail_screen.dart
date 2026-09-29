@@ -57,6 +57,8 @@ import '../../../core/body/coach_recommendations.dart';
 import '../../../services/pdf/client_report_data.dart';
 import '../../../services/pdf/client_report_pdf_service.dart';
 import '../../coaching/workout_widgets.dart';
+import '../../coaching/chat_screen.dart';
+import '../../coaching/checkin_widgets.dart';
 
 class ClientDetailScreen extends ConsumerWidget {
   final CoachClient client;
@@ -1048,6 +1050,7 @@ class ClientDetailScreen extends ConsumerWidget {
           lastSession: lastSession,
         ),
         CoachingInviteCard(client: liveClient),
+        ClientCheckInsCard(client: liveClient),
         _ActionPlanCard(client: liveClient),
         if (twoCols)
           Row(
@@ -1222,6 +1225,7 @@ class ClientDetailScreen extends ConsumerWidget {
               ],
             ),
             actions: [
+              CoachChatButton(client: liveClient),
               if (wide) ...[
                 OutlinedButton.icon(
                   onPressed: addInbody,

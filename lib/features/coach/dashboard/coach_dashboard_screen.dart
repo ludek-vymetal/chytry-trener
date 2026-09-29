@@ -29,6 +29,7 @@ import '../../paywall/paywall_screen.dart';
 import '../clients/add_client_screen.dart';
 import '../clients/add_inbody_entry_screen.dart';
 import '../clients/client_detail_screen.dart';
+import '../../coaching/coach_online_panel.dart';
 
 // =================================================================
 // Výpočty pro přehled
@@ -310,6 +311,16 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
           );
 
           final attentionPanel = AttentionCard(alerts: alerts, onOpen: _openClient);
+          final online = OnlineClientsCard(
+            onOpenClient: (id) {
+              for (final p in pulses) {
+                if (p.client.clientId == id) {
+                  _openClient(p.client);
+                  return;
+                }
+              }
+            },
+          );
           final activity = _ActivityPanel(pulses: pulses);
           final quick = _QuickPanel(
             items: [
@@ -351,6 +362,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                         gap,
                         kpis,
                         gap,
+                        if (!withSide) online,
                         if (!withSide && alerts.isNotEmpty) ...[
                           attentionPanel,
                           gap,
@@ -375,6 +387,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
           return SidePanelLayout(
             main: main,
             side: [
+              online,
               attentionPanel,
               activity,
               quick,

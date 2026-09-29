@@ -1,4 +1,5 @@
 import '../models/carb_cycling_plan.dart';
+import 'custom_food_store.dart';
 import 'food_catalog.dart';
 
 /// Makroživiny jednoho jídla / dne (kcal, bílkoviny, sacharidy, tuky).
@@ -38,11 +39,18 @@ class MealPlanMath {
 
   static Map<String, NutritionFood>? _cache;
 
+  /// Po změně vlastních potravin je potřeba index sestavit znovu.
+  static void resetIndex() => _cache = null;
+
+  /// Katalog + vlastní potraviny trenéra.
+  static List<NutritionFood> get allFoods =>
+      [...FoodCatalog.all, ...CustomFoodStore.foods];
+
   static Map<String, NutritionFood> get _index {
     final cached = _cache;
     if (cached != null) return cached;
     final map = <String, NutritionFood>{};
-    for (final f in FoodCatalog.all) {
+    for (final f in allFoods) {
       map.putIfAbsent(_norm(f.displayName), () => f);
       map.putIfAbsent(_norm(f.name), () => f);
     }

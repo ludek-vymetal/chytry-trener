@@ -137,130 +137,162 @@ Future<void> showFoodExclusionsEditor(
   WidgetRef ref,
   CoachClientDetails details,
 ) async {
-  final allergiesCtrl = TextEditingController(text: details.allergies);
-  final intolCtrl = TextEditingController(text: details.intolerances);
-  final dislikedCtrl = TextEditingController(text: details.dislikedFoods);
-
-  final saved = await showModalBottomSheet<bool>(
+  // Textová pole vlastní samotný list (_ExclusionsSheet) – uvolní je až
+  // po zavření, jinak Flutter při animaci zavírání spadne.
+  final result = await showModalBottomSheet<(String, String, String)>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) {
-        final current = FoodCatalog.parseExclusions(
-          '${allergiesCtrl.text}, ${intolCtrl.text}',
-        );
-        void toggle(String a) {
-          final list = FoodCatalog.parseExclusions(allergiesCtrl.text);
-          if (list.contains(a)) {
-            list.remove(a);
-          } else {
-            list.add(a);
-          }
-          allergiesCtrl.text = list.join(', ');
-          setState(() {});
-        }
-
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            0,
-            20,
-            20 + MediaQuery.viewInsetsOf(ctx).bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Alergie a co klient nejí',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Jídelníčky tyto potraviny vynechají. Piš je oddělené čárkou.',
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Rychlý výběr alergenů',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    for (final a in _quickAllergens)
-                      FilterChip(
-                        label: Text(a),
-                        selected: current.contains(a),
-                        onSelected: (_) => toggle(a),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: allergiesCtrl,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'Alergie',
-                    hintText: 'např. ořechy, ryby',
-                    prefixIcon: Icon(Icons.warning_amber_rounded),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: intolCtrl,
-                  onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    labelText: 'Nesnášenlivost',
-                    hintText: 'např. laktóza, lepek',
-                    prefixIcon: Icon(Icons.sick_outlined),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: dislikedCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nechce jíst / nechutná mu',
-                    hintText: 'např. tuňák, cottage, batáty',
-                    prefixIcon: Icon(Icons.thumb_down_alt_outlined),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                FilledButton.icon(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  icon: const Icon(Icons.check),
-                  label: const Text('Uložit'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
+    builder: (_) => _ExclusionsSheet(details: details),
   );
+  if (result == null) return;
 
-  if (saved == true) {
-    await ref.read(coachClientDetailsControllerProvider.notifier).upsert(
-          details.copyWith(
-            allergies: allergiesCtrl.text.trim(),
-            intolerances: intolCtrl.text.trim(),
-            dislikedFoods: dislikedCtrl.text.trim(),
-          ),
-        );
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Uloženo. Jídelníček vytvoř znovu, ať se změna projeví.',
-          ),
+  await ref.read(coachClientDetailsControllerProvider.notifier).upsert(
+        details.copyWith(
+          allergies: result.$1,
+          intolerances: result.$2,
+          dislikedFoods: result.$3,
         ),
       );
-    }
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Uloženo. Nové jídelníčky už tyto potraviny vynechají.',
+        ),
+      ),
+    );
   }
-  allergiesCtrl.dispose();
-  intolCtrl.dispose();
-  dislikedCtrl.dispose();
+}
+
+class _ExclusionsSheet extends StatefulWidget {
+  final CoachClientDetails details;
+  const _ExclusionsSheet({required this.details});
+
+  @override
+  State<_ExclusionsSheet> createState() => _ExclusionsSheetState();
+}
+
+class _ExclusionsSheetState extends State<_ExclusionsSheet> {
+  late final TextEditingController _allergies;
+  late final TextEditingController _intol;
+  late final TextEditingController _disliked;
+
+  @override
+  void initState() {
+    super.initState();
+    _allergies = TextEditingController(text: widget.details.allergies);
+    _intol = TextEditingController(text: widget.details.intolerances);
+    _disliked = TextEditingController(text: widget.details.dislikedFoods);
+  }
+
+  @override
+  void dispose() {
+    _allergies.dispose();
+    _intol.dispose();
+    _disliked.dispose();
+    super.dispose();
+  }
+
+  void _toggle(String a) {
+    final list = FoodCatalog.parseExclusions(_allergies.text);
+    if (list.contains(a)) {
+      list.remove(a);
+    } else {
+      list.add(a);
+    }
+    setState(() => _allergies.text = list.join(', '));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = FoodCatalog.parseExclusions(
+      '${_allergies.text}, ${_intol.text}',
+    );
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        20 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Alergie a co klient nejí',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Jídelníčky tyto potraviny vynechají. Piš je oddělené čárkou.',
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Rychlý výběr alergenů',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final a in _quickAllergens)
+                  FilterChip(
+                    label: Text(a),
+                    selected: current.contains(a),
+                    onSelected: (_) => _toggle(a),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _allergies,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                labelText: 'Alergie',
+                hintText: 'např. ořechy, ryby',
+                prefixIcon: Icon(Icons.warning_amber_rounded),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _intol,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                labelText: 'Nesnášenlivost',
+                hintText: 'např. laktóza, lepek',
+                prefixIcon: Icon(Icons.sick_outlined),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _disliked,
+              decoration: const InputDecoration(
+                labelText: 'Nechce jíst / nechutná mu',
+                hintText: 'např. tuňák, cottage, batáty',
+                prefixIcon: Icon(Icons.thumb_down_alt_outlined),
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: () {
+                FocusScope.of(context).unfocus();
+                Navigator.pop(context, (
+                  _allergies.text.trim(),
+                  _intol.text.trim(),
+                  _disliked.text.trim(),
+                ));
+              },
+              icon: const Icon(Icons.check),
+              label: const Text('Uložit'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

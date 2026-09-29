@@ -1,3 +1,4 @@
+import '../common/missing_goal_view.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -24,6 +25,8 @@ import '../help/help_button.dart';
 import '../help/help_screen.dart';
 import '../training/today_training_screen.dart';
 import '../coaching/workout_widgets.dart';
+import '../coaching/chat_screen.dart';
+import '../coaching/checkin_widgets.dart';
 
 /// Obrazovka „Dnes“ – přehled dne pro klienta: cesta k cíli, dnešní
 /// trénink, jídlo, týden a rychlé akce.
@@ -67,7 +70,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final profile = ref.watch(userProfileProvider);
 
     if (profile == null || profile.goal == null) {
-      return Scaffold(body: Center(child: Text(l10n.profileNotFound)));
+      return const MissingGoalScaffold();
     }
 
     final tdee = MetabolismService.calculateTDEE(
@@ -117,7 +120,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final linked = ref.watch(clientLinkProvider).valueOrNull != null;
     final Widget trainingCard = linked
-        ? const ClientTodayWorkoutCard()
+        ? const Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClientMessagesTile(),
+              ClientRemindersCard(),
+              SizedBox(height: 8),
+              ClientTodayWorkoutCard(),
+            ],
+          )
         : _TrainingCard(plan: todayPlan);
 
     final foodCard = _FoodCard(

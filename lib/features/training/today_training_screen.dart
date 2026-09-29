@@ -1,3 +1,4 @@
+import '../common/missing_goal_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -432,13 +433,7 @@ class TodayTrainingScreen extends ConsumerWidget {
 
     if (profile == null ||
         profile.goal == null) {
-      return Scaffold(
-        body: Center(
-          child: Text(
-            l10n.profileGoalRequired,
-          ),
-        ),
-      );
+      return MissingGoalScaffold(message: l10n.profileGoalRequired);
     }
 
     if (profile.trainingIntake == null) {
@@ -555,6 +550,7 @@ class TodayTrainingScreen extends ConsumerWidget {
 
     if (session == null) {
       return Scaffold(
+        appBar: AppBar(),
         body: Center(
           child: Text(
             l10n.todayTrainingGenerationFailed,
