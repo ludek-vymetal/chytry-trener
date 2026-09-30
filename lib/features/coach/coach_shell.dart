@@ -5,15 +5,16 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/nav_provider.dart';
 import '../common/adaptive_shell.dart';
 import 'clients/client_list_screen.dart';
+import 'calendar/calendar_screen.dart';
 import 'coach_settings_screen.dart';
 import 'dashboard/coach_dashboard_screen.dart';
 
-/// Trenérský režim: Přehled · Klienti · Nastavení. Na mobilu spodní
+/// Trenérský režim: Přehled · Klienti · Kalendář · Nastavení. Na mobilu spodní
 /// lišta, na tabletu a počítači boční panel.
 class CoachShell extends ConsumerWidget {
   const CoachShell({super.key});
 
-  static const _topics = ['start', 'clients', 'settings'];
+  static const _topics = ['start', 'clients', 'calendar', 'settings'];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,12 +28,15 @@ class CoachShell extends ConsumerWidget {
       pages: const [
         CoachDashboardScreen(),
         ClientListScreen(),
+        CalendarScreen(),
         CoachSettingsScreen(),
       ],
       destinations: [
         ShellDestination(
             Icons.dashboard_outlined, Icons.dashboard, l10n.dashboard),
         ShellDestination(Icons.people_outline, Icons.people, l10n.clients),
+        const ShellDestination(Icons.calendar_month_outlined,
+            Icons.calendar_month, 'Kalendář'),
         ShellDestination(
             Icons.settings_outlined, Icons.settings, l10n.settingsTitle),
       ],

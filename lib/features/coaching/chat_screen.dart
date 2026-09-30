@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/coach/coach_client.dart';
 import '../../services/coach/coaching_chat_service.dart';
 import '../../services/coach/online_coaching_service.dart';
+import '../../services/coach/quick_replies_service.dart';
 import '../help/help_button.dart';
 import 'workout_widgets.dart';
 
@@ -50,6 +51,108 @@ class _CoachingChatScreenState extends State<CoachingChatScreen> {
     _readTimer = Timer(const Duration(milliseconds: 600), () {
       CoachingChatService.markRead(widget.linkId, asCoach: widget.asCoach);
     });
+  }
+
+  Future<void> _quickReplies() async {
+    var items = await QuickRepliesService.load(coach: widget.asCoach);
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) {
+          Future<void> add() async {
+            final ctrl = TextEditingController();
+            final t = await showDialog<String>(
+              context: ctx,
+              builder: (d) => AlertDialog(
+                title: const Text('Nová rychlá odpověď'),
+                content: TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'např. Super výkon, příště +2,5 kg',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(d),
+                    child: const Text('Zrušit'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(d, ctrl.text),
+                    child: const Text('Přidat'),
+                  ),
+                ],
+              ),
+            );
+            Future<void>.delayed(
+                const Duration(milliseconds: 500), ctrl.dispose);
+            final v = t?.trim() ?? '';
+            if (v.isEmpty) return;
+            items = [...items, v];
+            await QuickRepliesService.save(items, coach: widget.asCoach);
+            setLocal(() {});
+          }
+
+          return SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.6,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Rychlé odpovědi',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: add,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Přidat'),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      for (var i = 0; i < items.length; i++)
+                        ListTile(
+                          title: Text(items[i]),
+                          onTap: () => Navigator.pop(ctx, items[i]),
+                          trailing: IconButton(
+                            tooltip: 'Smazat',
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () async {
+                              items = [...items]..removeAt(i);
+                              await QuickRepliesService.save(items,
+                                  coach: widget.asCoach);
+                              setLocal(() {});
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    if (picked == null) return;
+    final cur = _ctrl.text.trim();
+    _ctrl.text = cur.isEmpty ? picked : '$cur $picked';
+    _ctrl.selection = TextSelection.collapsed(offset: _ctrl.text.length);
   }
 
   Future<void> _send() async {
@@ -233,6 +336,11 @@ class _CoachingChatScreenState extends State<CoachingChatScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  IconButton(
+                    tooltip: 'Rychlé odpovědi',
+                    onPressed: _quickReplies,
+                    icon: const Icon(Icons.bolt),
+                  ),
                   Expanded(
                     child: TextField(
                       controller: _ctrl,

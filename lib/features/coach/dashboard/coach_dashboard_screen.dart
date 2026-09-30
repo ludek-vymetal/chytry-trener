@@ -31,6 +31,8 @@ import '../clients/add_inbody_entry_screen.dart';
 import '../clients/client_detail_screen.dart';
 import '../../coaching/coach_online_panel.dart';
 import '../passes/passes_widgets.dart';
+import '../calendar/calendar_screen.dart';
+import '../finance/income_screen.dart';
 
 // =================================================================
 // Výpočty pro přehled
@@ -321,6 +323,10 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
             }
           }
 
+          final todayCard = TodayAppointmentsCard(
+            onOpenCalendar: () =>
+                ref.read(coachTabProvider.notifier).state = 2,
+          );
           final passes = PassesOverviewCard(
             onOpenClient: openById,
             activeClientIds: {for (final p in pulses) p.client.clientId},
@@ -344,8 +350,13 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                   pulses.isEmpty ? null : () => _addInbody(pulses)),
               _Quick(Icons.people_outline, 'Všichni klienti',
                   () => ref.read(coachTabProvider.notifier).state = 1),
-              _Quick(Icons.settings_outlined, 'Nastavení a vzhled',
+              _Quick(Icons.calendar_month_outlined, 'Kalendář',
                   () => ref.read(coachTabProvider.notifier).state = 2),
+              _Quick(Icons.bar_chart, 'Příjmy a grafy',
+                  () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const IncomeScreen()))),
+              _Quick(Icons.settings_outlined, 'Nastavení a vzhled',
+                  () => ref.read(coachTabProvider.notifier).state = 3),
             ],
           );
           final backup = _BackupPanel(
@@ -376,6 +387,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                         gap,
                         kpis,
                         gap,
+                        if (!withSide) todayCard,
                         if (!withSide) online,
                         if (!withSide) passes,
                         if (!withSide && alerts.isNotEmpty) ...[
@@ -402,6 +414,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
           return SidePanelLayout(
             main: main,
             side: [
+              todayCard,
               online,
               passes,
               attentionPanel,

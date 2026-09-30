@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/coach/coach_client.dart';
 import '../../models/custom_training_plan.dart';
 import '../../models/exercise_performance.dart';
 import '../../providers/coach/custom_training_plan_provider.dart';
 import '../../providers/performance_provider.dart';
+import '../../providers/training_session_provider.dart';
 import '../../services/coach/online_coaching_service.dart';
+import '../../services/coach/exercise_video_service.dart';
 import '../../services/coach/workout_assignment_service.dart';
 import '../help/help_button.dart';
 
@@ -39,6 +44,29 @@ String _num(double v) => v == v.roundToDouble()
     ? v.toStringAsFixed(0)
     : v.toStringAsFixed(1).replaceAll('.', ',');
 
+/// Otevře video s technikou (Instagram, YouTube…) v prohlížeči / aplikaci.
+Future<void> openExerciseVideo(BuildContext context, String url) async {
+  final uri = Uri.tryParse(url.trim());
+  var ok = false;
+  if (uri != null) {
+    try {
+      ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      ok = false;
+    }
+  }
+  if (!ok && context.mounted) {
+    await Clipboard.setData(ClipboardData(text: url));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Video se nepodařilo otevřít – odkaz je zkopírovaný, '
+            'vlož ho do prohlížeče.'),
+      ),
+    );
+  }
+}
+
 // =====================================================================
 // TRENÉR – posílání tréninků po dnech
 // =====================================================================
@@ -56,11 +84,18 @@ class _AssignedWorkoutsCardState extends ConsumerState<AssignedWorkoutsCard> {
   List<WorkoutAssignment>? _items;
   CoachingLink? _link;
   String? _error;
+  StreamSubscription<List<WorkoutAssignment>>? _sub;
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -76,10 +111,43 @@ class _AssignedWorkoutsCardState extends ConsumerState<AssignedWorkoutsCard> {
         _items = items;
         _error = null;
       });
+      _backfillSessions(items);
+      // Živé změny: jakmile klient trénink odešle, hned tu je „odcvičeno“.
+      if (link != null) {
+        await _sub?.cancel();
+        _sub = WorkoutAssignmentService.watchForClient(widget.client.clientId)
+            ?.listen(
+          (list) {
+            if (!mounted) return;
+            setState(() => _items = list);
+            _backfillSessions(list);
+          },
+          onError: (_) {},
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Tréninky se nepodařilo načíst.');
     }
+  }
+
+  /// Odcvičené online tréninky zapíše i do historie tréninků klienta
+  /// („Poslední tréninky“, docházka), pokud tam ještě nejsou.
+  final _imported = <String>{};
+
+  Future<void> _backfillSessions(List<WorkoutAssignment> items) async {
+    final fresh = [
+      for (final a in items)
+        if (a.isDone && !_imported.contains('${a.id}|${a.completedAt}')) a,
+    ];
+    if (fresh.isEmpty) return;
+    for (final a in fresh) {
+      _imported.add('${a.id}|${a.completedAt}');
+    }
+    await ref.read(trainingSessionProvider.notifier).importSessions([
+      for (final a in fresh)
+        sessionFromAssignment(a, widget.client.clientId),
+    ]);
   }
 
   Future<void> _send() async {
@@ -96,21 +164,42 @@ class _AssignedWorkoutsCardState extends ConsumerState<AssignedWorkoutsCard> {
       );
       return;
     }
-    final items = await showModalBottomSheet<List<WorkoutAssignment>>(
+    final result = await showModalBottomSheet<_SendResult>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => _SendWorkoutSheet(plans: plans),
+      builder: (_) => _SendWorkoutSheet(
+        plans: plans,
+        currentClientId: widget.client.clientId,
+      ),
     );
-    if (items == null || items.isEmpty) return;
+    if (result == null || result.items.isEmpty) return;
+    final items = result.items;
     try {
       await WorkoutAssignmentService.assign(widget.client.clientId, items);
+      // Stejné tréninky i dalším vybraným online klientům.
+      for (final other in result.otherClientIds) {
+        await WorkoutAssignmentService.assign(other, [
+          for (var i = 0; i < items.length; i++)
+            WorkoutAssignment(
+              id: '${items[i].id}_$other',
+              date: items[i].date,
+              title: items[i].title,
+              exercises: items[i].exercises,
+              coachNote: items[i].coachNote,
+              videos: items[i].videos,
+            ),
+        ]);
+      }
       if (!mounted) return;
+      final extra = result.otherClientIds.isEmpty
+          ? ''
+          : ' (a dalším ${result.otherClientIds.length} klientům)';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(items.length == 1
-              ? 'Trénink odeslán.'
-              : 'Odesláno ${items.length} tréninků.'),
+              ? 'Trénink odeslán$extra.'
+              : 'Odesláno ${items.length} tréninků$extra.'),
         ),
       );
     } catch (e) {
@@ -228,7 +317,13 @@ class _AssignedWorkoutsCardState extends ConsumerState<AssignedWorkoutsCard> {
                     style: const TextStyle(fontWeight: FontWeight.w700)),
                 subtitle: Text(
                   '${_dateLabel(a.date)} · '
-                  '${a.isDone ? 'odcvičeno' : (_day(a.date).isBefore(today) ? 'neodcvičeno' : 'čeká')}',
+                  '${a.isDone ? 'odcvičeno – klepni pro výsledky' : (_day(a.date).isBefore(today) ? 'neodcvičeno' : 'čeká')}',
+                  style: a.isDone
+                      ? const TextStyle(
+                          color: Color(0xFF16A34A),
+                          fontWeight: FontWeight.w600,
+                        )
+                      : null,
                 ),
                 trailing: a.isDone
                     ? const Icon(Icons.chevron_right)
@@ -281,9 +376,19 @@ class _AssignedWorkoutsCardState extends ConsumerState<AssignedWorkoutsCard> {
   }
 }
 
+class _SendResult {
+  final List<WorkoutAssignment> items;
+  final List<String> otherClientIds;
+  const _SendResult(this.items, this.otherClientIds);
+}
+
 class _SendWorkoutSheet extends StatefulWidget {
   final List<CustomTrainingPlan> plans;
-  const _SendWorkoutSheet({required this.plans});
+  final String currentClientId;
+  const _SendWorkoutSheet({
+    required this.plans,
+    required this.currentClientId,
+  });
 
   @override
   State<_SendWorkoutSheet> createState() => _SendWorkoutSheetState();
@@ -302,6 +407,47 @@ class _SendWorkoutSheetState extends State<_SendWorkoutSheet> {
         orElse: () => widget.plans.first);
     _days.add(0);
     _dates.add(_day(DateTime.now()));
+    ExerciseVideoService.load().then((v) {
+      if (mounted) setState(() => _videos = v);
+    });
+    OnlineCoachingService.coachLinks().then((links) {
+      if (!mounted) return;
+      setState(() {
+        _links = [
+          for (final l in links)
+            if (l.isConnected && l.clientId != widget.currentClientId) l,
+        ]..sort((a, b) => a.clientName.compareTo(b.clientName));
+      });
+    }).catchError((_) {});
+  }
+
+  Map<String, String> _videos = const {};
+  List<CoachingLink> _links = const [];
+  final _others = <String>{};
+
+  /// Rozloží vybrané tréninky do týdne od dneška (např. 3 tréninky =
+  /// dnes, za 2 dny, za 4 dny).
+  void _spreadWeek() {
+    const patterns = {
+      1: [0],
+      2: [0, 3],
+      3: [0, 2, 4],
+      4: [0, 1, 3, 4],
+      5: [0, 1, 2, 3, 4],
+      6: [0, 1, 2, 3, 4, 5],
+      7: [0, 1, 2, 3, 4, 5, 6],
+    };
+    final n = _days.length.clamp(1, 7);
+    final today = _day(DateTime.now());
+    setState(() {
+      if (_days.length > 7) _days.removeRange(7, _days.length);
+      _dates
+        ..clear()
+        ..addAll([
+          for (final o in patterns[n]!)
+            DateTime(today.year, today.month, today.day + o),
+        ]);
+    });
   }
 
   @override
@@ -324,6 +470,12 @@ class _SendWorkoutSheetState extends State<_SendWorkoutSheet> {
             title: day.name,
             exercises: day.exercises,
             coachNote: note.isEmpty ? null : note,
+            videos: {
+              for (final e in day.exercises)
+                if (ExerciseVideoService.urlFor(_videos, e.customName) != null)
+                  e.customName:
+                      ExerciseVideoService.urlFor(_videos, e.customName)!,
+            },
           );
         }(),
     ];
@@ -335,7 +487,7 @@ class _SendWorkoutSheetState extends State<_SendWorkoutSheet> {
     final today = _day(DateTime.now());
     final dates = [
       for (var i = 0; i <= WorkoutAssignmentService.maxDaysAhead; i++)
-        today.add(Duration(days: i)),
+        DateTime(today.year, today.month, today.day + i),
     ];
 
     return Padding(
@@ -396,6 +548,17 @@ class _SendWorkoutSheetState extends State<_SendWorkoutSheet> {
                   ),
               ],
             ),
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ActionChip(
+                avatar: const Icon(Icons.date_range, size: 18),
+                label: Text(_days.length == 1
+                    ? 'Tip: vyber víc tréninků a rozvrhni je do týdne'
+                    : 'Rozvrhnout ${_days.length.clamp(1, 7)} tréninky do týdne'),
+                onPressed: _days.length < 2 ? null : _spreadWeek,
+              ),
+            ),
             const SizedBox(height: 14),
             const Text('2) Na který den',
                 style: TextStyle(fontWeight: FontWeight.w800)),
@@ -437,13 +600,41 @@ class _SendWorkoutSheetState extends State<_SendWorkoutSheet> {
                 border: OutlineInputBorder(),
               ),
             ),
+            if (_links.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              const Text('3) Poslat stejně i dalším klientům (nepovinné)',
+                  style: TextStyle(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final l in _links)
+                    FilterChip(
+                      label: Text(l.clientName),
+                      selected: _others.contains(l.clientId),
+                      onSelected: (on) => setState(() {
+                        if (on) {
+                          _others.add(l.clientId);
+                        } else {
+                          _others.remove(l.clientId);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => Navigator.pop(context, _build()),
+              onPressed: () => Navigator.pop(
+                context,
+                _SendResult(_build(), _others.toList()),
+              ),
               icon: const Icon(Icons.send),
-              label: Text(_dates.length == 1
-                  ? 'Odeslat trénink'
-                  : 'Odeslat ${_dates.length} tréninky'),
+              label: Text(
+                '${_dates.length == 1 ? 'Odeslat trénink' : 'Odeslat ${_dates.length} tréninky'}'
+                '${_others.isEmpty ? '' : ' (${_others.length + 1} klientům)'}',
+              ),
             ),
           ],
         ),
@@ -776,6 +967,17 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
     try {
       await WorkoutAssignmentService.submit(done);
 
+      // Zápis i do běžné historie tréninků (docházka, „Poslední tréninky“
+      // u trenéra) – synchronizuje se s trenérem.
+      final linkInfo = await OnlineCoachingService.localClientLink();
+      if (linkInfo != null) {
+        await ref.read(trainingSessionProvider.notifier).importSessions(
+          [sessionFromAssignment(done, linkInfo.clientId)],
+        );
+        OnlineCoachingService.scheduleSync(
+            delay: const Duration(seconds: 1));
+      }
+
       // Výkony do Pokroku (nejlepší odcvičená série každého cviku).
       final link = await OnlineCoachingService.localClientLink();
       if (!a.isDone) {
@@ -868,6 +1070,22 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                       ].join(' · '),
                       style: TextStyle(color: cs.onSurfaceVariant),
                     ),
+                    if (a.videos[a.exercises[i].customName] != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          onPressed: () => openExerciseVideo(
+                            context,
+                            a.videos[a.exercises[i].customName]!,
+                          ),
+                          icon: const Icon(Icons.play_circle_outline, size: 20),
+                          label: const Text('Technika – video'),
+                        ),
+                      ),
                     if ((a.exercises[i].note ?? '').trim().isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -876,6 +1094,26 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                                 fontSize: 13, color: cs.onSurfaceVariant)),
                       ),
                     const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const SizedBox(width: 58),
+                        Expanded(
+                          child: Text('kg',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 12, color: cs.onSurfaceVariant)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text('opakování',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  fontSize: 12, color: cs.onSurfaceVariant)),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     for (var s = 0; s < _sets[i].length; s++)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
@@ -897,9 +1135,10 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                                   FilteringTextInputFormatter.allow(
                                       RegExp(r'[0-9.,]')),
                                 ],
+                                textAlign: TextAlign.center,
                                 decoration: const InputDecoration(
                                   isDense: true,
-                                  suffixText: 'kg',
+                                  hintText: '–',
                                   border: OutlineInputBorder(),
                                 ),
                               ),
@@ -912,9 +1151,10 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
+                                textAlign: TextAlign.center,
                                 decoration: const InputDecoration(
                                   isDense: true,
-                                  suffixText: 'opak.',
+                                  hintText: '–',
                                   border: OutlineInputBorder(),
                                 ),
                               ),

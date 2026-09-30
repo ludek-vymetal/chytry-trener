@@ -8,7 +8,7 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "dart_application_1")
+set(BINARY_NAME "SPAL")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

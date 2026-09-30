@@ -1,3 +1,7 @@
+import '../../core/training/actual_set.dart';
+import '../../core/training/sessions/exercise_log_entry.dart';
+import '../../core/training/sessions/training_session.dart';
+import '../../core/training/training_plan_models.dart';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -64,6 +68,9 @@ class WorkoutAssignment {
   final String? clientNote;
   final DateTime? completedAt;
 
+  /// Odkazy na video s technikou (název cviku → URL).
+  final Map<String, String> videos;
+
   const WorkoutAssignment({
     required this.id,
     required this.date,
@@ -74,6 +81,7 @@ class WorkoutAssignment {
     this.results = const [],
     this.clientNote,
     this.completedAt,
+    this.videos = const {},
   });
 
   bool get isDone => status == 'done';
@@ -97,6 +105,7 @@ class WorkoutAssignment {
         results: results ?? this.results,
         clientNote: clientNote ?? this.clientNote,
         completedAt: completedAt ?? this.completedAt,
+        videos: videos,
       );
 
   Map<String, dynamic> toJson() => {
@@ -109,6 +118,7 @@ class WorkoutAssignment {
         'results': [for (final r in results) r.toJson()],
         'clientNote': clientNote,
         'completedAt': completedAt?.toIso8601String(),
+        'videos': videos,
       };
 
   factory WorkoutAssignment.fromJson(Map<String, dynamic> j) =>
@@ -128,7 +138,52 @@ class WorkoutAssignment {
         ],
         clientNote: j['clientNote'] as String?,
         completedAt: DateTime.tryParse((j['completedAt'] ?? '') as String),
+        videos: {
+          if (j['videos'] is Map)
+            for (final e in (j['videos'] as Map).entries)
+              e.key.toString(): e.value.toString(),
+        },
       );
+}
+
+/// Odcvičený trénink od trenéra jako běžný záznam tréninku – aby se
+/// objevil v „Posledních trénincích“, docházce i skóre klienta.
+TrainingSession sessionFromAssignment(WorkoutAssignment a, String clientId) {
+  return TrainingSession(
+    date: DateTime(a.date.year, a.date.month, a.date.day),
+    dayPlan: TrainingDayPlan(
+      dayLabel: a.title,
+      focus: 'Online trénink od trenéra',
+      exercises: [
+        for (final e in a.exercises)
+          PlannedExercise(
+            name: e.customName,
+            exerciseId: e.exerciseId,
+            sets: e.sets,
+            reps: e.reps,
+            rir: e.rir,
+            note: e.note,
+            weightKg: e.weightKg,
+          ),
+      ],
+    ),
+    entries: [
+      for (final r in a.results)
+        if (r.sets.any((s) => s.done || s.reps != null))
+          ExerciseLogEntry(
+            exerciseKey: r.name,
+            plannedSets: const [],
+            actualSets: [
+              for (final s in r.sets)
+                if (s.done || s.reps != null)
+                  ActualSet(weightKg: s.weightKg, reps: s.reps ?? 0),
+            ],
+          ),
+    ],
+    completed: true,
+    updatedAt: a.completedAt ?? DateTime.now(),
+    clientId: clientId,
+  );
 }
 
 /// Posílání tréninků klientovi po jednotlivých dnech.
@@ -162,6 +217,16 @@ class WorkoutAssignmentService {
       for (final d in q.docs) WorkoutAssignment.fromJson(d.data()),
     ]..sort((a, b) => b.date.compareTo(a.date));
     return list;
+  }
+
+  /// Živý seznam tréninků klienta – po odeslání klientem se hned
+  /// objeví „odcvičeno“ (null = nepřihlášený trenér).
+  static Stream<List<WorkoutAssignment>>? watchForClient(String clientId) {
+    final linkId = _linkIdForCoach(clientId);
+    if (linkId == null) return null;
+    return _ref(linkId).snapshots().map((q) => [
+          for (final d in q.docs) WorkoutAssignment.fromJson(d.data()),
+        ]..sort((a, b) => b.date.compareTo(a.date)));
   }
 
   static Future<void> assign(

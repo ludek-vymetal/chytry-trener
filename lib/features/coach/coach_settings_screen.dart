@@ -11,6 +11,8 @@ import '../paywall/paywall_screen.dart';
 import '../../services/pdf/pdf_author.dart';
 import 'pdf_branding_screen.dart';
 import '../common/about_app.dart';
+import 'exercise_videos_screen.dart';
+import 'finance/income_screen.dart';
 import '../help/help_screen.dart';
 import '../help/widgets/help_and_reset_actions.dart';
 
@@ -144,6 +146,30 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
           const PlanStatusCard(),
           const SizedBox(height: 8),
           const AppearanceCard(),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.bar_chart),
+              title: const Text('Příjmy a statistiky'),
+              subtitle: const Text('Kolik jsi vydělal/a, grafy a porovnání'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const IncomeScreen()),
+              ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.play_circle_outline),
+              title: const Text('Videa ke cvikům'),
+              subtitle: const Text('Odkazy na techniku (Instagram, YouTube)'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ExerciseVideosScreen()),
+              ),
+            ),
+          ),
           const _PdfSignatureCard(),
           const AboutAppTile(),
           Card(

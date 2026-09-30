@@ -5,6 +5,8 @@ import '../../../models/coach/client_pass.dart';
 import '../../../models/coach/coach_client.dart';
 import '../../../providers/coach/passes_provider.dart';
 import '../../help/help_button.dart';
+import '../calendar/calendar_screen.dart';
+import '../finance/income_screen.dart';
 
 String _d(DateTime d) => '${d.day}. ${d.month}. ${d.year}';
 
@@ -357,7 +359,10 @@ class _ClientPassesCardState extends ConsumerState<ClientPassesCard> {
     await ref.read(passesProvider.notifier).useVisit(p.id);
     if (!mounted) return;
     final left = p.remaining - 1;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    // Oznámení s tlačítkem „Vrátit“ by jinak zůstalo viset (novější
+    // Flutter je u tlačítka nezavírá sám) – zavřeme ho po 5 s.
+    final bar = messenger.showSnackBar(
       SnackBar(
         content: Text(left <= 0
             ? 'Odečteno – permanentka je vyčerpaná.'
@@ -368,6 +373,14 @@ class _ClientPassesCardState extends ConsumerState<ClientPassesCard> {
         ),
       ),
     );
+    var closed = false;
+    bar.closed.then((_) => closed = true);
+    Future<void>.delayed(const Duration(seconds: 5), () {
+      if (closed) return;
+      try {
+        bar.close();
+      } catch (_) {}
+    });
   }
 
   Future<void> _delete(ClientPass p) async {
@@ -570,6 +583,25 @@ class _ClientPassesCardState extends ConsumerState<ClientPassesCard> {
                 ),
               ),
             for (final p in active) _tile(p),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                TextButton.icon(
+                  onPressed: () => showAppointmentEditor(context, ref,
+                      client: widget.client),
+                  icon: const Icon(Icons.event_available, size: 18),
+                  label: const Text('Naplánovat termín'),
+                ),
+                TextButton.icon(
+                  onPressed: () =>
+                      showPaymentEditor(context, ref, client: widget.client),
+                  icon: const Icon(Icons.payments_outlined, size: 18),
+                  label: const Text('Jednorázová platba'),
+                ),
+              ],
+            ),
             if (history.isNotEmpty) ...[
               const SizedBox(height: 6),
               TextButton.icon(
@@ -661,9 +693,22 @@ class PassesOverviewCard extends ConsumerWidget {
                 const HelpButton(topic: 'passes'),
               ],
             ),
-            Text(
-              'Zaplaceno tento měsíc: ${_kc(income)}',
-              style: TextStyle(color: cs.onSurfaceVariant),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Zaplaceno tento měsíc: ${_kc(income)}',
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const IncomeScreen()),
+                  ),
+                  icon: const Icon(Icons.bar_chart, size: 18),
+                  label: const Text('Příjmy a grafy'),
+                ),
+              ],
             ),
             if (alerts.isEmpty)
               Padding(

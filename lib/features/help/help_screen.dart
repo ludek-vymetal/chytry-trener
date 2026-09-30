@@ -129,8 +129,65 @@ const helpArticles = <HelpArticle>[
           'mu uloží do výkonů u cviků.'),
       ('Neodcvičené', 'Tréninky z minulých dnů, které klient neodeslal, '
           'uvidíš v kartě „Online klienti“ na Přehledu.'),
+      ('Celý týden', 'Vyber víc tréninků (např. A, B, C) a klikni '
+          '„Rozvrhnout do týdne“ – dny se nastaví samy (dnes, za 2 a za 4 '
+          'dny). Dny můžeš ještě upravit.'),
+      ('Více klientům', 'V okně „Poslat trénink“ v části 3) označ další '
+          'online klienty – dostanou stejné tréninky.'),
       ('Smazání', 'Poslaný trénink, který ještě nebyl odcvičený, můžeš '
           'smazat ikonou koše.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'calendar',
+    icon: Icons.calendar_month_outlined,
+    title: 'Kalendář tréninků a masáží',
+    summary: 'Termíny na týden, opakování a odečet z permanentky.',
+    steps: [
+      ('Kde', 'Záložka Kalendář (v liště vlevo / dole). Dnešní termíny '
+          'vidíš i na Přehledu trenéra.'),
+      ('Nový termín', '„+ Termín“ nebo + u konkrétního dne. Vyber klienta, '
+          'druh (trénink, masáž, konzultace), den, čas a délku. „Opakovat '
+          'každý týden“ vytvoří termíny na 4, 8 nebo 12 týdnů najednou.'),
+      ('Po tréninku', 'Klepni na termín → „Proběhlo“. Má-li klient '
+          'permanentku, rovnou se odečte vstup (masáž z masážní, trénink '
+          'z tréninkové).'),
+      ('Zrušení', '„Zrušeno / omluveno“ – termín zůstane přeškrtnutý, '
+          'vstup se neodečte.'),
+      ('U klienta', 'Karta „Permanentky a platby“ → „Naplánovat termín“.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'income',
+    icon: Icons.bar_chart,
+    title: 'Příjmy a statistiky',
+    summary: 'Kolik jsi vydělal/a za měsíc, čtvrtletí a rok.',
+    steps: [
+      ('Kde', 'Nastavení → „Příjmy a statistiky“, nebo na Přehledu v kartě '
+          'Permanentky → „Příjmy a grafy“.'),
+      ('Co se počítá', 'Zaplacené permanentky s cenou (podle data zaplacení) '
+          'a jednorázové platby.'),
+      ('Jednorázová platba', 'Tlačítko „Platba“ – částka, za co (trénink, '
+          'masáž, koučink, jídelníček), klient a datum. Jde přidat i u '
+          'klienta v kartě Permanentky.'),
+      ('Porovnání', 'Přepínač Měsíc / Čtvrtletí / Rok a šipky pro posun. '
+          'Uvidíš rozdíl oproti minulému období i stejnému období loni.'),
+      ('Graf', 'Posledních 12 měsíců, průměr za měsíc, rozpad podle služeb '
+          'a podle klientů.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'videos',
+    icon: Icons.play_circle_outline,
+    title: 'Videa s technikou cviků',
+    summary: 'Odkaz na video u každého cviku pro klienta.',
+    steps: [
+      ('Kde', 'Nastavení → „Videa ke cvikům“. Seznam obsahuje cviky ze '
+          'všech tréninkových plánů.'),
+      ('Přidat', 'Klepni na cvik a vlož odkaz (Instagram: u příspěvku ⋯ → '
+          'Kopírovat odkaz). „Vyzkoušet“ ho rovnou otevře.'),
+      ('Klient', 'U cviku v tréninku uvidí „Technika – video“. Odkazy se '
+          'přidají k tréninkům, které pošleš po jejich uložení.'),
     ],
   ),
   HelpArticle(
@@ -186,6 +243,9 @@ const helpArticles = <HelpArticle>[
           '„Napsat trenérovi“.'),
       ('Přečteno', 'Jedna fajfka = odesláno, dvě = druhá strana si zprávu '
           'přečetla.'),
+      ('Rychlé odpovědi', 'Ikona blesku vedle pole pro psaní – uložené '
+          'věty jako „Super výkon, příště +2,5 kg“. Můžeš přidávat vlastní '
+          'a mazat.'),
       ('Soukromí', 'Zprávy vidí jen trenér a daný klient. Nejsou vidět '
           'jiným klientům ani v PDF.'),
       ('Upozornění', 'Nové zprávy uvidíš po otevření aplikace (číslo '

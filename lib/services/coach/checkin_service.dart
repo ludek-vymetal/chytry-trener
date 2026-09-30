@@ -82,6 +82,10 @@ class CheckInService {
     return _parse(q);
   }
 
+  /// Trenér: živý seznam check-inů.
+  static Stream<List<CheckIn>> watchForLink(String linkId) =>
+      _ref(linkId).snapshots().map(_parse);
+
   /// Klient: moje check-iny.
   static Future<List<CheckIn>> listMine() async {
     final link = await OnlineCoachingService.localClientLink();

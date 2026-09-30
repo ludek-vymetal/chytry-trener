@@ -293,24 +293,25 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 // TRENÉR – karta v detailu klienta
 // =====================================================================
 
-final _coachCheckInsProvider = FutureProvider.autoDispose
-    .family<(CoachingLink?, List<CheckIn>), String>((ref, clientId) async {
+/// Živě – nový check-in od klienta se ukáže hned.
+final _coachCheckInsProvider = StreamProvider.autoDispose
+    .family<(CoachingLink?, List<CheckIn>), String>((ref, clientId) async* {
   final link = await ref.watch(coachLinkForClientProvider(clientId).future);
-  if (link == null || !link.isConnected) return (link, const <CheckIn>[]);
-  try {
-    return (link, await CheckInService.listForLink(link.linkId));
-  } catch (_) {
-    return (link, const <CheckIn>[]);
+  if (link == null || !link.isConnected) {
+    yield (link, const <CheckIn>[]);
+    return;
   }
+  yield* CheckInService.watchForLink(link.linkId)
+      .map((list) => (link, list))
+      .handleError((_) {});
 });
 
-final _coachWorkoutsProvider = FutureProvider.autoDispose
-    .family<List<WorkoutAssignment>, String>((ref, clientId) async {
-  try {
-    return await WorkoutAssignmentService.listForClient(clientId);
-  } catch (_) {
-    return const <WorkoutAssignment>[];
-  }
+/// Živě – odcvičený trénink se hned započítá do „posledních 30 dní“.
+final _coachWorkoutsProvider = StreamProvider.autoDispose
+    .family<List<WorkoutAssignment>, String>((ref, clientId) {
+  return WorkoutAssignmentService.watchForClient(clientId)
+          ?.handleError((_) {}) ??
+      Stream.value(const <WorkoutAssignment>[]);
 });
 
 /// Souhrn posledních 30 dní: váha, tréninky, pohoda, jídelníček.
