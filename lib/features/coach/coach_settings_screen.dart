@@ -9,6 +9,8 @@ import '../../providers/locale_provider.dart';
 import '../settings/appearance_card.dart';
 import '../paywall/paywall_screen.dart';
 import '../../services/pdf/pdf_author.dart';
+import 'pdf_branding_screen.dart';
+import '../common/about_app.dart';
 import '../help/help_screen.dart';
 import '../help/widgets/help_and_reset_actions.dart';
 
@@ -143,6 +145,7 @@ class _CoachSettingsScreenState extends ConsumerState<CoachSettingsScreen> {
           const SizedBox(height: 8),
           const AppearanceCard(),
           const _PdfSignatureCard(),
+          const AboutAppTile(),
           Card(
             child: ListTile(
               leading: const Icon(Icons.help_outline),
@@ -280,76 +283,54 @@ class _PdfSignatureCard extends StatefulWidget {
 }
 
 class _PdfSignatureCardState extends State<_PdfSignatureCard> {
-  String _saved = '';
+  String _name = '';
+  PdfBrand _brand = const PdfBrand();
 
   @override
   void initState() {
     super.initState();
-    PdfAuthor.loadSaved().then((v) {
-      if (mounted) setState(() => _saved = v);
-    });
+    _load();
   }
 
-  Future<void> _edit() async {
-    final ctrl = TextEditingController(text: _saved);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Podpis na dokumentech'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Tiskne se na jídelníčky a souhrny jako „Vypracoval/a: …“. '
-              'Pod ním je vždy upozornění, že nejde o lékařské doporučení.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Jméno a zaměření',
-                hintText: 'Martina Šmejkalová – osobní trenérka a výživová poradkyně',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Zrušit'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text),
-            child: const Text('Uložit'),
-          ),
-        ],
-      ),
-    );
-    // Uvolnit až po animaci zavření dialogu (jinak pád).
-    Future<void>.delayed(const Duration(milliseconds: 500), ctrl.dispose);
-    if (result == null) return;
-    await PdfAuthor.save(result);
-    if (mounted) setState(() => _saved = result.trim());
+  Future<void> _load() async {
+    final name = await PdfAuthor.loadSaved();
+    final brand = await PdfAuthor.loadBrand();
+    if (mounted) {
+      setState(() {
+        _name = name;
+        _brand = brand;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final parts = [
+      _name.isEmpty ? 'Podpis nenastaven' : 'Vypracoval/a: $_name',
+      if (_brand.hasContacts) _brand.contactLine,
+      _brand.logo == null ? 'bez loga' : 'logo ✓',
+    ];
     return Card(
       child: ListTile(
-        leading: const Icon(Icons.draw_outlined),
-        title: const Text('Podpis na dokumentech'),
-        subtitle: Text(
-          _saved.isEmpty
-              ? 'Nenastaveno – použije se jméno trenéra'
-              : 'Vypracoval/a: $_saved',
-        ),
-        trailing: const Icon(Icons.edit_outlined),
-        onTap: _edit,
+        leading: _brand.logo == null
+            ? const Icon(Icons.badge_outlined)
+            : SizedBox(
+                width: 40,
+                height: 40,
+                child: Image.memory(_brand.logo!, fit: BoxFit.contain),
+              ),
+        title: const Text('Údaje na dokumentech (PDF)'),
+        subtitle: Text(parts.join('\n')),
+        isThreeLine: true,
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PdfBrandingScreen()),
+          );
+          _load();
+        },
       ),
     );
   }
 }
-

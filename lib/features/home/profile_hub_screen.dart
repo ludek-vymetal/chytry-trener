@@ -1,3 +1,4 @@
+import '../common/about_app.dart';
 import 'package:flutter/material.dart';
 import '../help/help_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -101,6 +102,8 @@ class ProfileHubScreen extends ConsumerWidget {
               onTap: () => _changeMode(context, ref),
             ),
           ),
+          const AboutAppTile(),
+          const AuthorFooter(),
         ],
       ),
     );

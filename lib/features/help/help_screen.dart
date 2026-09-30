@@ -1,3 +1,4 @@
+import '../common/about_app.dart';
 import 'package:flutter/material.dart';
 
 /// Jeden návod v nápovědě.
@@ -130,6 +131,29 @@ const helpArticles = <HelpArticle>[
           'uvidíš v kartě „Online klienti“ na Přehledu.'),
       ('Smazání', 'Poslaný trénink, který ještě nebyl odcvičený, můžeš '
           'smazat ikonou koše.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'passes',
+    icon: Icons.confirmation_number_outlined,
+    title: 'Permanentky a platby',
+    summary: 'Vstupy, předplatné koučinku, kdo zaplatil a komu co dochází.',
+    steps: [
+      ('Nová permanentka', 'Klient → Přehled → karta „Permanentky a platby“ '
+          '→ +. Rychlý výběr: osobní trénink 10/5 vstupů, masáž 5×, online '
+          'koučink 1/3 měsíce, jídelníček. Vše jde upravit.'),
+      ('Dva typy', 'Počet vstupů (trénink, masáž) – po každém tréninku '
+          'klikni „Odečíst vstup“. Časové období (online koučink) – platí '
+          'od–do.'),
+      ('Omyl?', 'Po odečtení je v oznámení tlačítko „Vrátit“, případně '
+          'v menu permanentky „Vrátit poslední vstup“.'),
+      ('Platba', 'Přepínač „Zaplaceno“ nebo tlačítko „Zaplaceno“ u '
+          'permanentky. Nezaplacené svítí červeně.'),
+      ('Přehled', 'Na Přehledu trenéra karta „Permanentky a platby“: '
+          'zaplaceno tento měsíc, nezaplacené, komu zbývají max. 2 vstupy '
+          'nebo končí platnost do 7 dní a co nedávno vypršelo.'),
+      ('Záloha', 'Permanentky se zálohují do cloudu s ostatními daty. '
+          'Klient je zatím nevidí.'),
     ],
   ),
   HelpArticle(
@@ -358,8 +382,11 @@ const helpArticles = <HelpArticle>[
           '(doporučeno „Od začátku“).'),
       ('Jídelníček a trénink', 'Ikona tiskárny u jídelníčku nebo plánu. '
           'V tisku můžeš zvolit i „Uložit jako PDF“; druhá ikona PDF sdílí.'),
-      ('Podpis', 'Nastavení → „Podpis na dokumentech“. Na každém PDF je '
-          '„Vypracoval/a: …“ a upozornění, že nejde o lékařskou radu.'),
+      ('Logo a kontakty', 'Nastavení → „Údaje na dokumentech (PDF)“: jméno '
+          'a zaměření, telefon, e-mail, Instagram, web a logo (PNG/JPG). '
+          'Logo a kontakty jsou nahoře na stránce, podpis a kontakt na konci.'),
+      ('Upozornění', 'Na každém PDF je i upozornění, že nejde o lékařskou '
+          'radu – chrání tě to.'),
       ('Černobílý tisk', 'Přepínač pro černobílou tiskárnu – šetří toner.'),
     ],
   ),
@@ -407,7 +434,8 @@ const helpArticles = <HelpArticle>[
       ('Světlý / tmavý / auto', 'Auto se řídí nastavením zařízení.'),
       ('Barva aplikace', 'Smaragdová, růžová, fialová, modrá, oranžová nebo '
           'grafitová – změní se celá aplikace.'),
-      ('Podpis na dokumentech', 'Jméno, které se tiskne na PDF.'),
+      ('Údaje na dokumentech', 'Jméno, kontakty a logo, které se tisknou '
+          'na PDF.'),
     ],
   ),
   HelpArticle(
@@ -589,6 +617,7 @@ class _HelpScreenState extends State<HelpScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
               ),
+              const AuthorFooter(),
             ],
           ),
         ),

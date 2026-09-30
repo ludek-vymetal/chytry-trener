@@ -62,6 +62,8 @@ class DietPlanPdfService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(24),
 
+        header: (ctx) => PdfAuthor.brandHeader(),
+
         footer: (ctx) => pw.Container(
           margin: const pw.EdgeInsets.only(top: 8),
           child: pw.Row(

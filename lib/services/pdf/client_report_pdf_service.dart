@@ -113,7 +113,7 @@ class ClientReportPdfService {
         margin: pw.EdgeInsets.fromLTRB(32, 28, 32, 28),
         theme: theme,
         header: (ctx) => ctx.pageNumber == 1
-            ? pw.SizedBox()
+            ? PdfAuthor.brandHeader()
             : pw.Container(
                 margin: pw.EdgeInsets.only(bottom: 10),
                 padding: pw.EdgeInsets.only(bottom: 4),

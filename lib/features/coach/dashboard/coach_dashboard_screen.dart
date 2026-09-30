@@ -30,6 +30,7 @@ import '../clients/add_client_screen.dart';
 import '../clients/add_inbody_entry_screen.dart';
 import '../clients/client_detail_screen.dart';
 import '../../coaching/coach_online_panel.dart';
+import '../passes/passes_widgets.dart';
 
 // =================================================================
 // Výpočty pro přehled
@@ -311,6 +312,19 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
           );
 
           final attentionPanel = AttentionCard(alerts: alerts, onOpen: _openClient);
+          void openById(String id) {
+            for (final p in pulses) {
+              if (p.client.clientId == id) {
+                _openClient(p.client);
+                return;
+              }
+            }
+          }
+
+          final passes = PassesOverviewCard(
+            onOpenClient: openById,
+            activeClientIds: {for (final p in pulses) p.client.clientId},
+          );
           final online = OnlineClientsCard(
             onOpenClient: (id) {
               for (final p in pulses) {
@@ -363,6 +377,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
                         kpis,
                         gap,
                         if (!withSide) online,
+                        if (!withSide) passes,
                         if (!withSide && alerts.isNotEmpty) ...[
                           attentionPanel,
                           gap,
@@ -388,6 +403,7 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
             main: main,
             side: [
               online,
+              passes,
               attentionPanel,
               activity,
               quick,

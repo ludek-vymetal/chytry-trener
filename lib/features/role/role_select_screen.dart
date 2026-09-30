@@ -1,3 +1,4 @@
+import '../common/about_app.dart';
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
@@ -457,6 +458,8 @@ class _RoleSelectScreenState
                             ),
                           ),
                         ],
+
+                        const AuthorFooter(),
                       ],
                     );
                   },

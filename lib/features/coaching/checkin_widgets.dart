@@ -5,6 +5,7 @@ import '../../models/coach/coach_client.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/coach/checkin_service.dart';
 import '../../services/coach/online_coaching_service.dart';
+import '../../services/coach/workout_assignment_service.dart';
 import '../help/help_button.dart';
 import 'chat_screen.dart';
 import 'workout_widgets.dart';
@@ -303,6 +304,207 @@ final _coachCheckInsProvider = FutureProvider.autoDispose
   }
 });
 
+final _coachWorkoutsProvider = FutureProvider.autoDispose
+    .family<List<WorkoutAssignment>, String>((ref, clientId) async {
+  try {
+    return await WorkoutAssignmentService.listForClient(clientId);
+  } catch (_) {
+    return const <WorkoutAssignment>[];
+  }
+});
+
+/// Souhrn posledních 30 dní: váha, tréninky, pohoda, jídelníček.
+class _ThirtyDays extends StatelessWidget {
+  final List<CheckIn> checkIns;
+  final List<WorkoutAssignment> workouts;
+  const _ThirtyDays({required this.checkIns, required this.workouts});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final now = DateTime.now();
+    final since = now.subtract(const Duration(days: 30));
+    final today = DateTime(now.year, now.month, now.day);
+
+    final recent = checkIns.where((c) => c.date.isAfter(since)).toList();
+    final weights = [
+      for (final c in checkIns.reversed)
+        if (c.weight != null && c.date.isAfter(now.subtract(const Duration(days: 90))))
+          c.weight!,
+    ];
+    final withW = recent.where((c) => c.weight != null).toList();
+    double? change;
+    if (withW.length >= 2) {
+      change = withW.first.weight! - withW.last.weight!;
+    }
+
+    final due = workouts
+        .where((w) => w.date.isAfter(since) && !w.date.isAfter(today))
+        .toList();
+    final done = due.where((w) => w.isDone).length;
+
+    double? avg(int Function(CheckIn c) pick) => recent.isEmpty
+        ? null
+        : recent.fold<int>(0, (a, c) => a + pick(c)) / recent.length;
+    final feel = recent.isEmpty
+        ? null
+        : recent.fold<double>(0, (a, c) => a + c.score) / recent.length;
+    final diet = avg((c) => c.diet);
+
+    String f1(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
+
+    Widget tile(String label, String value, {Color? color}) => Expanded(
+          child: Column(
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                ),
+              ),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              ),
+            ],
+          ),
+        );
+
+    Color? scoreColor(double? v) => v == null
+        ? null
+        : v >= 3.8
+            ? Colors.green.shade700
+            : v >= 2.8
+                ? Colors.orange.shade800
+                : cs.error;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 6, bottom: 4),
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 6, bottom: 8),
+            child: Text(
+              'Posledních 30 dní',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              tile(
+                'váha',
+                change == null
+                    ? '–'
+                    : '${change > 0 ? '+' : ''}${f1(change)} kg',
+              ),
+              tile(
+                'tréninky',
+                due.isEmpty ? '–' : '$done / ${due.length}',
+                color: due.isEmpty
+                    ? null
+                    : scoreColor(done / due.length * 5),
+              ),
+              tile(
+                'pohoda',
+                feel == null ? '–' : '${f1(feel)} / 5',
+                color: scoreColor(feel),
+              ),
+              tile(
+                'jídelníček',
+                diet == null ? '–' : '${f1(diet)} / 5',
+                color: scoreColor(diet),
+              ),
+            ],
+          ),
+          if (weights.length >= 2) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 60,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: _WeightLine(weights, cs.primary, cs.outlineVariant),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 6, top: 2),
+              child: Text(
+                'Váha z check-inů (90 dní): ${f1(weights.first)} → ${f1(weights.last)} kg',
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WeightLine extends CustomPainter {
+  final List<double> values;
+  final Color color;
+  final Color grid;
+  _WeightLine(this.values, this.color, this.grid);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    var lo = values.reduce((a, b) => a < b ? a : b);
+    var hi = values.reduce((a, b) => a > b ? a : b);
+    if (hi - lo < 1) {
+      final mid = (hi + lo) / 2;
+      lo = mid - 0.5;
+      hi = mid + 0.5;
+    }
+    const pad = 6.0;
+    final w = size.width - pad * 2;
+    final h = size.height - pad * 2;
+    Offset pt(int i) => Offset(
+          pad + (values.length == 1 ? 0 : w * i / (values.length - 1)),
+          pad + h - (values[i] - lo) / (hi - lo) * h,
+        );
+
+    canvas.drawLine(
+      Offset(pad, size.height - pad),
+      Offset(size.width - pad, size.height - pad),
+      Paint()
+        ..color = grid
+        ..strokeWidth = 1,
+    );
+    final path = Path()..moveTo(pt(0).dx, pt(0).dy);
+    for (var i = 1; i < values.length; i++) {
+      path.lineTo(pt(i).dx, pt(i).dy);
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = 2.5
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+    final dot = Paint()..color = color;
+    for (var i = 0; i < values.length; i++) {
+      canvas.drawCircle(pt(i), 3, dot);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WeightLine old) =>
+      old.values != values || old.color != color;
+}
+
 /// Přehled týdenních check-inů klienta (jen u online klientů).
 class ClientCheckInsCard extends ConsumerWidget {
   final CoachClient client;
@@ -314,6 +516,9 @@ class ClientCheckInsCard extends ConsumerWidget {
     final link = data?.$1;
     if (link == null || !link.isConnected) return const SizedBox.shrink();
     final list = data!.$2;
+    final workouts =
+        ref.watch(_coachWorkoutsProvider(client.clientId)).valueOrNull ??
+            const <WorkoutAssignment>[];
     final cs = Theme.of(context).colorScheme;
     final due = CheckInService.isDue(list);
 
@@ -356,19 +561,22 @@ class ClientCheckInsCard extends ConsumerWidget {
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
-                    'Týdenní check-in',
+                    'Check-in a posledních 30 dní',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                   ),
                 ),
                 const HelpButton(topic: 'checkin'),
                 IconButton(
                   tooltip: 'Obnovit',
-                  onPressed: () =>
-                      ref.invalidate(_coachCheckInsProvider(client.clientId)),
+                  onPressed: () {
+                    ref.invalidate(_coachCheckInsProvider(client.clientId));
+                    ref.invalidate(_coachWorkoutsProvider(client.clientId));
+                  },
                   icon: const Icon(Icons.refresh),
                 ),
               ],
             ),
+            _ThirtyDays(checkIns: list, workouts: workouts),
             if (due)
               Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 4),

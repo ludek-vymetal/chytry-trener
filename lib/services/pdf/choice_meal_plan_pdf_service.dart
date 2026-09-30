@@ -48,6 +48,7 @@ class ChoiceMealPlanPdfService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.fromLTRB(32, 30, 32, 30),
         theme: theme,
+        header: (ctx) => PdfAuthor.brandHeader(),
         footer: (ctx) => pw.Container(
           margin: const pw.EdgeInsets.only(top: 8),
           child: pw.Row(
