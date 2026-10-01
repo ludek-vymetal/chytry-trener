@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>dart_application_1</string>
+	<string>SPAL</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -26,6 +26,8 @@
 	<string>SPAL načítá kroky, pohyb, spánek, tep, váhu a tréninky z hodinek, aby ti (a tvému trenérovi) ukázal tvou aktivitu.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>SPAL do aplikace Zdraví nic nezapisuje – data jen čte.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
