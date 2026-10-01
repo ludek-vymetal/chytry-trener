@@ -56,7 +56,6 @@ class DefaultFirebaseOptions {
     authDomain: 'fitness-app-spal.firebaseapp.com',
     storageBucket: 'fitness-app-spal.firebasestorage.app',
   );
-
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyDMN38L8zs10Sl1NEd6a9Mt93FUQgX6YVA',
     appId: '1:975656862720:web:b2a154b511d98291e084e5',
@@ -68,20 +67,19 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyCKOnznYtv415uP5V1JAmUZRZC-soxwzE4',
-    appId: '1:975656862720:ios:27885310c8d69214e084e5',
+    appId: '1:975656862720:ios:5fdfab46eca044b8e084e5',
     messagingSenderId: '975656862720',
     projectId: 'fitness-app-spal',
     storageBucket: 'fitness-app-spal.firebasestorage.app',
-    iosBundleId: 'com.example.dartApplication1',
+    iosBundleId: 'cz.spal.chytrytrener',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCKOnznYtv415uP5V1JAmUZRZC-soxwzE4',
-    appId: '1:975656862720:ios:27885310c8d69214e084e5',
+    appId: '1:975656862720:ios:5fdfab46eca044b8e084e5',
     messagingSenderId: '975656862720',
     projectId: 'fitness-app-spal',
     storageBucket: 'fitness-app-spal.firebasestorage.app',
-    iosBundleId: 'com.example.dartApplication1',
+    iosBundleId: 'cz.spal.chytrytrener',
   );
-
 }
