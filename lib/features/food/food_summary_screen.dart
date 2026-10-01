@@ -19,6 +19,7 @@ import '../../services/macro_service.dart';
 import '../../services/meal_suggestion_service.dart';
 import '../../services/metabolism_service.dart';
 import 'food_entry_screen.dart';
+import '../health/activity_screen.dart';
 import '../../models/meal.dart';
 import 'package:dart_application_1/l10n/app_localizations.dart';
 
@@ -1473,6 +1474,8 @@ Widget build(BuildContext context, WidgetRef ref) {
       padding: const EdgeInsets.all(16),
       children: [
         const TrainerMealPlansCard(),
+
+        const ActivityFoodHint(),
 
         _HeaderCard(date: date),
 

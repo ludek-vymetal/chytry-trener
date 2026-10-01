@@ -60,6 +60,7 @@ import '../../coaching/workout_widgets.dart';
 import '../../coaching/chat_screen.dart';
 import '../../coaching/checkin_widgets.dart';
 import '../passes/passes_widgets.dart';
+import '../../health/activity_screen.dart';
 
 class ClientDetailScreen extends ConsumerWidget {
   final CoachClient client;
@@ -1052,6 +1053,7 @@ class ClientDetailScreen extends ConsumerWidget {
         ),
         CoachingInviteCard(client: liveClient),
         ClientCheckInsCard(client: liveClient),
+        ClientActivityCard(client: liveClient),
         ClientPassesCard(client: liveClient),
         _ActionPlanCard(client: liveClient),
         if (twoCols)

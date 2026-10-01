@@ -30,6 +30,12 @@ import 'providers/theme_provider.dart';
 import 'providers/training_session_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'services/coach/coach_cloud_sync_service.dart';
+import 'services/coach/account_data_switcher.dart';
+import 'providers/coach/appointments_provider.dart';
+import 'providers/coach/passes_provider.dart';
+import 'providers/coach/finance_provider.dart';
+import 'providers/health_provider.dart';
+import 'features/diet_plans/providers/saved_meal_plans_provider.dart';
 import 'package:dart_application_1/l10n/app_localizations.dart';
 
 
@@ -555,6 +561,10 @@ class _CoachSessionBootstrapState
 
       debugPrint('COACH SESSION SYNC -> start uid=$uid');
 
+      // Jiný trenér na stejném zařízení → vlastní kalendář, platby,
+      // jídelníčky i značka v PDF (data předchozího účtu se odloží).
+      await AccountDataSwitcher.ensureFor(uid);
+
       final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
 
       debugPrint(
@@ -627,6 +637,12 @@ class AppProviderInvalidation {
     ref.invalidate(dailyHistoryProvider);
     ref.invalidate(dailyIntakeProvider);
     ref.invalidate(coachSetupProvider);
+    ref.invalidate(appointmentsProvider);
+    ref.invalidate(passesProvider);
+    ref.invalidate(paymentsProvider);
+    ref.invalidate(savedMealPlansProvider);
+    ref.invalidate(customFoodsProvider);
+    ref.invalidate(healthProvider);
   }
 }
 

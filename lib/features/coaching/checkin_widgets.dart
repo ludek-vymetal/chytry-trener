@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/coach/coach_client.dart';
+import '../../providers/health_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/coach/checkin_service.dart';
 import '../../services/coach/online_coaching_service.dart';
@@ -24,6 +25,50 @@ const _labels = {
   'stress': ('Stres', 'Hodně stresu', 'V klidu'),
   'diet': ('Jídelníček', 'Nedodržuji', 'Dodržuji'),
 };
+
+/// V check-inu: co za týden naměřily hodinky (trenér to vidí taky).
+class _CheckInActivity extends ConsumerWidget {
+  const _CheckInActivity();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(healthProvider);
+    if (!s.enabled || !s.hasData) return const SizedBox.shrink();
+    final w = HealthStats.of(s.days);
+    final cs = Theme.of(context).colorScheme;
+    String n(int v) => v.toString().replaceAllMapped(
+          RegExp(r'(\d)(?=(\d{3})+$)'),
+          (m) => '${m[1]}\u00a0',
+        );
+    final sleep = w.avgSleepMin <= 0
+        ? '–'
+        : '${w.avgSleepMin ~/ 60} h ${w.avgSleepMin % 60} min';
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.primaryContainer.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.watch, color: cs.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Z hodinek za týden: ${n(w.avgSteps)} kroků denně · '
+                'spánek $sleep · ${w.workouts} tréninků. '
+                'Trenér to uvidí automaticky.',
+                style: const TextStyle(fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // =====================================================================
 // KLIENT – připomínky na obrazovce Dnes
@@ -131,7 +176,19 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   @override
   void initState() {
     super.initState();
-    final w = ref.read(userProfileProvider)?.weight ?? 0;
+    var w = ref.read(userProfileProvider)?.weight ?? 0;
+    // Váha z chytré váhy (Apple Zdraví / Health Connect) za poslední 3 dny.
+    final health = ref.read(healthProvider);
+    if (health.enabled) {
+      final limit = DateTime.now().subtract(const Duration(days: 3));
+      for (final d in health.days.reversed) {
+        if (d.date.isBefore(limit)) break;
+        if (d.weight != null) {
+          w = d.weight!;
+          break;
+        }
+      }
+    }
     _weight = TextEditingController(
       text: w > 0 ? w.toStringAsFixed(1).replaceAll('.', ',') : '',
     );
@@ -211,6 +268,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                 'trénink a jídelníček.',
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
+              const _CheckInActivity(),
               const SizedBox(height: 16),
               TextField(
                 controller: _weight,

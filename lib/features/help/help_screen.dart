@@ -395,6 +395,46 @@ const helpArticles = <HelpArticle>[
       ('Obvody', 'Pas, boky, stehno, paže… Měř vždy na stejném místě.'),
       ('Výkony', 'Nejlepší výkony u cviků a jejich vývoj v grafu. Výkony '
           'z tréninků od trenéra se sem ukládají samy.'),
+      ('Hodinky', 'Pokrok → „Aktivita a hodinky“ – kroky, pohyb, spánek, tep '
+          'a tréninky z chytrých hodinek. Podrobně v článku „Chytré hodinky“.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'activity',
+    icon: Icons.watch_outlined,
+    title: 'Chytré hodinky a aktivita',
+    summary: 'Kroky, pohyb, spánek a tréninky se zapíšou samy.',
+    steps: [
+      ('Jak to funguje', 'SPAL čte data z aplikace Apple Zdraví (iPhone) nebo '
+          'Health Connect (Android). Tam posílá data skoro každé hodinky: '
+          'Apple Watch, Garmin, Samsung, Fitbit, Xiaomi, Amazfit, Polar…'),
+      ('Propojení', 'Pokrok → „Aktivita a hodinky“ → Propojit a povolit '
+          'všechny položky. Nebo na obrazovce Dnes karta „Máš chytré '
+          'hodinky?“.'),
+      ('Hodinky jiné značky', 'V aplikaci hodinek (Garmin Connect, Samsung '
+          'Health, Fitbit, Mi Fitness, Zepp…) zapni sdílení do Apple Zdraví '
+          'nebo do Health Connect. Bez toho se data do telefonu nedostanou.'),
+      ('Android', 'Potřebuješ aplikaci Health Connect od Googlu – na novějších '
+          'telefonech už je, jinak ji SPAL nabídne k instalaci.'),
+      ('Co uvidíš', 'Dnešní kroky s cílem, kalorie spálené pohybem, '
+          'vzdálenost, spánek, klidový tep, váhu z chytré váhy, graf za 7 '
+          'a 30 dní, průměry a tréninky zaznamenané hodinkami.'),
+      ('Kalorie', 'Tvůj denní cíl už počítá s běžným pohybem. Když se hýbeš '
+          'víc než obvykle, Jídlo ti ukáže, kolik si můžeš dát navíc. Cíl od '
+          'trenéra se sám nemění.'),
+      ('Check-in', 'Váha z chytré váhy se do check-inu předvyplní a trenér '
+          'vidí i průměr kroků a spánku.'),
+      ('Trenér', 'Klient → Přehled → karta „Aktivita z hodinek“: průměry za '
+          '7 dní, porovnání s dřívějškem a detail s grafy. Data se obnoví, '
+          'když klient otevře aplikaci.'),
+      ('Nevidím data', 'iPhone: Zdraví → profil → Aplikace → SPAL → zapni vše. '
+          'Android: Health Connect → Oprávnění aplikací → SPAL. Pak v SPAL '
+          'potáhni obrazovku dolů pro načtení.'),
+      ('Soukromí', 'Data se jen čtou, nic se do hodinek nezapisuje. Vidíš je '
+          'ty a tvůj trenér, nikdy se nepoužívají k reklamě. „Odpojit '
+          'hodinky“ je smaže z telefonu i u trenéra.'),
+      ('Počítač', 'Na Windows se hodinky propojit nedají – jen v aplikaci '
+          'na telefonu. Trenér ale data klienta vidí i na počítači.'),
     ],
   ),
   HelpArticle(

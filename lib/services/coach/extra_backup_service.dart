@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'account_data_switcher.dart';
 import 'coach_storage_service.dart';
 import 'online_coaching_service.dart';
 
@@ -132,6 +133,28 @@ class ExtraBackupService {
   // ---------------------------------------------------------------
 
   /// Nahraje místní data (sloučená s tím, co už v cloudu je).
+  /// Očistí položku zálohy od dat jiného trenéra (sdílené zařízení).
+  static Map<String, dynamic>? _sanitize(
+    SharedPreferences prefs,
+    String uid,
+    Map<String, dynamic> item,
+    Set<String> ownIds,
+  ) {
+    final key = item['id'];
+    if (key is! String || !AccountDataSwitcher.isAccountKey(key)) return item;
+    if (AccountDataSwitcher.belongsToOtherAccount(prefs, uid, key, item['v'])) {
+      return null;
+    }
+    if (AccountDataSwitcher.clientBoundKeys.contains(key) &&
+        item['v'] is String) {
+      return {
+        ...item,
+        'v': AccountDataSwitcher.filterForCoach(item['v'] as String, ownIds),
+      };
+    }
+    return item;
+  }
+
   static Future<void> push() async {
     final uid = CoachStorageService.currentCoachUid();
     if (uid == null) return;
@@ -141,11 +164,14 @@ class ExtraBackupService {
     final cloudList =
         await CoachStorageService.readCloudSnapshot(uid: uid, key: snapshotKey) ??
             const <Map<String, dynamic>>[];
+    final ownIds = AccountDataSwitcher.clientIdsOf(prefs, uid);
 
     final merged = <String, Map<String, dynamic>>{};
     for (final c in cloudList) {
       final id = c['id'];
-      if (id is String) merged[id] = Map<String, dynamic>.from(c);
+      if (id is! String) continue;
+      final clean = _sanitize(prefs, uid, Map<String, dynamic>.from(c), ownIds);
+      if (clean != null) merged[id] = clean;
     }
     for (final e in local.entries) {
       if (e.key == _performanceKey) {
@@ -183,10 +209,13 @@ class ExtraBackupService {
     if (cloudList == null) return 0;
 
     final prefs = await SharedPreferences.getInstance();
+    final ownIds = AccountDataSwitcher.clientIdsOf(prefs, uid);
     var restored = 0;
-    for (final item in cloudList) {
-      final key = item['id'];
+    for (final raw in cloudList) {
+      final key = raw['id'];
       if (key is! String || !_isBackedUp(key)) continue;
+      final item = _sanitize(prefs, uid, raw, ownIds);
+      if (item == null) continue;
 
       if (key == _performanceKey) {
         final local = prefs.getString(key);

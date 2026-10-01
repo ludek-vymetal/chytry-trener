@@ -10,6 +10,7 @@ import '../body/circumference_list_screen.dart';
 import '../coach/clients/add_circumference_entry_screen.dart';
 import '../coach/clients/coach_circumference_history_screen.dart';
 import '../performance/performance_list_screen.dart';
+import '../health/activity_screen.dart';
 
 /// Pokrok: váha a složení těla, obvody, výkony – vše na jednom místě.
 class ProgressHubScreen extends ConsumerWidget {
@@ -76,6 +77,12 @@ class ProgressHubScreen extends ConsumerWidget {
             l10n.performance,
             () => open(const PerformanceListScreen()),
           ),
+          if (coachClient == null)
+            tile(
+              Icons.watch_outlined,
+              'Aktivita a hodinky',
+              () => open(const ActivityScreen()),
+            ),
         ],
       ),
     );

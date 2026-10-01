@@ -27,6 +27,7 @@ import '../training/today_training_screen.dart';
 import '../coaching/workout_widgets.dart';
 import '../coaching/chat_screen.dart';
 import '../coaching/checkin_widgets.dart';
+import '../health/activity_screen.dart';
 
 /// Obrazovka „Dnes“ – přehled dne pro klienta: cesta k cíli, dnešní
 /// trénink, jídlo, týden a rychlé akce.
@@ -131,13 +132,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           )
         : _TrainingCard(plan: todayPlan);
 
-    final foodCard = _FoodCard(
+    final foodCardCore = _FoodCard(
       eatenKcal: intake.calories,
       targetKcal: macro.targetCalories,
       protein: (intake.protein, macro.protein),
       carbs: (intake.carbs, macro.carbs),
       fat: (intake.fat, macro.fat),
       onOpenFood: () => ref.read(userTabProvider.notifier).state = 1,
+    );
+    // Pod jídlem aktivita z hodinek (kroky, kalorie pohybem, spánek).
+    final foodCard = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [foodCardCore, const TodayActivityCard()],
     );
 
     final week = _WeekStrip(trainedWeekdays: trained, todayWeekday: now.weekday);

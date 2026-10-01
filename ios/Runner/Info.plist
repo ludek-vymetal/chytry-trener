@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Dart Application 1</string>
+	<string>SPAL</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -22,6 +22,10 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>SPAL načítá kroky, pohyb, spánek, tep, váhu a tréninky z hodinek, aby ti (a tvému trenérovi) ukázal tvou aktivitu.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>SPAL do aplikace Zdraví nic nezapisuje – data jen čte.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

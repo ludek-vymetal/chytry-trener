@@ -22,7 +22,8 @@ android {
 
     defaultConfig {
         applicationId = "com.spal.app"
-        minSdk = flutter.minSdkVersion
+        // Health Connect (chytré hodinky) potřebuje Android 8.0+.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
