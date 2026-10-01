@@ -12,10 +12,11 @@ class CustomTrainingPlanNotifier
 
   Future<void> _load() async {
     try {
-      state = await CoachStorageService.loadCustomTrainingPlans();
+      final plans = await CoachStorageService.loadCustomTrainingPlans();
+      if (mounted) state = plans;
     } catch (e) {
       debugPrint('Chyba při načítání custom plánů: $e');
-      state = [];
+      if (mounted) state = [];
     }
   }
 

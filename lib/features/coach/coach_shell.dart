@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../providers/booking_provider.dart';
 import '../../providers/nav_provider.dart';
 import '../common/adaptive_shell.dart';
 import 'clients/client_list_screen.dart';
@@ -20,6 +21,9 @@ class CoachShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final index = ref.watch(coachTabProvider);
+    // Online rezervace klientů → kalendář (běží na pozadí).
+    ref.watch(coachBookingSyncProvider);
+    final newBookings = ref.watch(unseenBookingsProvider).length;
 
     return AdaptiveShell(
       index: index,
@@ -35,8 +39,9 @@ class CoachShell extends ConsumerWidget {
         ShellDestination(
             Icons.dashboard_outlined, Icons.dashboard, l10n.dashboard),
         ShellDestination(Icons.people_outline, Icons.people, l10n.clients),
-        const ShellDestination(Icons.calendar_month_outlined,
-            Icons.calendar_month, 'Kalendář'),
+        ShellDestination(Icons.calendar_month_outlined,
+            Icons.calendar_month, 'Kalendář',
+            badge: newBookings),
         ShellDestination(
             Icons.settings_outlined, Icons.settings, l10n.settingsTitle),
       ],

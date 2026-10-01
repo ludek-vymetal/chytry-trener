@@ -42,6 +42,7 @@ class TrainingSessionNotifier extends StateNotifier<List<TrainingSession>> {
         merged[id] = _pickNewerSession(existing, session);
       }
 
+      if (!mounted) return;
       _all = merged.values.toList();
       _publish();
     } catch (_) {

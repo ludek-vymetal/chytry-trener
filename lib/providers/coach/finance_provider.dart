@@ -83,7 +83,7 @@ class PaymentsNotifier extends StateNotifier<List<Payment>> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(key);
-    if (raw == null || raw.isEmpty) return;
+    if (!mounted || raw == null || raw.isEmpty) return;
     try {
       final d = jsonDecode(raw);
       if (d is List) {

@@ -18,6 +18,7 @@ class PerformanceNotifier extends StateNotifier<List<ExercisePerformance>> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_storageKey);
+      if (!mounted) return;
 
       if (raw == null || raw.isEmpty) {
         state = [];
@@ -29,7 +30,7 @@ class PerformanceNotifier extends StateNotifier<List<ExercisePerformance>> {
           .map((e) => _fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
     } catch (_) {
-      state = [];
+      if (mounted) state = [];
     }
   }
 

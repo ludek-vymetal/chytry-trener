@@ -61,6 +61,63 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------
+    // Online rezervace termínů.
+    // booking/{coachUid}            – nastavení a obsazené časy (bez jmen)
+    // booking/{coachUid}/slots/*    – zámky 15min úseků (proti dvojí rezervaci)
+    // booking/{coachUid}/requests/* – rezervace klientů
+    // ---------------------------------------------------------------
+    match /booking/{coachUid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == coachUid;
+
+      // Klient propojený s tímto trenérem (podle coaching/{linkId}).
+      function isLinkedClient(linkId) {
+        let link = get(/databases/$(database)/documents/coaching/$(linkId)).data;
+        return link.coachUid == coachUid && link.clientUid == request.auth.uid;
+      }
+
+      match /slots/{slotId} {
+        allow read: if signedIn();
+        // Jen založení – obsazený úsek nejde přepsat (druhý klient dostane chybu).
+        allow create: if signedIn() && (
+          request.auth.uid == coachUid ||
+          (
+            request.resource.data.clientUid == request.auth.uid &&
+            isLinkedClient(request.resource.data.linkId)
+          )
+        );
+        allow update: if signedIn() && request.auth.uid == coachUid;
+        allow delete: if signedIn() && (
+          request.auth.uid == coachUid ||
+          resource.data.clientUid == request.auth.uid
+        );
+      }
+
+      match /requests/{requestId} {
+        allow read: if signedIn() && (
+          request.auth.uid == coachUid ||
+          resource.data.clientUid == request.auth.uid
+        );
+        allow create: if signedIn()
+          && request.resource.data.clientUid == request.auth.uid
+          && request.resource.data.coachUid == coachUid
+          && request.resource.data.status == 'booked'
+          && isLinkedClient(request.resource.data.linkId);
+        // Trenér cokoli; klient jen zrušit svou rezervaci.
+        allow update: if signedIn() && (
+          request.auth.uid == coachUid ||
+          (
+            resource.data.clientUid == request.auth.uid &&
+            request.resource.data.status == 'cancelled' &&
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'cancelledAt'])
+          )
+        );
+        allow delete: if signedIn() && request.auth.uid == coachUid;
+      }
+    }
+
+    // ---------------------------------------------------------------
     // Pozvánky – kód zná jen trenér a klient, kterému ho poslal.
     // ---------------------------------------------------------------
     match /invites/{code} {

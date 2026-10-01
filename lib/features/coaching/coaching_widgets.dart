@@ -28,6 +28,7 @@ import 'coach_online_panel.dart';
 import 'checkin_widgets.dart';
 import '../help/help_button.dart';
 import '../help/help_screen.dart';
+import '../booking/client_booking_screen.dart';
 
 // =====================================================================
 // Obnova dat po synchronizaci + pravidelná synchronizace
@@ -766,6 +767,14 @@ class _ClientCoachCardState extends State<ClientCoachCard> {
                   ),
                   icon: const Icon(Icons.fact_check_outlined),
                   label: const Text('Týdenní check-in'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => const ClientBookingScreen()),
+                  ),
+                  icon: const Icon(Icons.event_available),
+                  label: const Text('Rezervovat termín'),
                 ),
                 FilledButton.tonalIcon(
                   onPressed: _busy ? null : _sync,

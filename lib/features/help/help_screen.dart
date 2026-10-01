@@ -155,6 +155,48 @@ const helpArticles = <HelpArticle>[
       ('Zrušení', '„Zrušeno / omluveno“ – termín zůstane přeškrtnutý, '
           'vstup se neodečte.'),
       ('U klienta', 'Karta „Permanentky a platby“ → „Naplánovat termín“.'),
+      ('Blokace', 'Ikona ⊘ nahoře nebo u dne – jednorázově zablokuješ čas '
+          '(lékař, dovolená). Klienti ho uvidí jako obsazený.'),
+      ('Online rezervace', 'Klienti si mohou termíny rezervovat sami – '
+          'podrobně v článku „Online rezervace termínů“.'),
+    ],
+  ),
+  HelpArticle(
+    id: 'booking',
+    icon: Icons.event_available,
+    title: 'Online rezervace termínů',
+    summary: 'Klienti si sami vyberou volný čas podle tvé pracovní doby.',
+    steps: [
+      ('Zapnutí', 'Kalendář → ikona kalendáře s fajfkou (nebo karta „Online '
+          'rezervace“ nahoře) → zapni „Klienti si mohou rezervovat termíny“ '
+          'a ulož.'),
+      ('Pracovní doba', 'Vyber dny a čas od–do, např. Po, Út, Čt 8:00–18:00. '
+          '„Přidat pauzu“ přidá výjimku, např. oběd 13:00–15:00. Jiné dny '
+          'můžou mít jinou dobu – přidej další pravidlo.'),
+      ('Blokace', 'Jednorázově zablokuj čas – lékař, dovolená, školení. '
+          'Celý den nebo od–do. Klienti ho uvidí jako obsazený.'),
+      ('Služby', 'Co si klienti mohou rezervovat a jak dlouho to trvá '
+          '(Osobní trénink 60 min, Masáž 60 min…).'),
+      ('Rezervace po', 'Celých hodinách (8:00, 9:00…), půlhodinách nebo '
+          '15 minutách – podle toho klient uvidí začátky termínů.'),
+      ('Pravidla', 'Kolik dní '
+          'dopředu (např. měsíc), nejpozději kolik hodin předem a do kdy '
+          'může klient sám zrušit.'),
+      ('Co vidí klient', 'Jen VOLNÉ časy: pracovní doba bez pauz, blokací, '
+          'tvých termínů v kalendáři a rezervací ostatních klientů. Jména '
+          'ostatních nikdy neuvidí.'),
+      ('Klient', 'Dnes → „Rezervovat termín“, nebo Profil → „Rezervovat '
+          'termín“. Vybere službu, den a čas. V „Moje termíny“ může termín '
+          'zrušit (do limitu, potom jen napsat trenérovi).'),
+      ('V kalendáři', 'Rezervace se hned objeví jako termín s poznámkou '
+          '„Rezervace z aplikace“. U Kalendáře uvidíš číslo nových změn a '
+          'nahoře jejich seznam.'),
+      ('Zrušení a přesun', 'Když termín z rezervace zrušíš, smažeš nebo '
+          'přesuneš, klient to v aplikaci uvidí.'),
+      ('Dva klienti najednou', 'Stejný čas si nikdy nezarezervují dva – '
+          'druhému aplikace napíše, že je termín obsazený.'),
+      ('Náhled', 'Dole v nastavení vidíš, jaké časy klienti uvidí na '
+          'příštích 7 dní.'),
     ],
   ),
   HelpArticle(
@@ -505,6 +547,11 @@ const helpArticles = <HelpArticle>[
           'režim skrytý.'),
       ('Cloud', 'Data jsou v cloudu Google Firebase, přístup mají jen '
           'přihlášený trenér a jeho propojený klient.'),
+      ('Víc trenérů na jednom zařízení', 'Každý trenér má vlastní klienty, '
+          'kalendář, permanentky, platby, jídelníčky, videa, údaje a logo '
+          'na PDF i barvu a motiv aplikace. Po přihlášení jiného trenéra se '
+          'data předchozího odloží a načtou se data nového – nic se '
+          'nepropisuje. Když smažeš logo nebo kontakt, smaže se i v záloze.'),
     ],
   ),
 

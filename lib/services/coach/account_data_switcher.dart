@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/diet_plans/logic/custom_food_store.dart';
 import '../../features/diet_plans/logic/meal_plan_math.dart';
 import '../pdf/pdf_author.dart';
+import 'extra_backup_service.dart';
 
 /// Data, která patří jednomu trenérskému účtu (kalendář, permanentky,
 /// platby, jídelníčky, značka v PDF…).
@@ -34,6 +35,14 @@ class AccountDataSwitcher {
     'pdf_contact_instagram',
     'pdf_contact_web',
     'pdf_logo_b64',
+    // Vzhled a vlastní data trenéra.
+    'app_accent',
+    'theme_mode',
+    'custom_food_combos_v1',
+    'food_bank_v1',
+    // Naposledy otevřený klient – jiný trenér ho nesmí „zdědit“.
+    'active_client_id_v1',
+    'booking_seen_v1',
   ];
 
   /// Seznamy, jejichž položky mají `clientId`.
@@ -138,6 +147,8 @@ class AccountDataSwitcher {
     }
 
     debugPrint('ACCOUNT DATA SWITCH -> $owner => $uid');
+    // Rozpracované nahrání zálohy předchozího účtu už neplatí.
+    ExtraBackupService.cancelPending();
     for (final k in keys) {
       // Odložit data předchozího účtu…
       await prefs.remove(stashKey(owner, k));

@@ -7,7 +7,17 @@ class ShellDestination {
   final IconData selectedIcon;
   final String label;
 
-  const ShellDestination(this.icon, this.selectedIcon, this.label);
+  /// Číslo v červeném kolečku (např. nové rezervace). 0 = nic.
+  final int badge;
+
+  const ShellDestination(this.icon, this.selectedIcon, this.label,
+      {this.badge = 0});
+
+  Widget iconWidget(bool selected) {
+    final i = Icon(selected ? selectedIcon : icon);
+    if (badge <= 0) return i;
+    return Badge(label: Text('$badge'), child: i);
+  }
 }
 
 /// Hlavní rozložení aplikace podle šířky obrazovky:
@@ -48,8 +58,8 @@ class AdaptiveShell extends StatelessWidget {
           destinations: [
             for (final d in destinations)
               NavigationDestination(
-                icon: Icon(d.icon),
-                selectedIcon: Icon(d.selectedIcon),
+                icon: d.iconWidget(false),
+                selectedIcon: d.iconWidget(true),
                 label: d.label,
               ),
           ],
@@ -86,8 +96,8 @@ class AdaptiveShell extends StatelessWidget {
             destinations: [
               for (final d in destinations)
                 NavigationRailDestination(
-                  icon: Icon(d.icon),
-                  selectedIcon: Icon(d.selectedIcon),
+                  icon: d.iconWidget(false),
+                  selectedIcon: d.iconWidget(true),
                   label: Text(d.label),
                 ),
             ],

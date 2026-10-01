@@ -11,13 +11,16 @@ class CustomFoodsNotifier extends StateNotifier<List<NutritionFood>> {
   }
 
   Future<void> _load() async {
-    state = await CustomFoodStore.load();
+    final foods = await CustomFoodStore.load();
     MealPlanMath.resetIndex();
+    if (!mounted) return;
+    state = foods;
   }
 
   Future<void> _set(List<NutritionFood> next) async {
-    state = await CustomFoodStore.save(next);
+    final saved = await CustomFoodStore.save(next);
     MealPlanMath.resetIndex();
+    if (mounted) state = saved;
     ExtraBackupService.schedulePush();
   }
 

@@ -28,6 +28,7 @@ import '../coaching/workout_widgets.dart';
 import '../coaching/chat_screen.dart';
 import '../coaching/checkin_widgets.dart';
 import '../health/activity_screen.dart';
+import '../booking/client_booking_screen.dart';
 
 /// Obrazovka „Dnes“ – přehled dne pro klienta: cesta k cíli, dnešní
 /// trénink, jídlo, týden a rychlé akce.
@@ -126,6 +127,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               ClientMessagesTile(),
               ClientRemindersCard(),
+              ClientBookingCard(),
               SizedBox(height: 8),
               ClientTodayWorkoutCard(),
             ],

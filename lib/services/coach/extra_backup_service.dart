@@ -44,6 +44,10 @@ class ExtraBackupService {
     'theme_mode',
   ];
 
+  /// Účet, pro který už v tomto běhu aplikace proběhlo [pullMissing].
+  /// Pak platí, že co v zařízení chybí, bylo smazané – a smaže se i v cloudu.
+  static String? _pulledUid;
+
   static bool _isBackedUp(String key) =>
       key == 'user_profile_storage' ||
       key.startsWith('user_profile_storage_') ||
@@ -92,14 +96,50 @@ class ExtraBackupService {
 
   static Future<Map<String, Map<String, dynamic>>> _collectLocal(
     SharedPreferences prefs,
+    Set<String> ownIds,
   ) async {
     final result = <String, Map<String, dynamic>>{};
     for (final key in prefs.getKeys()) {
       if (!_isBackedUp(key)) continue;
       final item = _encode(key, prefs.get(key));
-      if (item != null) result[key] = item;
+      if (item == null) continue;
+      final clean = _onlyOwnClients(item, ownIds);
+      if (clean != null) result[key] = clean;
     }
     return result;
+  }
+
+  /// Profily klientů a výkony jen klientů TOHOTO trenéra
+  /// (na sdíleném zařízení mohou ležet i data klientů jiného trenéra).
+  static Map<String, dynamic>? _onlyOwnClients(
+    Map<String, dynamic> item,
+    Set<String> ownIds,
+  ) {
+    final key = item['id'];
+    final v = item['v'];
+    if (key is! String || v is! String) return item;
+    if (key.startsWith('user_profile_storage_')) {
+      final id = key.substring('user_profile_storage_'.length);
+      return ownIds.contains(id) ? item : null;
+    }
+    if (key == 'user_profile_storage') {
+      try {
+        final d = jsonDecode(v);
+        final id = d is Map ? d['clientId']?.toString() : null;
+        if (id != null && id.isNotEmpty && !ownIds.contains(id)) return null;
+      } catch (_) {}
+      return item;
+    }
+    if (key == _performanceKey) {
+      return {...item, 'v': AccountDataSwitcher.filterForCoach(v, ownIds)};
+    }
+    return item;
+  }
+
+  /// Zruší naplánované nahrání (např. při přepnutí na jiný účet).
+  static void cancelPending() {
+    _timer?.cancel();
+    _timer = null;
   }
 
   /// Sloučí dva JSON seznamy výkonů (bez duplicit).
@@ -141,7 +181,10 @@ class ExtraBackupService {
     Set<String> ownIds,
   ) {
     final key = item['id'];
-    if (key is! String || !AccountDataSwitcher.isAccountKey(key)) return item;
+    if (key is! String) return item;
+    if (!AccountDataSwitcher.isAccountKey(key)) {
+      return _onlyOwnClients(item, ownIds);
+    }
     if (AccountDataSwitcher.belongsToOtherAccount(prefs, uid, key, item['v'])) {
       return null;
     }
@@ -160,16 +203,26 @@ class ExtraBackupService {
     if (uid == null) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final local = await _collectLocal(prefs);
+    // Data v zařízení patří jinému účtu (probíhá přepnutí) → nic nenahrávat.
+    final owner = prefs.getString(AccountDataSwitcher.ownerKey);
+    if (owner != null && owner != uid) {
+      debugPrint('EXTRAS PUSH SKIPPED -> device data belong to $owner');
+      return;
+    }
+    final ownIds = AccountDataSwitcher.clientIdsOf(prefs, uid);
+    final local = await _collectLocal(prefs, ownIds);
     final cloudList =
         await CoachStorageService.readCloudSnapshot(uid: uid, key: snapshotKey) ??
             const <Map<String, dynamic>>[];
-    final ownIds = AccountDataSwitcher.clientIdsOf(prefs, uid);
+    // Po načtení z cloudu platí zařízení: smazané logo, kontakt, barva…
+    // se smažou i v cloudu (jinak by se při dalším přihlášení vrátily).
+    final localWins = _pulledUid == uid;
 
     final merged = <String, Map<String, dynamic>>{};
     for (final c in cloudList) {
       final id = c['id'];
       if (id is! String) continue;
+      if (localWins && AccountDataSwitcher.isAccountKey(id)) continue;
       final clean = _sanitize(prefs, uid, Map<String, dynamic>.from(c), ownIds);
       if (clean != null) merged[id] = clean;
     }
@@ -206,9 +259,14 @@ class ExtraBackupService {
 
     final cloudList =
         await CoachStorageService.readCloudSnapshot(uid: uid, key: snapshotKey);
-    if (cloudList == null) return 0;
+    if (cloudList == null) {
+      _pulledUid = uid;
+      return 0;
+    }
 
     final prefs = await SharedPreferences.getInstance();
+    final owner = prefs.getString(AccountDataSwitcher.ownerKey);
+    if (owner != null && owner != uid) return 0;
     final ownIds = AccountDataSwitcher.clientIdsOf(prefs, uid);
     var restored = 0;
     for (final raw in cloudList) {
@@ -232,6 +290,7 @@ class ExtraBackupService {
         restored++;
       }
     }
+    _pulledUid = uid;
     debugPrint('EXTRAS PULL OK -> restored=$restored');
     return restored;
   }

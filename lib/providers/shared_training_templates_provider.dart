@@ -21,6 +21,7 @@ class SharedTrainingTemplatesNotifier
     try {
       final cloudReadyTemplates =
           await CoachStorageService.loadSharedTrainingTemplates();
+      if (!mounted) return;
 
       if (cloudReadyTemplates.isNotEmpty) {
         state = cloudReadyTemplates;
@@ -28,6 +29,7 @@ class SharedTrainingTemplatesNotifier
       }
 
       final migrated = await _loadOldTemplatesFromPrefs();
+      if (!mounted) return;
 
       if (migrated.isNotEmpty) {
         state = migrated;
@@ -43,7 +45,7 @@ class SharedTrainingTemplatesNotifier
       state = [];
     } catch (e) {
       debugPrint('Chyba při načítání sdílených šablon: $e');
-      state = [];
+      if (mounted) state = [];
     }
   }
 

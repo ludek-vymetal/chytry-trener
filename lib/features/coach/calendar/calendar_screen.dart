@@ -8,6 +8,11 @@ import '../../../providers/coach/coach_clients_controller.dart';
 import '../../../providers/coach/finance_provider.dart';
 import '../../../providers/coach/passes_provider.dart';
 import '../../help/help_button.dart';
+import '../../../providers/booking_provider.dart';
+import '../../../services/booking/booking_models.dart';
+import '../../../services/booking/booking_service.dart';
+import '../../booking/booking_settings_screen.dart';
+import '../../booking/client_booking_screen.dart';
 
 const _dayNames = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
 const _dayNamesLong = [
@@ -80,6 +85,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 setState(() => _week = _monday(DateTime.now())),
             child: const Text('Dnes'),
           ),
+          IconButton(
+            tooltip: 'Zablokovat čas (lékař, dovolená…)',
+            onPressed: () => addBlockForCoach(context, ref),
+            icon: const Icon(Icons.block),
+          ),
+          IconButton(
+            tooltip: 'Online rezervace – pracovní doba',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const BookingSettingsScreen()),
+            ),
+            icon: const Icon(Icons.event_available),
+          ),
           const HelpButton(topic: 'calendar'),
         ],
       ),
@@ -94,6 +111,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
             children: [
+              const NewBookingsBanner(),
+              const _BookingStatusTile(),
               Row(
                 children: [
                   IconButton(
@@ -151,9 +170,47 @@ class _DaySection extends ConsumerWidget {
     required this.items,
   });
 
+  Future<void> _removeBlock(
+    BuildContext context,
+    WidgetRef ref,
+    BookingSettings s,
+    TimeBlock b,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Zrušit blokaci?'),
+        content: Text('${bookingDayLabel(b.day)} ${b.label}\n'
+            'Klienti si tento čas pak budou moci rezervovat.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Nechat'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Zrušit blokaci'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await BookingService.saveSettings(s.copyWith(blocks: [
+      for (final x in s.blocks)
+        if (x.id != b.id) x,
+    ]));
+    final uid = currentCoachUidForBooking();
+    if (uid != null) ref.invalidate(bookingSettingsProvider(uid));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final uid = currentCoachUidForBooking();
+    final settings = uid == null
+        ? null
+        : ref.watch(bookingSettingsProvider(uid)).valueOrNull;
+    final blocks = settings?.blocksOn(day) ?? const <TimeBlock>[];
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: Column(
@@ -178,6 +235,12 @@ class _DaySection extends ConsumerWidget {
               ),
               const Spacer(),
               IconButton(
+                tooltip: 'Zablokovat čas v tento den',
+                visualDensity: VisualDensity.compact,
+                onPressed: () => addBlockForCoach(context, ref, day: day),
+                icon: const Icon(Icons.block, size: 20),
+              ),
+              IconButton(
                 tooltip: 'Přidat termín na tento den',
                 visualDensity: VisualDensity.compact,
                 onPressed: () =>
@@ -186,7 +249,19 @@ class _DaySection extends ConsumerWidget {
               ),
             ],
           ),
-          if (items.isEmpty)
+          for (final b in blocks)
+            Padding(
+              padding: const EdgeInsets.only(left: 4, top: 4),
+              child: InputChip(
+                avatar: Icon(Icons.block, size: 16, color: cs.error),
+                label: Text('Blokováno: ${b.label}'),
+                onDeleted: settings == null
+                    ? null
+                    : () => _removeBlock(context, ref, settings, b),
+                deleteButtonTooltipMessage: 'Zrušit blokaci',
+              ),
+            ),
+          if (items.isEmpty && blocks.isEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 10, top: 2, bottom: 4),
               child: Text('volno',
@@ -713,6 +788,56 @@ class TodayAppointmentsCard extends ConsumerWidget {
                 child: AppointmentTile(appointment: a),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Stav online rezervací nahoře v kalendáři.
+class _BookingStatusTile extends ConsumerWidget {
+  const _BookingStatusTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final uid = currentCoachUidForBooking();
+    if (uid == null) return const SizedBox.shrink();
+    final async = ref.watch(bookingSettingsProvider(uid));
+    if (async.isLoading) return const SizedBox.shrink();
+    final s = async.valueOrNull;
+    final cs = Theme.of(context).colorScheme;
+    final on = s?.enabled ?? false;
+    final rules = s?.rules ?? const <WorkRule>[];
+    final hours = on
+        ? [
+            for (final r in rules)
+              if (r.days.isNotEmpty)
+                '${[for (final d in (r.days.toList()..sort())) _dayNames[d - 1]].join(', ')} '
+                    '${r.windows().join(', ')}',
+          ].join(' · ')
+        : '';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: ListTile(
+        dense: true,
+        leading: Icon(
+          on ? Icons.event_available : Icons.event_busy_outlined,
+          color: on ? cs.primary : cs.onSurfaceVariant,
+        ),
+        title: Text(
+          on
+              ? 'Online rezervace zapnuté'
+              : 'Online rezervace vypnuté',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          on
+              ? (hours.isEmpty ? 'Nastav pracovní dobu.' : hours)
+              : 'Zapni je a klienti si budou termíny rezervovat sami.',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const BookingSettingsScreen()),
         ),
       ),
     );

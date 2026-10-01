@@ -110,15 +110,18 @@ class Appointment {
 
 class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
   AppointmentsNotifier() : super(const []) {
-    _load();
+    ready = _load();
   }
+
+  /// Dokončí se po načtení termínů ze zařízení.
+  late final Future<void> ready;
 
   static const key = 'coach_appointments_v1';
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(key);
-    if (raw == null || raw.isEmpty) return;
+    if (!mounted || raw == null || raw.isEmpty) return;
     try {
       final d = jsonDecode(raw);
       if (d is List) {
@@ -138,7 +141,14 @@ class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
     ExtraBackupService.schedulePush();
   }
 
-  Future<void> addAll(List<Appointment> items) => _save([...state, ...items]);
+  Future<void> addAll(List<Appointment> items) {
+    final ids = {for (final a in state) a.id};
+    return _save([
+      ...state,
+      for (final a in items)
+        if (!ids.contains(a.id)) a,
+    ]);
+  }
 
   Future<void> update(Appointment a) =>
       _save([for (final e in state) e.id == a.id ? a : e]);

@@ -35,6 +35,9 @@ import 'providers/coach/appointments_provider.dart';
 import 'providers/coach/passes_provider.dart';
 import 'providers/coach/finance_provider.dart';
 import 'providers/health_provider.dart';
+import 'providers/booking_provider.dart';
+import 'providers/shared_training_templates_provider.dart';
+import 'providers/coach/active_client_provider.dart';
 import 'features/diet_plans/providers/saved_meal_plans_provider.dart';
 import 'package:dart_application_1/l10n/app_localizations.dart';
 
@@ -563,7 +566,15 @@ class _CoachSessionBootstrapState
 
       // Jiný trenér na stejném zařízení → vlastní kalendář, platby,
       // jídelníčky i značka v PDF (data předchozího účtu se odloží).
-      await AccountDataSwitcher.ensureFor(uid);
+      final switched = await AccountDataSwitcher.ensureFor(uid);
+      if (switched) {
+        // Barva, motiv a licence předchozího trenéra se nesmí přenést.
+        ref.invalidate(accentProvider);
+        ref.invalidate(themeProvider);
+        ref.invalidate(subscriptionProvider);
+        // Profil naposledy otevřeného klienta předchozího trenéra.
+        ref.invalidate(userProfileProvider);
+      }
 
       final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
 
@@ -643,6 +654,11 @@ class AppProviderInvalidation {
     ref.invalidate(savedMealPlansProvider);
     ref.invalidate(customFoodsProvider);
     ref.invalidate(healthProvider);
+    ref.invalidate(sharedTrainingTemplatesProvider);
+    ref.invalidate(activeClientIdProvider);
+    ref.invalidate(coachBookingsProvider);
+    ref.invalidate(seenBookingsProvider);
+    ref.invalidate(coachBookingSyncProvider);
   }
 }
 
