@@ -76,3 +76,5 @@ analyzer:
 linter:
   rules:
     prefer_const_constructors: false
+dependency_overrides:
+  device_info_plus: 12.3.0
