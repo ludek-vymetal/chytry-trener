@@ -98,7 +98,14 @@ class PaymentsNotifier extends StateNotifier<List<Payment>> {
   Future<void> _save(List<Payment> next) async {
     state = next;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, jsonEncode([for (final p in next) p.toJson()]));
+    await prefs.setString(
+      key,
+      await ExtraBackupService.stampList(
+        prefs,
+        key,
+        [for (final p in next) p.toJson()],
+      ),
+    );
     ExtraBackupService.schedulePush();
   }
 

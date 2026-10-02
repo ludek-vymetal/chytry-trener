@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,6 +32,10 @@ import 'providers/theme_provider.dart';
 import 'providers/training_session_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'services/coach/coach_cloud_sync_service.dart';
+import 'services/coach/coach_storage_service.dart';
+import 'providers/coach/active_client_data_providers.dart';
+import 'providers/coach/coach_client_details_controller.dart';
+import 'providers/coach/custom_training_plan_provider.dart';
 import 'services/coach/account_data_switcher.dart';
 import 'providers/coach/appointments_provider.dart';
 import 'providers/coach/passes_provider.dart';
@@ -524,15 +530,94 @@ class CoachSessionBootstrap extends ConsumerStatefulWidget {
 }
 
 class _CoachSessionBootstrapState
-    extends ConsumerState<CoachSessionBootstrap> {
+    extends ConsumerState<CoachSessionBootstrap> with WidgetsBindingObserver {
   bool _isSyncing = true;
   Object? _syncError;
   String? _lastSyncedUid;
 
+  /// Průběžná synchronizace s ostatními zařízeními trenéra (mobil ↔ PC).
+  Timer? _liveTimer;
+  StreamSubscription<Set<String>>? _changesSub;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _changesSub =
+        CoachCloudSyncService.localChanges.listen(_refreshChangedData);
+    _liveTimer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => _liveSync(),
+    );
     Future.microtask(_syncIfNeeded);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _liveTimer?.cancel();
+    _changesSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Návrat do aplikace (např. z mobilu po zápisu na PC) → hned stáhnout.
+    if (state == AppLifecycleState.resumed) _liveSync();
+  }
+
+  Future<void> _liveSync() async {
+    if (!mounted || _isSyncing || _lastSyncedUid != widget.user.uid) return;
+    try {
+      final changed = await CoachCloudSyncService.liveTick();
+      _refreshChangedData(changed);
+    } catch (e) {
+      debugPrint('LIVE SYNC FAILED -> $e');
+    }
+  }
+
+  /// Obnoví jen obrazovky, jejichž data přišla z jiného zařízení.
+  void _refreshChangedData(Set<String> keys) {
+    if (!mounted || keys.isEmpty) return;
+    for (final key in keys) {
+      switch (key) {
+        case CoachStorageService.clientsKey:
+          ref.invalidate(coachClientsControllerProvider);
+          ref.invalidate(activeCoachClientProvider);
+        case CoachStorageService.notesKey:
+          ref.invalidate(coachNotesControllerProvider);
+        case CoachStorageService.clientDetailsKey:
+          ref.invalidate(coachClientDetailsControllerProvider);
+          ref.invalidate(activeCoachClientDetailsProvider);
+        case CoachStorageService.circumferencesKey:
+          ref.invalidate(coachCircumferenceControllerProvider);
+        case CoachStorageService.inbodyKey:
+          ref.invalidate(coachInbodyControllerProvider);
+          ref.invalidate(activeCoachClientInbodyProvider);
+        case CoachStorageService.goalsKey:
+          ref.invalidate(coachGoalControllerProvider);
+        case CoachStorageService.diagnosticsKey:
+          ref.invalidate(coachDiagnosticControllerProvider);
+        case CoachStorageService.trainingSessionsKey:
+          ref.invalidate(trainingSessionProvider);
+        case CoachStorageService.dailyHistoryKey:
+          ref.invalidate(dailyHistoryProvider);
+        case CoachStorageService.customTrainingPlansKey:
+          ref.invalidate(customTrainingPlanProvider);
+        case CoachStorageService.sharedTrainingTemplatesKey:
+          ref.invalidate(sharedTrainingTemplatesProvider);
+        case 'coach_appointments_v1':
+          ref.invalidate(appointmentsProvider);
+        case 'coach_passes_v1':
+          ref.invalidate(passesProvider);
+        case 'coach_payments_v1':
+          ref.invalidate(paymentsProvider);
+        case 'saved_meal_plans_v1':
+          ref.invalidate(savedMealPlansProvider);
+        case 'custom_foods_v1':
+          ref.invalidate(customFoodsProvider);
+      }
+    }
   }
 
   @override
@@ -655,6 +740,7 @@ class AppProviderInvalidation {
     ref.invalidate(customFoodsProvider);
     ref.invalidate(healthProvider);
     ref.invalidate(sharedTrainingTemplatesProvider);
+    ref.invalidate(customTrainingPlanProvider);
     ref.invalidate(activeClientIdProvider);
     ref.invalidate(coachBookingsProvider);
     ref.invalidate(seenBookingsProvider);
@@ -774,4 +860,4 @@ class _RetryableErrorCard extends ConsumerWidget {
       ),
     );
    }
-  }
+  }

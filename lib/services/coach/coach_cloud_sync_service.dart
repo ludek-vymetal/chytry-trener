@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -23,6 +24,94 @@ class CoachCloudSyncReport {
 }
 
 class CoachCloudSyncService {
+  // ---------------------------------------------------------------
+  // Průběžná synchronizace mezi zařízeními (mobil ↔ počítač)
+  // ---------------------------------------------------------------
+
+  /// Klíče, které se v zařízení změnily daty z jiného zařízení.
+  /// Aplikace podle nich obnoví obrazovky.
+  static final StreamController<Set<String>> _changes =
+      StreamController<Set<String>>.broadcast();
+  static Stream<Set<String>> get localChanges => _changes.stream;
+
+  static void notifyLocalChanged(Set<String> keys) {
+    if (keys.isNotEmpty) _changes.add(keys);
+  }
+
+  static bool _ticking = false;
+
+  /// Stáhne změny z cloudu a nahraje ty místní. Zapisuje jen to,
+  /// co se opravdu liší. Vrací klíče, které se změnily v zařízení.
+  static Future<Set<String>> liveTick() async {
+    final changed = <String>{};
+    final uid = CoachStorageService.currentCoachUid();
+    if (uid == null || _ticking) return changed;
+    _ticking = true;
+    try {
+      for (final key in CoachStorageService.syncStorageKeys) {
+        try {
+          final cloudItems = await _loadCloudSnapshotItems(uid, key);
+          // Místní data číst až po stažení cloudu (nejčerstvější stav).
+          final localItems = await CoachStorageService.loadRawItemsForKey(key);
+          if (cloudItems == null) {
+            if (localItems.isNotEmpty) {
+              await _uploadCloudSnapshotItems(
+                uid: uid,
+                key: key,
+                items: localItems,
+              );
+            }
+            continue;
+          }
+          final merged = _mergeLists(
+            key: key,
+            localItems: localItems,
+            cloudItems: cloudItems,
+          );
+          if (!sameItems(key, merged, localItems)) {
+            await CoachStorageService.saveRawItemsForKeyLocalOnly(
+              key: key,
+              items: merged,
+            );
+            changed.add(key);
+          }
+          if (!sameItems(key, merged, cloudItems)) {
+            await _uploadCloudSnapshotItems(uid: uid, key: key, items: merged);
+          }
+        } catch (e) {
+          debugPrint('LIVE SYNC ERROR -> key=$key error=$e');
+        }
+      }
+      try {
+        changed.addAll(await ExtraBackupService.liveSync());
+      } catch (e) {
+        debugPrint('LIVE SYNC EXTRAS ERROR -> $e');
+      }
+      if (changed.isNotEmpty) {
+        debugPrint('LIVE SYNC -> changed=$changed');
+      }
+    } finally {
+      _ticking = false;
+    }
+    return changed;
+  }
+
+  /// Stejné položky bez ohledu na pořadí?
+  static bool sameItems(
+    String key,
+    List<Map<String, dynamic>> a,
+    List<Map<String, dynamic>> b,
+  ) {
+    if (a.length != b.length) return false;
+    final m = <String, String>{
+      for (final i in a) _resolveItemId(key, i): jsonEncode(i),
+    };
+    for (final i in b) {
+      if (m[_resolveItemId(key, i)] != jsonEncode(i)) return false;
+    }
+    return true;
+  }
+
   static const Map<String, List<String>> _idCandidatesByKey = {
     CoachStorageService.clientsKey: ['clientId', 'id'],
     CoachStorageService.notesKey: ['noteId', 'id'],
@@ -408,10 +497,20 @@ class CoachCloudSyncService {
       if (cloudUpdatedAt.isAfter(localUpdatedAt)) {
         return Map<String, dynamic>.from(cloudItem);
       }
-      return Map<String, dynamic>.from(localItem);
+      if (localUpdatedAt.isAfter(cloudUpdatedAt)) {
+        return Map<String, dynamic>.from(localItem);
+      }
     }
 
     if (cloudUpdatedAt != null && localUpdatedAt == null) {
+      return Map<String, dynamic>.from(cloudItem);
+    }
+
+    // Shodný čas, ale jiný obsah → vždy stejná volba na všech zařízeních,
+    // jinak by si mobil a počítač data donekonečna přepisovaly.
+    final l = jsonEncode(localItem);
+    final c = jsonEncode(cloudItem);
+    if (l != c && c.compareTo(l) > 0) {
       return Map<String, dynamic>.from(cloudItem);
     }
 
@@ -475,4 +574,4 @@ class CoachCloudSyncService {
 
     return null;
   }
-}
+}

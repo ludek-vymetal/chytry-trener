@@ -16,6 +16,7 @@ import '../../models/coach/coach_goal.dart';
 import '../../models/coach/coach_inbody_entry.dart';
 import '../../models/coach/coach_note.dart';
 import '../../models/coach/coach_overrides.dart';
+import 'coach_cloud_sync_service.dart';
 import 'online_coaching_service.dart';
 
 class CoachStorageService {
@@ -175,12 +176,32 @@ class CoachStorageService {
       final deviceId = await _ensureDeviceId();
       final now = DateTime.now();
 
-      debugPrint('UPLOAD -> coaches/$uid/snapshots/$key count=${items.length}');
+      // Nepřepsat naslepo, co mezitím uložilo jiné zařízení (mobil ×
+      // počítač): sloučit s cloudem a teprve pak nahrát.
+      var toUpload = items;
+      final cloudItems = await readCloudSnapshot(uid: uid, key: key);
+      if (cloudItems != null && cloudItems.isNotEmpty) {
+        toUpload = CoachCloudSyncService.mergeLists(
+          key: key,
+          localItems: items,
+          cloudItems: cloudItems,
+        );
+        if (!CoachCloudSyncService.sameItems(key, toUpload, items)) {
+          await _saveRawList(key, toUpload);
+          CoachCloudSyncService.notifyLocalChanged({key});
+        }
+        if (CoachCloudSyncService.sameItems(key, toUpload, cloudItems)) {
+          debugPrint('UPLOAD SKIPPED -> $key unchanged');
+          return;
+        }
+      }
+
+      debugPrint('UPLOAD -> coaches/$uid/snapshots/$key count=${toUpload.length}');
 
       await writeCloudSnapshot(
         uid: uid,
         key: key,
-        items: items,
+        items: toUpload,
         deviceId: deviceId,
         now: now,
       );

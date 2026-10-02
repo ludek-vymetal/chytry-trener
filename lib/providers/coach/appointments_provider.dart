@@ -137,7 +137,14 @@ class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
     next.sort((a, b) => a.start.compareTo(b.start));
     state = next;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, jsonEncode([for (final a in next) a.toJson()]));
+    await prefs.setString(
+      key,
+      await ExtraBackupService.stampList(
+        prefs,
+        key,
+        [for (final a in next) a.toJson()],
+      ),
+    );
     ExtraBackupService.schedulePush();
   }
 

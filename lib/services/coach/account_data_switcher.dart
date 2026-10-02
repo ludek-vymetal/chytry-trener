@@ -26,6 +26,10 @@ class AccountDataSwitcher {
     'coach_passes_v1',
     'coach_payments_v1',
     'coach_appointments_v1',
+    // Smazané položky kalendáře, permanentek a plateb (synchronizace).
+    'coach_passes_v1__del',
+    'coach_payments_v1__del',
+    'coach_appointments_v1__del',
     'exercise_videos_v1',
     'chat_quick_replies_coach_v1',
     'custom_daily_meal_templates_v1',

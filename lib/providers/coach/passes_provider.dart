@@ -35,7 +35,11 @@ class PassesNotifier extends StateNotifier<List<ClientPass>> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       key,
-      jsonEncode([for (final p in next) p.toJson()]),
+      await ExtraBackupService.stampList(
+        prefs,
+        key,
+        [for (final p in next) p.toJson()],
+      ),
     );
     ExtraBackupService.schedulePush();
   }

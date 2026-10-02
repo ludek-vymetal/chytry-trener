@@ -1660,7 +1660,7 @@ class _CaloriesCard extends StatelessWidget {
         child: Column(
           children: [
             const Text(
-              'Calories',
+              'Kalorie',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
               ),
@@ -1719,11 +1719,11 @@ class _MacroBarsCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildBar('Protein', intakeP, targetP),
+            _buildBar('Bílkoviny', intakeP, targetP),
             const SizedBox(height: 12),
-            _buildBar('Carbs', intakeC, targetC),
+            _buildBar('Sacharidy', intakeC, targetC),
             const SizedBox(height: 12),
-            _buildBar('Fat', intakeF, targetF),
+            _buildBar('Tuky', intakeF, targetF),
           ],
         ),
       ),
@@ -1762,4 +1762,4 @@ class _ItemsCard extends StatelessWidget {
       ),
     );
   }
-}
+}

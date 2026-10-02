@@ -939,56 +939,34 @@ class _SharedTemplateCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-
-        title: Text(
-          template.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(
-            '${template.description ?? l10n.noDescription}\n'
-            '${l10n.daysCount}: ${template.days.length}',
-          ),
-        ),
-
-        isThreeLine: true,
-
-        trailing: Wrap(
-          spacing: 8,
-          children: [
-            FilledButton(
-              onPressed: () async {
-                await ref
-                    .read(sharedTrainingTemplatesProvider.notifier)
-                    .createPlanFromTemplate(
-                      clientId: clientId,
-                      template: template,
-                      ref: ref,
-                    );
-
-                if (!context.mounted) return;
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      l10n.templateInserted(template.name),
-                    ),
-                  ),
+    return _ResponsivePlanCard(
+      title: template.name,
+      description: template.description ?? l10n.noDescription,
+      daysLine: '${l10n.daysCount}: ${template.days.length}',
+      actions: [
+        FilledButton(
+          onPressed: () async {
+            await ref
+                .read(sharedTrainingTemplatesProvider.notifier)
+                .createPlanFromTemplate(
+                  clientId: clientId,
+                  template: template,
+                  ref: ref,
                 );
-              },
-              child: Text(l10n.insert),
-            ),
-          ],
+
+            if (!context.mounted) return;
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  l10n.templateInserted(template.name),
+                ),
+              ),
+            );
+          },
+          child: Text(l10n.insert),
         ),
-      ),
+      ],
     );
   }
 }
@@ -1041,81 +1019,194 @@ class _PlanCard extends ConsumerWidget {
   ) {
     final l10n = AppLocalizations.of(context)!;
 
+    return _ResponsivePlanCard(
+      title: plan.name,
+      description: plan.description ?? l10n.noDescription,
+      daysLine: '${l10n.daysCount}: ${plan.days.length}',
+      isActive: plan.isActive,
+      activeLabel: l10n.active,
+      onTap: () => _openPlanDetail(context),
+      menu: PopupMenuButton<String>(
+        tooltip: '',
+        icon: const Icon(Icons.more_vert),
+        onSelected: (value) async {
+          if (value != 'delete') return;
+          final ok = await showDialog<bool>(
+            context: context,
+            builder: (d) => AlertDialog(
+              title: Text(l10n.deleteWholePlan),
+              content: Text('${plan.name}\n\n${l10n.deletePlanWarning}'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(d, false),
+                  child: Text(l10n.cancel),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(d).colorScheme.error,
+                    foregroundColor: Theme.of(d).colorScheme.onError,
+                  ),
+                  onPressed: () => Navigator.pop(d, true),
+                  child: Text(l10n.deleteForever),
+                ),
+              ],
+            ),
+          );
+          if (ok == true) {
+            await ref
+                .read(customTrainingPlanProvider.notifier)
+                .deletePlan(plan.id);
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                const Icon(Icons.delete_outline),
+                const SizedBox(width: 12),
+                Text(l10n.delete),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => _activateAndOpen(context, ref),
+          child: Text(l10n.open),
+        ),
+        if (!plan.isActive)
+          OutlinedButton(
+            onPressed: () {
+              ref
+                  .read(customTrainingPlanProvider.notifier)
+                  .setActivePlan(
+                    clientId: plan.clientId,
+                    planId: plan.id,
+                  );
+            },
+            child: Text(l10n.activate),
+          ),
+      ],
+    );
+  }
+}
+
+/// Karta plánu, která se vejde i na úzký telefon:
+/// název a popis přes celou šířku, tlačítka pod nimi.
+class _ResponsivePlanCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final String daysLine;
+  final List<Widget> actions;
+  final bool isActive;
+  final String? activeLabel;
+  final VoidCallback? onTap;
+  final Widget? menu;
+
+  const _ResponsivePlanCard({
+    required this.title,
+    required this.description,
+    required this.daysLine,
+    required this.actions,
+    this.isActive = false,
+    this.activeLabel,
+    this.onTap,
+    this.menu,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                plan.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+      clipBehavior: Clip.antiAlias,
+      shape: isActive
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: scheme.primary, width: 1.5),
+            )
+          : null,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (isActive && activeLabel != null)
+                    Container(
+                      margin: const EdgeInsets.only(left: 8, top: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        activeLabel!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  if (menu != null) menu!,
+                  if (menu == null) const SizedBox(width: 8),
+                ],
               ),
-            ),
-
-            if (plan.isActive)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade100,
-                  borderRadius:
-                      BorderRadius.circular(20),
-                ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
                 child: Text(
-                  l10n.active,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
+                  description,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
                 ),
               ),
-          ],
-        ),
-
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(
-            '${plan.description ?? l10n.noDescription}\n'
-            '${l10n.daysCount}: ${plan.days.length}',
+              const SizedBox(height: 4),
+              Text(
+                daysLine,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.end,
+                    children: actions,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-
-        isThreeLine: true,
-
-        onTap: () => _openPlanDetail(context),
-
-        trailing: Wrap(
-          spacing: 8,
-          children: [
-            FilledButton(
-              onPressed: () =>
-                  _activateAndOpen(context, ref),
-              child: Text(l10n.open),
-            ),
-
-            OutlinedButton(
-              onPressed: () {
-                ref
-                    .read(
-                      customTrainingPlanProvider
-                          .notifier,
-                    )
-                    .setActivePlan(
-                      clientId: plan.clientId,
-                      planId: plan.id,
-                    );
-              },
-              child: Text(l10n.activate),
-            ),
-          ],
         ),
       ),
     );
