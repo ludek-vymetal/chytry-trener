@@ -463,7 +463,26 @@ Future<void> showAppointmentEditor(
   if (existing != null) {
     await n.update(result.first);
   } else {
+    // Stejný termín už v kalendáři je (např. zapsaný v mobilu) → nepřidávat
+    // podruhé, jen upozornit.
+    final dupes = [
+      for (final a in result)
+        if (n.findSame(a) != null) a,
+    ];
     await n.addAll(result);
+    if (dupes.isNotEmpty && context.mounted) {
+      final d = dupes.first.start;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            dupes.length == 1
+                ? 'Termín ${dupes.first.clientName} ${d.day}. ${d.month}. '
+                    '${d.hour}:${d.minute.toString().padLeft(2, '0')} už v kalendáři je – nepřidal jsem ho podruhé.'
+                : '${dupes.length} termíny už v kalendáři byly – nepřidal jsem je podruhé.',
+          ),
+        ),
+      );
+    }
   }
 }
 

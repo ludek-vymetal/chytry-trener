@@ -125,12 +125,66 @@ class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
     try {
       final d = jsonDecode(raw);
       if (d is List) {
-        state = [
+        final loaded = [
           for (final e in d)
             if (e is Map) Appointment.fromJson(Map<String, dynamic>.from(e)),
-        ]..sort((a, b) => a.start.compareTo(b.start));
+        ];
+        final clean = dedupe(loaded);
+        if (clean.length != loaded.length) {
+          // Stejný termín zapsaný v mobilu i na PC → nechat jeden
+          // (smazání duplicity se propíše i do ostatních zařízení).
+          await _save(clean);
+        } else {
+          state = clean..sort((a, b) => a.start.compareTo(b.start));
+        }
       }
     } catch (_) {}
+  }
+
+  static String _slotKey(Appointment a) {
+    final who = (a.clientId != null && a.clientId!.isNotEmpty)
+        ? a.clientId!
+        : a.clientName.trim().toLowerCase();
+    return '$who|${a.start.toIso8601String()}|${a.type.name}';
+  }
+
+  /// Který ze dvou stejných termínů ponechat (vždy stejně na všech
+  /// zařízeních): termín z online rezervace, pak hotový, pak s poznámkou.
+  static int _rank(Appointment a) =>
+      (a.id.startsWith('bk_') ? 100 : 0) +
+      (a.status == AppointmentStatus.done ? 10 : 0) +
+      (a.note.trim().isNotEmpty ? 1 : 0);
+
+  /// Odstraní duplicitní termíny (stejný klient, začátek a druh).
+  /// Zrušený termín se za duplicitu nepovažuje.
+  static List<Appointment> dedupe(List<Appointment> items) {
+    final best = <String, Appointment>{};
+    final out = <Appointment>[];
+    for (final a in items) {
+      if (a.status == AppointmentStatus.cancelled) {
+        out.add(a);
+        continue;
+      }
+      final k = _slotKey(a);
+      final cur = best[k];
+      if (cur == null) {
+        best[k] = a;
+        continue;
+      }
+      final ra = _rank(a), rc = _rank(cur);
+      var keep = (ra > rc || (ra == rc && a.id.compareTo(cur.id) < 0)) ? a : cur;
+      final other = identical(keep, a) ? cur : a;
+      // Hotovo na kterékoli kopii → hotovo.
+      if (other.status == AppointmentStatus.done &&
+          keep.status != AppointmentStatus.done) {
+        keep = keep.copyWith(status: AppointmentStatus.done);
+      }
+      if (keep.note.trim().isEmpty && other.note.trim().isNotEmpty) {
+        keep = keep.copyWith(note: other.note);
+      }
+      best[k] = keep;
+    }
+    return [...best.values, ...out];
   }
 
   Future<void> _save(List<Appointment> next) async {
@@ -150,11 +204,24 @@ class AppointmentsNotifier extends StateNotifier<List<Appointment>> {
 
   Future<void> addAll(List<Appointment> items) {
     final ids = {for (final a in state) a.id};
-    return _save([
+    return _save(dedupe([
       ...state,
       for (final a in items)
         if (!ids.contains(a.id)) a,
-    ]);
+    ]));
+  }
+
+  /// Je už v kalendáři stejný termín (klient + začátek + druh)?
+  Appointment? findSame(Appointment a) {
+    final k = _slotKey(a);
+    for (final e in state) {
+      if (e.id != a.id &&
+          e.status != AppointmentStatus.cancelled &&
+          _slotKey(e) == k) {
+        return e;
+      }
+    }
+    return null;
   }
 
   Future<void> update(Appointment a) =>
