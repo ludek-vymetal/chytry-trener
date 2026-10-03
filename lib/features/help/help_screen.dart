@@ -596,9 +596,22 @@ const helpArticles = <HelpArticle>[
           'do cloudu k tvému účtu.'),
       ('Druhé zařízení', 'Na jiném počítači se stačí přihlásit stejným '
           'trenérským účtem – data se stáhnou z cloudu.'),
+      ('Mobil a počítač zároveň', 'Když máš aplikaci otevřenou na víc '
+          'zařízeních, změny se mezi nimi propisují zhruba každou minutu '
+          'a hned po návratu do aplikace. Termín zapsaný v mobilu se tak '
+          'do minuty objeví i na počítači. Stejný termín zapsaný dvakrát '
+          'se sloučí do jednoho.'),
       ('Export klienta', 'Záloha do souboru s PDF souhrnem a tabulkami. '
           'Hodí se před většími změnami.'),
-      ('Tovární nastavení', 'Nevratně smaže všechna data v zařízení.'),
+      ('Tovární nastavení', 'Nevratně smaže všechna data v zařízení '
+          '(záloha v cloudu zůstane).'),
+      ('Smazat účet (trenér)', 'Nastavení → Smazat účet. Po zadání hesla '
+          'trvale smaže trenérský účet i všechna data v cloudu a v zařízení.'),
+      ('Smazat moje data (klient)', 'Profil → Smazat moje data. Smaže '
+          'profil a záznamy v telefonu, data z hodinek (i u trenéra), '
+          'propojení s trenérem a účet. Potvrzuje se dvakrát – nejdřív '
+          'tlačítkem, pak napsáním slova SMAZAT. Záznamy, které vede '
+          'trenér, smaže na požádání trenér.'),
     ],
   ),
   HelpArticle(

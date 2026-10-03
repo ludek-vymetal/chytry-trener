@@ -10,6 +10,8 @@ import '../settings/appearance_card.dart';
 import '../paywall/paywall_screen.dart';
 import '../onboarding/onboarding_goal_screen.dart';
 import '../coaching/coaching_widgets.dart';
+import '../../providers/user_profile_provider.dart';
+import '../../services/client_data_deletion_service.dart';
 
 /// Profil: cíl, jazyk, vzhled a změna režimu.
 class ProfileHubScreen extends ConsumerWidget {
@@ -46,6 +48,150 @@ class ProfileHubScreen extends ConsumerWidget {
 
   void _changeMode(BuildContext context, WidgetRef ref) {
     switchToRoleSelect(context, ref);
+  }
+
+  /// Smazání všech dat klienta – dvojí potvrzení.
+  Future<void> _deleteMyData(BuildContext context, WidgetRef ref) async {
+    final cs = Theme.of(context).colorScheme;
+
+    // 1. potvrzení: co se smaže
+    final first = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        icon: Icon(Icons.warning_amber_rounded, color: cs.error, size: 36),
+        title: const Text('Smazat všechna moje data?'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Smaže se:'),
+              SizedBox(height: 8),
+              Text('• profil, cíl, zapsané jídlo, tréninky a měření v tomto telefonu'),
+              Text('• data z hodinek (kroky, spánek, tep) – i ta odeslaná trenérovi'),
+              Text('• propojení s trenérem a tvůj účet v aplikaci'),
+              SizedBox(height: 12),
+              Text(
+                'Záznamy, které o tobě vede trenér (karta klienta, '
+                'odcvičené tréninky), zůstanou u trenéra. O jejich smazání '
+                'požádej trenéra.',
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Používáš-li v tomto zařízení i trenérský režim, budeš '
+                'odhlášen/a – trenérská data v cloudu zůstanou.',
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Tuto akci nejde vrátit.',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(d, false),
+            child: const Text('Zrušit'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: cs.error,
+              foregroundColor: cs.onError,
+            ),
+            onPressed: () => Navigator.pop(d, true),
+            child: const Text('Pokračovat'),
+          ),
+        ],
+      ),
+    );
+    if (first != true || !context.mounted) return;
+
+    // 2. potvrzení: napsat SMAZAT
+    final ctrl = TextEditingController();
+    final second = await showDialog<bool>(
+      context: context,
+      builder: (d) => StatefulBuilder(
+        builder: (d, setState) {
+          final ok = ctrl.text.trim().toUpperCase() == 'SMAZAT';
+          return AlertDialog(
+            title: const Text('Opravdu smazat?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Pro potvrzení napiš slovo SMAZAT.'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: ctrl,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'SMAZAT',
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(d, false),
+                child: const Text('Zrušit'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: cs.error,
+                  foregroundColor: cs.onError,
+                ),
+                onPressed: ok ? () => Navigator.pop(d, true) : null,
+                child: const Text('Smazat navždy'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    ctrl.dispose();
+    if (second != true || !context.mounted) return;
+
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final messenger = ScaffoldMessenger.of(context);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.4),
+              ),
+              SizedBox(width: 16),
+              Expanded(child: Text('Mažu data…')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await ClientDataDeletionService.deleteAll();
+      rootNavigator.pop();
+      ref.invalidate(userProfileProvider);
+      if (context.mounted) await switchToRoleSelect(context, ref);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Všechna tvoje data byla smazána.')),
+      );
+    } catch (e) {
+      rootNavigator.pop();
+      messenger.showSnackBar(
+        SnackBar(content: Text('Smazání se nepodařilo dokončit: $e')),
+      );
+    }
   }
 
   @override
@@ -103,6 +249,23 @@ class ProfileHubScreen extends ConsumerWidget {
             ),
           ),
           const AboutAppTile(),
+          const SizedBox(height: 16),
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.delete_forever_outlined,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(
+                'Smazat moje data',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              subtitle: const Text(
+                'Profil, záznamy, data z hodinek a propojení s trenérem',
+              ),
+              onTap: () => _deleteMyData(context, ref),
+            ),
+          ),
           const AuthorFooter(),
         ],
       ),
