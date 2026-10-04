@@ -37,6 +37,10 @@ class _RoleSelectScreenState
     OnlineCoachingService.localClientLink().then((l) {
       if (mounted && l != null) setState(() => _linked = true);
     });
+    // Při prvním spuštění upozornění ke zdraví (jednou na zařízení).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) LegalInfo.showHealthOnce(context);
+    });
   }
 
   void _openPaywall(
@@ -471,4 +475,4 @@ class _RoleSelectScreenState
       ),
     );
   }
-}
+}

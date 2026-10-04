@@ -547,6 +547,12 @@ const helpArticles = <HelpArticle>[
           'režim skrytý.'),
       ('Cloud', 'Data jsou v cloudu Google Firebase, přístup mají jen '
           'přihlášený trenér a jeho propojený klient.'),
+      ('Zásady ochrany osobních údajů', 'Nastavení (trenér) nebo Profil '
+          '(klient) → Zásady ochrany osobních údajů. Otevře se stránka '
+          'ludektrener.cz s tím, jaká data aplikace zpracovává a proč.'),
+      ('Upozornění ke zdraví', 'Aplikace nenahrazuje lékaře – tréninky '
+          'a jídelníčky jsou obecné informace. Upozornění se ukáže při '
+          'prvním spuštění a najdeš ho i v Nastavení / Profilu.'),
       ('Víc trenérů na jednom zařízení', 'Každý trenér má vlastní klienty, '
           'kalendář, permanentky, platby, jídelníčky, videa, údaje a logo '
           'na PDF i barvu a motiv aplikace. Po přihlášení jiného trenéra se '
