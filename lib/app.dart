@@ -13,6 +13,8 @@ import 'features/home/user_shell.dart';
 import 'features/onboarding/onboarding_profile_screen.dart';
 import 'features/paywall/paywall_screen.dart';
 import 'features/role/role_select_screen.dart';
+import 'features/spal/spal_screen.dart';
+import 'features/spal/spal_service.dart';
 import 'providers/coach/app_role_provider.dart';
 import 'providers/coach/coach_auth_provider.dart';
 import 'providers/coach/coach_circumference_controller.dart';
@@ -458,6 +460,9 @@ class RoleGate extends ConsumerWidget {
     }
 
     if (role == null) {
+      // Člen fitka propojený se SPAL, který si nevybral režim → rovnou QR pro vstup
+      final spal = ref.watch(spalPrihlasenProvider).valueOrNull ?? SpalService.prihlasen;
+      if (spal) return const SpalScreen(samostatne: true);
       return const RoleSelectScreen();
     }
 
@@ -860,4 +865,4 @@ class _RetryableErrorCard extends ConsumerWidget {
       ),
     );
    }
-  }
+  }

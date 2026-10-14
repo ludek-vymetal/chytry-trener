@@ -12,6 +12,7 @@ import '../onboarding/onboarding_goal_screen.dart';
 import '../coaching/coaching_widgets.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/client_data_deletion_service.dart';
+import '../spal/spal_screen.dart';
 
 /// Profil: cíl, jazyk, vzhled a změna režimu.
 class ProfileHubScreen extends ConsumerWidget {
@@ -212,6 +213,7 @@ class ProfileHubScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           const ClientCoachCard(),
+          const SpalProfilKarta(),
           Card(
             child: ListTile(
               leading: const Icon(Icons.flag_outlined),

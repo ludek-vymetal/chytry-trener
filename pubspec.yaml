@@ -35,6 +35,9 @@ dependencies:
   url_launcher: ^6.3.1
   # 13.3.2 vyžaduje novější win32 než share_plus 10 – zatím pevně 13.3.1
   health: 13.3.1
+  # SPAL Strength Gym – vstup přes QR, permanentky, členství
+  supabase_flutter: ^2.8.0
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

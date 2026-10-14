@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'firebase_options.dart';
 import 'app.dart';
+import 'features/spal/spal_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,9 +36,12 @@ Future<void> main() async {
     rethrow;
   }
 
+  // SPAL Strength Gym (Supabase) – chyba nesmí zastavit aplikaci
+  await SpalService.init();
+
   runApp(
     const ProviderScope(
       child: MyApp(),
     ),
   );
-}
+}

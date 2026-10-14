@@ -11,6 +11,7 @@ import '../../providers/user_profile_provider.dart';
 import '../../providers/locale_provider.dart';
 
 import '../paywall/paywall_screen.dart';
+import '../spal/spal_screen.dart';
 import '../coaching/coaching_widgets.dart';
 import '../../services/coach/online_coaching_service.dart';
 
@@ -432,6 +433,24 @@ class _RoleSelectScreenState
                                     ),
                           ),
                         ),
+
+                        const SizedBox(height: 10),
+
+                        // Člen fitka SPAL – jen vstup přes QR, permanentky, členství
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.qr_code_2),
+                            label: const Text('Jsem člen fitka SPAL'),
+                            onPressed: _switching
+                                ? null
+                                : () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const SpalScreen(),
+                                      ),
+                                    ),
+                          ),
+                        ),
                         ],
 
                         const SizedBox(height: 12),
@@ -475,4 +494,4 @@ class _RoleSelectScreenState
       ),
     );
   }
-}
+}

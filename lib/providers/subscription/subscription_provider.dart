@@ -68,7 +68,7 @@ class SubscriptionController extends AsyncNotifier<SubscriptionStatus> {
   static const _keySimulateFree = 'sub_debug_simulate_free';
 
   /// Délka zkušební doby zdarma s plnou verzí.
-  static const int trialDays = 14;
+  static const int trialDays = 7;
 
   /// Placená verze zapnutá?
   ///
