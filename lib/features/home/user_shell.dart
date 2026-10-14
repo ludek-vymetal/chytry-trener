@@ -11,10 +11,9 @@ import 'profile_hub_screen.dart';
 import 'progress_hub_screen.dart';
 import '../coaching/workout_widgets.dart';
 import '../spal/spal_screen.dart';
-import '../spal/spal_service.dart';
 
 /// Hlavní obrazovka klienta: Dnes · Jídlo · Trénink · Pokrok · Profil
-/// (+ Fitko, když je účet propojený se SPAL Strength Gym).
+/// · SPAL (fitko SPAL Strength Gym – otevře se přes celou obrazovku).
 /// Na mobilu spodní lišta, na tabletu a počítači boční.
 class UserShell extends ConsumerWidget {
   const UserShell({super.key});
@@ -24,10 +23,7 @@ class UserShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final spal = ref.watch(spalPrihlasenProvider).valueOrNull ?? SpalService.prihlasen;
-    final pocet = spal ? 6 : 5;
     final index = ref.watch(userTabProvider).clamp(0, 4).toInt();
-    assert(pocet >= 5);
     // Klient s trenérem vidí jen tréninky, které mu trenér poslal.
     final linked = ref.watch(clientLinkProvider).valueOrNull != null;
     final pages = <Widget>[
@@ -36,13 +32,13 @@ class UserShell extends ConsumerWidget {
       linked ? const ClientWorkoutsScreen() : const TrainingOverviewScreen(),
       const ProgressHubScreen(),
       const ProfileHubScreen(),
-      if (spal) const SizedBox.shrink(), // Fitko se otevírá přes celou obrazovku
+      const SizedBox.shrink(), // SPAL se otevírá přes celou obrazovku
     ];
 
     return AdaptiveShell(
       index: index,
       onSelect: (i) {
-        if (spal && i == 5) {
+        if (i == 5) {
           // fitko má vlastní spodní lištu (jako Clubspire) → přes celou obrazovku
           Navigator.push(context, MaterialPageRoute(builder: (_) => const SpalScreen()));
           return;
@@ -59,7 +55,7 @@ class UserShell extends ConsumerWidget {
             l10n.navTraining),
         ShellDestination(Icons.show_chart, Icons.show_chart, l10n.navProgress),
         ShellDestination(Icons.person_outline, Icons.person, l10n.navProfile),
-        if (spal) const ShellDestination(Icons.qr_code_2, Icons.qr_code_2, 'Fitko'),
+        const ShellDestination(Icons.qr_code_2, Icons.qr_code_2, 'SPAL'),
       ],
     );
   }
