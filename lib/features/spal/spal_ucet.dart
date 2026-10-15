@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'spal_menu.dart';
+import 'spal_platba.dart';
 import 'spal_screen.dart';
 import 'spal_service.dart';
 import 'spal_styl.dart';
@@ -129,7 +130,8 @@ class _Depozit extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pohyby = (u['depozit_pohyby'] as List?) ?? const [];
-    return ListView(children: [
+    return Column(children: [
+      Expanded(child: ListView(children: [
       const SizedBox(height: 16),
       const Text('Aktuální stav depozitu',
           textAlign: TextAlign.center, style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
@@ -174,7 +176,14 @@ class _Depozit extends StatelessWidget {
         ),
       if (pohyby.isEmpty)
         const Padding(padding: EdgeInsets.all(20), child: Text('Zatím žádné pohyby na depozitu.')),
-      const SizedBox(height: 90),
+      const SizedBox(height: 16),
+      ])),
+      SpalSpodniTlacitko(
+        text: 'Dobít depozit',
+        ikona: Icons.account_balance_wallet_outlined,
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KoupitDepozit())),
+      ),
+      const SizedBox(height: 72), // místo pro spodní lištu s „+“
     ]);
   }
 }
@@ -247,16 +256,17 @@ class _Radek extends StatelessWidget {
 // Koupit členství / permanentku / voucher
 // ---------------------------------------------------------------------
 
-const _brzyGoPay = 'Platba kartou v aplikaci (GoPay) bude spuštěna brzy. '
-    'Zatím si členství nebo permanentku kup na recepci.';
-
-class _Nakup extends StatelessWidget {
-  const _Nakup({required this.titulek, required this.deti});
+/// Spodek nákupní obrazovky: souhlas + ZAPLATIT KARTOU (GoPay – karta, Apple Pay, Google Pay).
+class _Nakup extends ConsumerWidget {
+  const _Nakup({required this.titulek, required this.deti, required this.nakup});
   final String titulek;
   final List<Widget> deti;
 
+  /// Co se kupuje (pro server), null = ještě není vybráno.
+  final Map<String, dynamic>? nakup;
+
   @override
-  Widget build(BuildContext context) => Theme(
+  Widget build(BuildContext context, WidgetRef ref) => Theme(
         data: spalTema(context),
         child: Scaffold(
           appBar: AppBar(title: Text(titulek)),
@@ -272,12 +282,18 @@ class _Nakup extends StatelessWidget {
                 foregroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(52),
               ),
-              onPressed: null,
+              onPressed: nakup == null
+                  ? null
+                  : () async {
+                      final ok = await spalZaplatit(context, ref, nakup!);
+                      if (ok && context.mounted) Navigator.pop(context);
+                    },
               icon: const Icon(Icons.credit_card),
               label: const Text('ZAPLATIT KARTOU'),
             ),
             const SizedBox(height: 10),
-            const Text(_brzyGoPay, style: TextStyle(color: Colors.grey)),
+            const Text('Platba kartou, Apple Pay nebo Google Pay přes zabezpečenou bránu GoPay.',
+                style: TextStyle(color: Colors.grey)),
           ]),
         ),
       );
@@ -336,7 +352,10 @@ class _KoupitPermanentkuState extends ConsumerState<KoupitPermanentku> {
             for (final p in (snap.data?['permanentky'] as List?) ?? const []) Map<String, dynamic>.from(p as Map)
           ];
           final p = seznam.where((x) => x['id'] == _vybrana).firstOrNull ?? (seznam.isEmpty ? null : seznam.first);
-          return _Nakup(titulek: 'Koupit permanentku', deti: [
+          return _Nakup(
+              titulek: 'Koupit permanentku',
+              nakup: p == null ? null : {'druh': 'permanentka', 'typ_id': p['id']},
+              deti: [
             if (snap.hasError) Text(SpalService.chyba(snap.error!)),
             if (!snap.hasData && !snap.hasError) const LinearProgressIndicator(color: spalZluta),
             if (snap.hasData && seznam.isEmpty) const Text('Teď není v nabídce žádná permanentka.'),
@@ -382,7 +401,16 @@ class _KoupitClenstviState extends ConsumerState<KoupitClenstvi> {
             for (final c in (snap.data?['clenstvi'] as List?) ?? const []) Map<String, dynamic>.from(c as Map)
           ];
           final c = seznam.where((x) => x['id'] == _vybrane).firstOrNull ?? (seznam.isEmpty ? null : seznam.first);
-          return _Nakup(titulek: 'Koupit členství', deti: [
+          return _Nakup(
+              titulek: 'Koupit členství',
+              nakup: c == null
+                  ? null
+                  : {
+                      'druh': 'clenstvi',
+                      'typ_id': c['id'],
+                      'od': '${_od.year}-${_od.month.toString().padLeft(2, '0')}-${_od.day.toString().padLeft(2, '0')}',
+                    },
+              deti: [
             if (snap.hasError) Text(SpalService.chyba(snap.error!)),
             if (!snap.hasData && !snap.hasError) const LinearProgressIndicator(color: spalZluta),
             if (snap.hasData && seznam.isEmpty) const Text('Teď není v nabídce žádné členství.'),
@@ -435,7 +463,10 @@ class _KoupitVoucherState extends State<KoupitVoucher> {
   int _castka = 500;
 
   @override
-  Widget build(BuildContext context) => _Nakup(titulek: 'Koupit voucher', deti: [
+  Widget build(BuildContext context) => _Nakup(
+          titulek: 'Koupit voucher',
+          nakup: {'druh': 'voucher', 'castka': _castka},
+          deti: [
         _vyber<int>(
           popis: 'Voucher na částku',
           hodnota: _castka,
@@ -447,6 +478,36 @@ class _KoupitVoucherState extends State<KoupitVoucher> {
         _udaj('Platnost', '6 měsíců'),
         _udaj('Cena', spalKc(_castka), zlute: true),
         const SizedBox(height: 8),
-        const Text('Dárkový poukaz ti přijde e-mailem jako PDF k vytištění.', style: TextStyle(color: Colors.grey)),
+        const Text('Voucher najdeš v Můj účet → Vouchery, s číslem pro uplatnění na recepci.',
+            style: TextStyle(color: Colors.grey)),
+      ]);
+}
+
+class KoupitDepozit extends StatefulWidget {
+  const KoupitDepozit({super.key});
+  @override
+  State<KoupitDepozit> createState() => _KoupitDepozitState();
+}
+
+class _KoupitDepozitState extends State<KoupitDepozit> {
+  int _castka = 1000;
+
+  @override
+  Widget build(BuildContext context) => _Nakup(
+          titulek: 'Dobít depozit',
+          nakup: {'druh': 'depozit', 'castka': _castka},
+          deti: [
+        _vyber<int>(
+          popis: 'Dobít o',
+          hodnota: _castka,
+          moznosti: const [500, 1000, 2000, 3000, 5000],
+          text: (x) => spalKc(x),
+          onChanged: (x) => setState(() => _castka = x ?? 1000),
+        ),
+        const SizedBox(height: 10),
+        _udaj('Cena', spalKc(_castka), zlute: true),
+        const SizedBox(height: 8),
+        const Text('Z depozitu se platí na recepci i vstup čtečkou, když nemáš permanentku.',
+            style: TextStyle(color: Colors.grey)),
       ]);
 }

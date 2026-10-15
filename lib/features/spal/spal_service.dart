@@ -75,12 +75,34 @@ class SpalService {
     return (kod: r['kod'] as String, platiDo: DateTime.parse(r['plati_do'] as String).toLocal());
   }
 
+  /// Online nákup: server spočítá cenu a založí platbu u GoPay → odkaz na platební bránu.
+  static Future<({int id, String url, bool testovaci})> zalozitPlatbu(Map<String, dynamic> nakup) async {
+    final n = _m(await db.rpc('muj_nakup', params: {'p': nakup}));
+    final id = (n['id'] as num).toInt();
+    final r = await db.functions.invoke('gopay', body: {'akce': 'zaplatit', 'platba_id': id});
+    final d = r.data;
+    if (d is Map && d['gw_url'] is String) {
+      return (id: id, url: d['gw_url'] as String, testovaci: d['testovaci'] == true);
+    }
+    throw Exception(d is Map ? '${d['chyba'] ?? 'Platbu se nepodařilo založit'}' : 'Platbu se nepodařilo založit');
+  }
+
+  /// nova / zaplacena / zrusena
+  static Future<String> stavPlatby(int id) async =>
+      '${_m(await db.rpc('muj_platba', params: {'p_id': id}))['stav']}';
+
   /// Srozumitelná chyba ze serveru.
-  static String chyba(Object e) => e is PostgrestException
-      ? e.message
-      : e is AuthException
-          ? e.message
-          : 'Něco se nepovedlo – zkontroluj připojení k internetu.';
+  static String chyba(Object e) {
+    if (e is PostgrestException) return e.message;
+    if (e is AuthException) return e.message;
+    if (e is FunctionException) {
+      final d = e.details;
+      if (d is Map && d['chyba'] != null) return '${d['chyba']}';
+      return 'Platbu se nepodařilo založit, zkus to prosím znovu.';
+    }
+    if (e is Exception && e.toString().startsWith('Exception: ')) return e.toString().substring(11);
+    return 'Něco se nepovedlo – zkontroluj připojení k internetu.';
+  }
 }
 
 /// Je přihlášený účet SPAL? (mění se při přihlášení/odhlášení)
