@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../providers/coach/app_role_provider.dart';
 import '../role/role_select_screen.dart';
 import 'spal_menu.dart';
 import 'spal_rezervace.dart';
@@ -40,10 +41,19 @@ class SpalScreen extends ConsumerWidget {
 }
 
 /// Výběr režimu Chytrého trenéra z menu fitka (trénink, jídelníček…).
-void otevritChytrehoTrenera(BuildContext context) => Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-    );
+/// Z úvodní stránky SPAL dál do Chytrého trenéra (jen v této relaci – při
+/// dalším spuštění aplikace se zase začíná stránkou SPAL).
+final spalDalProvider = StateProvider<bool>((_) => false);
+
+void otevritChytrehoTrenera(BuildContext context) {
+  final c = ProviderScope.containerOf(context, listen: false);
+  final maRezim = c.read(appRoleProvider) != null;
+  // nastavit hned – po výběru režimu se aplikace přestaví a nesmí skočit zpět na SPAL
+  c.read(spalDalProvider.notifier).state = true; // RoleGate přepne na trenéra / uživatele
+  if (!maRezim) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const RoleSelectScreen()));
+  }
+}
 
 // ---------------------------------------------------------------------
 // Hlavní rozložení se spodní lištou
@@ -64,7 +74,7 @@ class _SpalDomovState extends ConsumerState<SpalDomov> {
   @override
   Widget build(BuildContext context) {
     final stranky = [
-      SpalPrehled(onUcet: () => prepnout(2)),
+      SpalPrehled(onUcet: () => prepnout(2), samostatne: widget.samostatne),
       const SpalMojeRezervace(),
       const SpalUcet(),
       SpalMenu(samostatne: widget.samostatne),
@@ -76,8 +86,11 @@ class _SpalDomovState extends ConsumerState<SpalDomov> {
         child: InkWell(
           onTap: () => prepnout(i),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(ikona, color: barva, size: 30),
-            Text(text, style: TextStyle(color: barva, fontWeight: FontWeight.w700, fontSize: 13)),
+            Icon(ikona, color: barva, size: 26),
+            Text(text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: barva, fontWeight: FontWeight.w700, fontSize: 12)),
           ]),
         ),
       );
@@ -122,8 +135,9 @@ class _SpalDomovState extends ConsumerState<SpalDomov> {
 // ---------------------------------------------------------------------
 
 class SpalPrehled extends ConsumerWidget {
-  const SpalPrehled({super.key, required this.onUcet});
+  const SpalPrehled({super.key, required this.onUcet, this.samostatne = false});
   final VoidCallback onUcet;
+  final bool samostatne;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -149,13 +163,13 @@ class SpalPrehled extends ConsumerWidget {
               borderRadius: BorderRadius.circular(10),
               onTap: onTap,
               child: SizedBox(
-                height: 58,
+                height: 50,
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(ikona, color: hlavni ? spalCerna : spalZluta, size: 30),
-                  const SizedBox(width: 18),
+                  Icon(ikona, color: hlavni ? spalCerna : spalZluta, size: 26),
+                  const SizedBox(width: 14),
                   Text(text,
                       style: TextStyle(
-                          color: hlavni ? spalCerna : spalZluta, fontSize: 21, fontWeight: FontWeight.w800)),
+                          color: hlavni ? spalCerna : spalZluta, fontSize: 18, fontWeight: FontWeight.w800)),
                 ]),
               ),
             ),
@@ -199,12 +213,15 @@ class SpalPrehled extends ConsumerWidget {
               onTap: onUcet,
               child: Column(children: [
                 Text(spalKc(depozit),
-                    style: const TextStyle(color: Colors.white, fontSize: 52, fontWeight: FontWeight.w900)),
+                    style: const TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w900)),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const Icon(Icons.account_balance_wallet_outlined, color: Colors.white),
                   const SizedBox(width: 8),
-                  Text('Depozit • ${depozitDo == null ? 'platný neomezeně' : 'platný do ${spalDatum(depozitDo)}'}',
-                      style: const TextStyle(color: Colors.white, fontSize: 18)),
+                  Flexible(
+                    child: Text(
+                        'Depozit • ${depozitDo == null ? 'platný neomezeně' : 'platný do ${spalDatum(depozitDo)}'}',
+                        style: const TextStyle(color: Colors.white, fontSize: 15)),
+                  ),
                 ]),
               ]),
             ),
@@ -226,11 +243,11 @@ class SpalPrehled extends ConsumerWidget {
                 const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(Icons.event, color: Colors.white, size: 30),
                   SizedBox(width: 10),
-                  Text('Rezervace', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
+                  Text('Rezervace', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
                 ]),
                 const SizedBox(height: 20),
                 if (nadchazejici.isEmpty)
-                  const Text('Nemáte žádné rezervace', style: TextStyle(color: Colors.white, fontSize: 19))
+                  const Text('Nemáte žádné rezervace', style: TextStyle(color: Colors.white, fontSize: 16))
                 else
                   for (final r in nadchazejici.take(3))
                     Padding(
@@ -238,11 +255,26 @@ class SpalPrehled extends ConsumerWidget {
                       child: Text(
                         '${_den(r['zacatek'])} ${spalCas(DateTime.parse(r['zacatek'] as String).toLocal())} · ${r['nazev']}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                     ),
               ]),
             ),
+            if (samostatne)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white54),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () => otevritChytrehoTrenera(context),
+                  icon: const Icon(Icons.fitness_center),
+                  label: const Text('Chytrý trenér – tréninky a jídelníček  →',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                ),
+              ),
           ]),
         ),
         // plovoucí QR kód (jako v Clubspire)
@@ -253,12 +285,12 @@ class SpalPrehled extends ConsumerWidget {
             style: FilledButton.styleFrom(
               backgroundColor: spalZluta,
               foregroundColor: spalCerna,
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => otevritQr(context),
-            icon: const Icon(Icons.qr_code_2, size: 32),
-            label: const Text('QR kód', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+            icon: const Icon(Icons.qr_code_2, size: 26),
+            label: const Text('QR kód', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
           ),
         ),
       ]),

@@ -18,7 +18,7 @@ ThemeData spalTema(BuildContext context) {
       backgroundColor: spalTmava,
       foregroundColor: Colors.white,
       centerTitle: true,
-      titleTextStyle: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+      titleTextStyle: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white),
     ),
     tabBarTheme: const TabBarThemeData(
       labelColor: Colors.white,
@@ -50,12 +50,12 @@ class SpalSpodniTlacitko extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: SizedBox(
-              height: 60,
+              height: 54,
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(ikona, color: Colors.white, size: 28),
+                Icon(ikona, color: Colors.white, size: 24),
                 const SizedBox(width: 14),
                 Text(text,
-                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+                    style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800)),
               ]),
             ),
           ),
@@ -71,7 +71,7 @@ class SpalNadpis extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 0, 6),
         child: Text(text,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.grey.shade600)),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.grey.shade600)),
       );
 }
 

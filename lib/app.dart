@@ -86,9 +86,11 @@ class MyApp extends ConsumerWidget {
       darkTheme: AppTheme.build(Brightness.dark, accent),
 
       builder: (context, child) {
+        // velké písmo v nastavení telefonu nesmí rozbít rozložení (max. +15 %)
+        child = MediaQuery.withClampedTextScaling(maxScaleFactor: 1.15, child: child ?? const SizedBox.shrink());
         return ActiveClientProfileSync(
           child: CoachingSyncListener(
-            child: child ?? const SizedBox.shrink(),
+            child: child,
           ),
         );
       },
@@ -465,6 +467,11 @@ class RoleGate extends ConsumerWidget {
       if (spal) return const SpalScreen(samostatne: true);
       return const RoleSelectScreen();
     }
+
+    // Člen fitka propojený se SPAL: nejdřív stránka SPAL, do Chytrého trenéra
+    // pokračuje tlačítkem „Chytrý trenér“ (Přehled nebo Menu).
+    final spalClen = ref.watch(spalPrihlasenProvider).valueOrNull ?? SpalService.prihlasen;
+    if (spalClen && !ref.watch(spalDalProvider)) return const SpalScreen(samostatne: true);
 
     final subscriptionAsync = ref.watch(subscriptionProvider);
     final profile = ref.watch(userProfileProvider);

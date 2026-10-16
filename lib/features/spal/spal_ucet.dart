@@ -134,7 +134,7 @@ class _Depozit extends StatelessWidget {
       Expanded(child: ListView(children: [
       const SizedBox(height: 16),
       const Text('Aktuální stav depozitu',
-          textAlign: TextAlign.center, style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
       const SizedBox(height: 12),
       Center(
         child: Container(
@@ -143,7 +143,7 @@ class _Depozit extends StatelessWidget {
           color: const Color(0xFF2ECC40),
           child: Text(spalKc(u['depozit_kc']),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+              style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
         ),
       ),
       const SizedBox(height: 10),
@@ -307,14 +307,14 @@ Widget _vyber<T>({
   required ValueChanged<T?> onChanged,
 }) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(popis, style: const TextStyle(color: spalZluta, fontSize: 21, fontWeight: FontWeight.w800)),
+      Text(popis, style: const TextStyle(color: spalZluta, fontSize: 18, fontWeight: FontWeight.w800)),
       DropdownButton<T>(
         value: hodnota,
         isExpanded: true,
         iconEnabledColor: spalZluta,
         iconSize: 36,
         underline: Container(height: 2, color: spalZluta),
-        style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: spalCerna),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: spalCerna),
         items: [for (final m in moznosti) DropdownMenuItem(value: m, child: Text(text(m)))],
         onChanged: onChanged,
       ),
@@ -322,9 +322,14 @@ Widget _vyber<T>({
 
 Widget _udaj(String a, String b, {bool zlute = false}) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(children: [
-        Expanded(child: Text(a, style: const TextStyle(fontSize: 19))),
-        Text(b, style: TextStyle(fontSize: 19, color: zlute ? spalZluta : spalCerna)),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(a, style: const TextStyle(fontSize: 16)),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(b,
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 16, color: zlute ? spalZluta : spalCerna, fontWeight: FontWeight.w600)),
+        ),
       ]),
     );
 
@@ -373,8 +378,8 @@ class _KoupitPermanentkuState extends ConsumerState<KoupitPermanentku> {
               if (p['druh'] == 'vstupova') _udaj('Obsahuje', '${p['pocet_vstupu']}× vstup do posilovny'),
               if (p['popis'] != null) Text('${p['popis']}', style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 24),
-              const Text('Platná od', style: TextStyle(color: spalZluta, fontSize: 20)),
-              Text(spalDatum(DateTime.now()), style: const TextStyle(fontSize: 21)),
+              const Text('Platná od', style: TextStyle(color: spalZluta, fontSize: 17)),
+              Text(spalDatum(DateTime.now()), style: const TextStyle(fontSize: 18)),
               Container(height: 2, color: spalZluta),
             ],
           ]);
@@ -423,14 +428,14 @@ class _KoupitClenstviState extends ConsumerState<KoupitClenstvi> {
                 onChanged: (id) => setState(() => _vybrane = id),
               ),
               const SizedBox(height: 16),
-              const Text('Typ členství', style: TextStyle(color: spalZluta, fontSize: 21, fontWeight: FontWeight.w800)),
-              Text('${c['delka_mesicu']} měsíc(ů)', style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+              const Text('Typ členství', style: TextStyle(color: spalZluta, fontSize: 18, fontWeight: FontWeight.w800)),
+              Text('${c['delka_mesicu']} měsíc(ů)', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               Container(height: 2, color: spalZluta),
               const SizedBox(height: 10),
               _udaj('cena', spalKc(c['cena_kc']), zlute: true),
               if (c['popis'] != null) Text('${c['popis']}', style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 24),
-              const Text('Platné od', style: TextStyle(color: spalZluta, fontSize: 20)),
+              const Text('Platné od', style: TextStyle(color: spalZluta, fontSize: 17)),
               InkWell(
                 onTap: () async {
                   final d = await showDatePicker(
@@ -443,7 +448,7 @@ class _KoupitClenstviState extends ConsumerState<KoupitClenstvi> {
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(spalDatum(_od), style: const TextStyle(fontSize: 21)),
+                  child: Text(spalDatum(_od), style: const TextStyle(fontSize: 18)),
                 ),
               ),
               Container(height: 2, color: spalZluta),

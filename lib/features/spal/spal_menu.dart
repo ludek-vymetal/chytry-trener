@@ -75,6 +75,7 @@ class SpalMenu extends ConsumerWidget {
           padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text('Informace', style: TextStyle(color: spalZluta, fontSize: 17, fontWeight: FontWeight.w600)),
         ),
+        polozka(Icons.help_outline, 'Nápověda', () => jdi(const SpalNapoveda())),
         polozka(Icons.mail_outline, 'Kontakt', () => jdi(const SpalKontakt())),
         polozka(Icons.lock_outline, 'Obchodní podmínky a soukromí', () {
           final web = info?['web'] as String?;
@@ -250,4 +251,89 @@ class SpalProfil extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Nápověda pro členy fitka – jak se dostat dovnitř, rezervace, nákupy.
+class SpalNapoveda extends StatelessWidget {
+  const SpalNapoveda({super.key});
+
+  static const _temata = <(IconData, String, String)>[
+    (
+      Icons.qr_code_2,
+      'Jak se dostanu do fitka',
+      'Na úvodní obrazovce SPAL klepni na žluté tlačítko „QR kód“ a přilož telefon displejem ke čtečce '
+          'u dveří. Kód platí jen chvilku a sám se obnovuje, takže snímek obrazovky nefunguje – vždy otevři '
+          'aplikaci. Čtečka tě pustí, když máš platné členství nebo permanentku (u permanentky se odečte vstup). '
+          'Fungují i čip a klíčenka jako dosud.',
+    ),
+    (
+      Icons.login,
+      'Přihlášení',
+      'Přístup ti založí recepce – stačí jim říct e-mail. Přihlašuješ se v Chytrém trenérovi v sekci SPAL '
+          '(„Jsem člen fitka SPAL“) e-mailem a heslem. Zapomenuté heslo obnovíš na přihlašovací obrazovce, '
+          'heslo si změníš v Menu → Můj profil.',
+    ),
+    (
+      Icons.event_available,
+      'Rezervace tréninku nebo masáže',
+      'Klepni na „+“ uprostřed dole nebo na „Nová rezervace“. Vyber aktivitu, trenéra a den – ukážou se volné '
+          'časy. Rezervovat jde nejpozději 8 hodin předem a nejvýš 30 dní dopředu. Cena se ti připíše na účet '
+          'a zaplatíš ji na recepci.',
+    ),
+    (
+      Icons.event_busy,
+      'Zrušení rezervace',
+      'Rezervace → Moje rezervace → Zrušit. V aplikaci jde zrušit nejpozději 24 hodin předem. '
+          'Později už jen telefonicky nebo na recepci.',
+    ),
+    (
+      Icons.credit_card,
+      'Nákup permanentky, členství a voucheru',
+      'Na Přehledu nebo v Účtu vyber, co chceš koupit, a klepni na „ZAPLATIT KARTOU“. Otevře se zabezpečená '
+          'platební brána GoPay (karta, Apple Pay, Google Pay). Po zaplacení se vrať do aplikace – nákup se ti '
+          'během pár vteřin objeví v Můj účet. Permanentka platí ode dne nákupu, u členství si zvolíš začátek.',
+    ),
+    (
+      Icons.account_balance_wallet_outlined,
+      'Depozit (kredit)',
+      'Depozit je předplacený kredit. Dobiješ ho v Účet → Depozit → „Dobít depozit“ nebo na recepci. '
+          'Platíš z něj na baru i za vstup, když nemáš permanentku. Platí 1 rok od posledního dobití.',
+    ),
+    (
+      Icons.card_giftcard,
+      'Vouchery',
+      'Koupený voucher najdeš v Účet → Vouchery i s číslem. Uplatníš ho na recepci (číslo nebo čárový kód). '
+          'Platí 6 měsíců.',
+    ),
+    (
+      Icons.notifications_none,
+      'Oznámení',
+      'Zvonek na Přehledu ukazuje novinky z fitka (změny otevírací doby, pravidla rezervací…).',
+    ),
+    (
+      Icons.help_outline,
+      'Něco nefunguje?',
+      'Zkontroluj připojení k internetu a aplikaci zavři a znovu otevři. Když čtečka QR kód nepřečte, '
+          'zesvětli displej a podrž telefon chvilku v klidu. Jinak nám zavolej nebo napiš – kontakt najdeš '
+          'v Menu → Kontakt.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => Theme(
+        data: spalTema(context),
+        child: Scaffold(
+          appBar: AppBar(title: const Text('Nápověda')),
+          body: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
+            for (final (ikona, nadpis, text) in _temata)
+              ExpansionTile(
+                leading: Icon(ikona, color: spalZluta, size: 28),
+                title: Text(nadpis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                children: [Text(text, style: const TextStyle(fontSize: 16, height: 1.4))],
+              ),
+          ]),
+        ),
+      );
 }
