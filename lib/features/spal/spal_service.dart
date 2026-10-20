@@ -127,8 +127,34 @@ class SpalService {
   static Future<String> stavPlatby(int id) async =>
       '${_m(await db.rpc('muj_platba', params: {'p_id': id}))['stav']}';
 
+  /// Sešit chyb ve fitku (recepce: Nástroje → Sešit chyb). Jen když je zákazník přihlášený
+  /// do SPAL (bez přihlášení server zápis nepřijme). Nikdy nevyhodí chybu.
+  static final _hlaseno = <String, DateTime>{};
+  static Future<void> zapsatChybu(String zprava, {String? detail, String? kde}) async {
+    try {
+      if (!prihlasen) return;
+      final klic = '$kde|${zprava.length > 200 ? zprava.substring(0, 200) : zprava}';
+      final minule = _hlaseno[klic];
+      if (minule != null && DateTime.now().difference(minule).inSeconds < 30) return;
+      _hlaseno[klic] = DateTime.now();
+      if (_hlaseno.length > 200) _hlaseno.clear();
+      await db.rpc('chyba_zapsat', params: {
+        'p_zdroj': 'aplikace',
+        'p_zprava': zprava.length > 2000 ? zprava.substring(0, 2000) : zprava,
+        'p_detail': detail,
+        'p_kde': kde,
+        'p_verze': 'Chytrý trenér',
+        'p_zarizeni': kIsWeb ? 'web' : defaultTargetPlatform.name,
+      });
+    } catch (_) {}
+  }
+
   /// Srozumitelná chyba ze serveru.
   static String chyba(Object e) {
+    // hlášky pro zákazníka z databáze (P0001) nejsou chyby programu – ostatní do sešitu chyb
+    if (!(e is PostgrestException && e.code == 'P0001') && e is! AuthException) {
+      zapsatChybu(e.toString(), kde: 'SPAL v aplikaci', detail: StackTrace.current.toString());
+    }
     if (e is PostgrestException) return e.message;
     if (e is AuthException) return e.message;
     if (e is FunctionException) {

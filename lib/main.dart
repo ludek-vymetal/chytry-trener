@@ -1,3 +1,5 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +44,22 @@ Future<void> main() async {
 
   // SPAL Strength Gym (Supabase) – chyba nesmí zastavit aplikaci
   await SpalService.init();
+
+  // Nečekané chyby → sešit chyb ve fitku (jen když je přihlášený člen SPAL)
+  final puvodni = FlutterError.onError;
+  FlutterError.onError = (d) {
+    if (puvodni != null) {
+      puvodni(d);
+    } else {
+      FlutterError.presentError(d);
+    }
+    SpalService.zapsatChybu(d.exceptionAsString(),
+        detail: '${d.context?.toDescription() ?? ''}\n${d.stack ?? ''}', kde: d.library);
+  };
+  PlatformDispatcher.instance.onError = (e, st) {
+    SpalService.zapsatChybu(e.toString(), detail: st.toString(), kde: 'nezachycená chyba');
+    return false;
+  };
 
   runApp(
     const ProviderScope(
