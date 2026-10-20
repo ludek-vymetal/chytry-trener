@@ -524,9 +524,9 @@ class _SpalPrihlaseniState extends ConsumerState<SpalPrihlaseni> {
           decoration: const InputDecoration(labelText: 'Heslo'),
           onSubmitted: (_) => _prihlasit(),
         ),
-        if (_chyba != null) ...[
+        if ((_chyba ?? SpalService.proc) != null) ...[
           const SizedBox(height: 10),
-          Text(_chyba!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Text(_chyba ?? SpalService.proc!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ],
         const SizedBox(height: 20),
         FilledButton(

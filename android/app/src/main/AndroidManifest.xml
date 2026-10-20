@@ -43,6 +43,9 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="spalgym"/>
             </intent-filter>
+            <!-- Impeller (nové vykreslování) dělá na některých telefonech černou obrazovku
+                 po návratu do aplikace (např. z platební brány) → klasické vykreslování -->
+            <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false"/>
             <!-- odkaz jen přepne do aplikace, nemá otevírat žádnou obrazovku -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
             <!-- Health Connect: vysvětlení, k čemu aplikace data potřebuje -->

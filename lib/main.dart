@@ -17,9 +17,13 @@ Future<void> main() async {
   }
 
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    // Při návratu z platební brány může Android spustit aplikaci podruhé –
+    // Firebase už pak běží, znovu se nezakládá (jinak černá obrazovka).
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
 
     debugPrint('MAIN -> Firebase initialized');
 

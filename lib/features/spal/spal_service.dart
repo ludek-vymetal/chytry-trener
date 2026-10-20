@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,6 +17,14 @@ class SpalService {
     try {
       await Supabase.initialize(url: spalSupabaseUrl, anonKey: spalSupabaseKey);
       _hotovo = true;
+      Supabase.instance.client.auth.onAuthStateChange.listen((e) {
+        if (e.event == AuthChangeEvent.signedOut && !_odhlasujiSam && !_overuji) {
+          proc ??= 'Přihlášení ukončil server (${DateTime.now().toString().substring(11, 19)}). '
+              'Pošli prosím tuto zprávu správci.';
+        }
+      }, onError: (Object e) {
+        proc = 'Chyba přihlášení: $e';
+      });
     } catch (e) {
       debugPrint('SPAL init error: $e');
     }
@@ -22,24 +32,50 @@ class SpalService {
 
   static bool get dostupne => _hotovo;
   static SupabaseClient get db => Supabase.instance.client;
-  static bool get prihlasen => _hotovo && db.auth.currentSession != null;
+  /// Během ověřování po přihlášení se ještě nepřepíná obrazovka (jinak by při chybě
+  /// aplikace na okamžik skočila dovnitř a hned zpět na přihlášení bez vysvětlení).
+  static bool _overuji = false;
+  static final _zmena = StreamController<void>.broadcast();
+  static Stream<void> get zmena => _zmena.stream;
+  static bool get prihlasen => _hotovo && !_overuji && db.auth.currentSession != null;
+
+  /// Proč skončilo přihlášení (ukáže se na přihlašovací obrazovce). Pro hledání chyb.
+  static String? proc;
+  static bool _odhlasujiSam = false;
   static String? get email => _hotovo ? db.auth.currentUser?.email : null;
 
   static Future<void> prihlasit(String email, String heslo) async {
-    await db.auth.signInWithPassword(email: email.trim(), password: heslo);
-    // účet musí být propojený se zákazníkem (role klient)
+    _overuji = true;
+    proc = null;
     try {
-      await db.rpc('muj_spal');
-    } catch (_) {
-      await db.auth.signOut();
-      throw const AuthException(
-          'Tento účet není propojený se zákazníkem SPAL. Požádej o přístup na recepci.');
+      await db.auth.signInWithPassword(email: email.trim(), password: heslo);
+      // účet musí být propojený se zákazníkem (role klient)
+      try {
+        await db.rpc('muj_spal');
+      } catch (e) {
+        debugPrint('SPAL prihlaseni muj_spal -> $e');
+        await odhlasit();
+        final text = chyba(e);
+        throw AuthException(text.contains('propojen')
+            ? 'Tento účet není propojený se zákazníkem SPAL. Požádej o přístup na recepci.'
+            : 'Přihlášení se nepodařilo dokončit: $text');
+      }
+    } finally {
+      _overuji = false;
+      _zmena.add(null);
     }
   }
 
   static Future<void> zapomenuteHeslo(String email) => db.auth.resetPasswordForEmail(email.trim());
   static Future<void> zmenitHeslo(String heslo) => db.auth.updateUser(UserAttributes(password: heslo));
-  static Future<void> odhlasit() => db.auth.signOut();
+  static Future<void> odhlasit() async {
+    _odhlasujiSam = true;
+    try {
+      await db.auth.signOut();
+    } finally {
+      _odhlasujiSam = false;
+    }
+  }
 
   static Map<String, dynamic> _m(Object? v) => Map<String, dynamic>.from(v as Map);
   static List<Map<String, dynamic>> _l(Object? v) =>
@@ -106,15 +142,19 @@ class SpalService {
 }
 
 /// Je přihlášený účet SPAL? (mění se při přihlášení/odhlášení)
-final spalPrihlasenProvider = StreamProvider<bool>((ref) async* {
-  if (!SpalService.dostupne) {
-    yield false;
-    return;
-  }
-  yield SpalService.prihlasen;
-  await for (final _ in SpalService.db.auth.onAuthStateChange) {
-    yield SpalService.prihlasen;
-  }
+final spalPrihlasenProvider = StreamProvider<bool>((ref) {
+  if (!SpalService.dostupne) return Stream.value(false);
+  final c = StreamController<bool>();
+  c.add(SpalService.prihlasen);
+  final a = SpalService.db.auth.onAuthStateChange
+      .listen((_) => c.add(SpalService.prihlasen), onError: (_) {});
+  final b = SpalService.zmena.listen((_) => c.add(SpalService.prihlasen));
+  ref.onDispose(() {
+    a.cancel();
+    b.cancel();
+    c.close();
+  });
+  return c.stream.distinct();
 });
 
 final spalPrehledProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
