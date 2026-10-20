@@ -26,6 +26,19 @@
 	<string>SPAL načítá kroky, pohyb, spánek, tep, váhu a tréninky z hodinek, aby ti (a tvému trenérovi) ukázal tvou aktivitu.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>SPAL do aplikace Zdraví nic nezapisuje – data jen čte.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>cz.spal.chytrytrener.platba</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>spalgym</string>
+			</array>
+		</dict>
+	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>

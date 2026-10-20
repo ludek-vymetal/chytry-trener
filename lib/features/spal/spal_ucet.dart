@@ -495,24 +495,64 @@ class KoupitDepozit extends StatefulWidget {
 }
 
 class _KoupitDepozitState extends State<KoupitDepozit> {
-  int _castka = 1000;
+  static const _min = 100, _max = 20000; // stejné meze hlídá server (muj_nakup)
+  final _pole = TextEditingController(text: '1000');
+
+  int? get _castka {
+    final x = int.tryParse(_pole.text.replaceAll(RegExp(r'[\s.]'), ''));
+    return x != null && x >= _min && x <= _max ? x : null;
+  }
 
   @override
-  Widget build(BuildContext context) => _Nakup(
-          titulek: 'Dobít depozit',
-          nakup: {'druh': 'depozit', 'castka': _castka},
-          deti: [
-        _vyber<int>(
-          popis: 'Dobít o',
-          hodnota: _castka,
-          moznosti: const [500, 1000, 2000, 3000, 5000],
-          text: (x) => spalKc(x),
-          onChanged: (x) => setState(() => _castka = x ?? 1000),
-        ),
-        const SizedBox(height: 10),
-        _udaj('Cena', spalKc(_castka), zlute: true),
-        const SizedBox(height: 8),
-        const Text('Z depozitu se platí na recepci i vstup čtečkou, když nemáš permanentku.',
-            style: TextStyle(color: Colors.grey)),
-      ]);
+  void dispose() {
+    _pole.dispose();
+    super.dispose();
+  }
+
+  void _dat(int x) => setState(() {
+        _pole.text = '$x';
+        _pole.selection = TextSelection.collapsed(offset: _pole.text.length);
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    final castka = _castka;
+    return _Nakup(
+        titulek: 'Dobít depozit',
+        nakup: castka == null ? null : {'druh': 'depozit', 'castka': castka},
+        deti: [
+          const Text('Dobít o',
+              style: TextStyle(color: spalZluta, fontSize: 21, fontWeight: FontWeight.w800)),
+          TextField(
+            controller: _pole,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: spalCerna),
+            decoration: InputDecoration(
+              suffixText: 'Kč',
+              helperText: 'Libovolná částka od ${spalKc(_min)} do ${spalKc(_max)}',
+              errorText: _pole.text.isNotEmpty && castka == null
+                  ? 'Zadej celé Kč od ${spalKc(_min)} do ${spalKc(_max)}'
+                  : null,
+              enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: spalZluta, width: 2)),
+              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: spalZluta, width: 3)),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final m in const [500, 1000, 2000, 3000, 5000])
+              ChoiceChip(
+                label: Text(spalKc(m)),
+                selected: castka == m,
+                onSelected: (_) => _dat(m),
+              ),
+          ]),
+          const SizedBox(height: 10),
+          _udaj('Cena', castka == null ? '–' : spalKc(castka), zlute: true),
+          const SizedBox(height: 8),
+          const Text('Z depozitu se platí na recepci i vstup čtečkou, když nemáš permanentku.',
+              style: TextStyle(color: Colors.grey)),
+        ]);
+  }
 }
+

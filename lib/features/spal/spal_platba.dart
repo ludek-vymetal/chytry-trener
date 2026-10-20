@@ -44,8 +44,8 @@ Future<bool> spalZaplatit(BuildContext context, WidgetRef ref, Map<String, dynam
     messenger.showSnackBar(const SnackBar(content: Text('Zaplaceno, děkujeme! Najdeš to v Můj účet.')));
     return true;
   }
-  if (stav == 'zrusena') {
-    messenger.showSnackBar(const SnackBar(content: Text('Platba byla zrušena.')));
+  if (stav == 'zrusena' || stav == 'nedokoncena') {
+    messenger.showSnackBar(const SnackBar(content: Text('Platba nebyla dokončena – nic se nestrhlo.')));
   }
   return false;
 }
@@ -81,7 +81,7 @@ class _CekaniNaPlatbuState extends State<_CekaniNaPlatbu> with WidgetsBindingObs
     try {
       final s = await SpalService.stavPlatby(widget.id);
       if (!mounted) return;
-      if (s == 'zaplacena' || s == 'zrusena') {
+      if (s == 'zaplacena' || s == 'zrusena' || s == 'nedokoncena') {
         Navigator.pop(context, s);
       } else if (DateTime.now().difference(_start) > const Duration(minutes: 20)) {
         Navigator.pop(context, 'nova');

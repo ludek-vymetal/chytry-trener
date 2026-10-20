@@ -36,6 +36,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Návrat z platební brány GoPay: spalgym://platba otevře aplikaci -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="spalgym"/>
+            </intent-filter>
+            <!-- odkaz jen přepne do aplikace, nemá otevírat žádnou obrazovku -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
             <!-- Health Connect: vysvětlení, k čemu aplikace data potřebuje -->
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>

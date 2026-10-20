@@ -45,7 +45,8 @@ class BookingService {
       yield* q.snapshots().map(map);
       return;
     }
-    while (true) {
+    final kdo = _uid; // po odhlášení / přepnutí účtu přestaneme
+    while (_uid != null && _uid == kdo) {
       try {
         yield map(await q.get());
       } catch (e) {
@@ -71,7 +72,8 @@ class BookingService {
       yield* _doc(coachUid).snapshots().map(parse);
       return;
     }
-    while (true) {
+    final kdo = _uid; // po odhlášení / přepnutí účtu přestaneme
+    while (_uid != null && _uid == kdo) {
       try {
         yield parse(await _doc(coachUid).get());
       } catch (e) {
