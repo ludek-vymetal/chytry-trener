@@ -46,8 +46,26 @@ Future<void> main() async {
   await SpalService.init();
 
   // Nečekané chyby → sešit chyb ve fitku (jen když je přihlášený člen SPAL)
+  // Webová verze: chyby vypsat do konzole prohlížeče (F12) – debugPrint je v ostré verzi vypnutý
+  // a místo šedé obrazovky ukázat, co se stalo (ať to jde vyfotit a poslat).
+  if (kIsWeb) {
+    ErrorWidget.builder = (d) => Material(
+          color: Colors.white,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                  'Něco se pokazilo – pošli prosím tuto obrazovku správci:\n\n'
+                  '${d.exceptionAsString()}\n\n${d.stack.toString().split('\n').take(12).join('\n')}',
+                  style: const TextStyle(color: Colors.red, fontSize: 13)),
+            ),
+          ),
+        );
+  }
   final puvodni = FlutterError.onError;
   FlutterError.onError = (d) {
+    // ignore: avoid_print
+    if (kIsWeb) print('FLUTTER CHYBA: ${d.exceptionAsString()}\n${d.stack}');
     if (puvodni != null) {
       puvodni(d);
     } else {
@@ -57,6 +75,8 @@ Future<void> main() async {
         detail: '${d.context?.toDescription() ?? ''}\n${d.stack ?? ''}', kde: d.library);
   };
   PlatformDispatcher.instance.onError = (e, st) {
+    // ignore: avoid_print
+    if (kIsWeb) print('NEZACHYCENÁ CHYBA: $e\n$st');
     SpalService.zapsatChybu(e.toString(), detail: st.toString(), kde: 'nezachycená chyba');
     return false;
   };

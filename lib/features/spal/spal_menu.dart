@@ -9,6 +9,22 @@ import 'spal_service.dart';
 import 'spal_styl.dart';
 
 /// Menu (jako boční menu v Clubspire): profil, QR, novinky, kontakt, podmínky, odhlášení.
+/// Odhlášení z fitka (s potvrzením) – z Menu i z horní lišty Přehledu.
+Future<void> spalOdhlasitDotaz(BuildContext context) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: const Text('Odhlásit z fitka?'),
+      content: const Text('Znovu se přihlásíš e-mailem a heslem.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Zrušit')),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Odhlásit')),
+      ],
+    ),
+  );
+  if (ok == true) await SpalService.odhlasit();
+}
+
 class SpalMenu extends ConsumerWidget {
   const SpalMenu({super.key, required this.samostatne});
   final bool samostatne;
@@ -56,20 +72,7 @@ class SpalMenu extends ConsumerWidget {
               () => otevritChytrehoTrenera(context))
         else
           polozka(Icons.arrow_back, 'Zpět do Chytrého trenéra', () => Navigator.of(context).maybePop()),
-        polozka(Icons.power_settings_new, 'Odhlásit', () async {
-          final ok = await showDialog<bool>(
-            context: context,
-            builder: (c) => AlertDialog(
-              title: const Text('Odhlásit z fitka?'),
-              content: const Text('Znovu se přihlásíš e-mailem a heslem.'),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Zrušit')),
-                FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Odhlásit')),
-              ],
-            ),
-          );
-          if (ok == true) await SpalService.odhlasit();
-        }),
+        polozka(Icons.power_settings_new, 'Odhlásit', () => spalOdhlasitDotaz(context)),
         const Divider(),
         const Padding(
           padding: EdgeInsets.fromLTRB(16, 8, 16, 4),

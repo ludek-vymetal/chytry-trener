@@ -1,6 +1,8 @@
 import '../common/about_app.dart';
 import 'dart:io' show Platform, exit;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -248,7 +250,7 @@ class _RoleSelectScreenState
             },
           ),
 
-          if (Platform.isWindows)
+          if (!kIsWeb && Platform.isWindows)
             IconButton(
               tooltip: l10n.exitApp,
               icon: const Icon(Icons.close),

@@ -1,11 +1,11 @@
 {
-    "name": "dart_application_1",
-    "short_name": "dart_application_1",
-    "start_url": ".",
+    "name": "Chytrý trenér",
+    "short_name": "Chytrý trenér",
+    "start_url": "./",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "description": "Trénink, jídelníček a SPAL Strength Gym – vstupy, permanentky, rezervace.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
@@ -31,5 +31,6 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "lang": "cs"
 }

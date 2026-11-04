@@ -20,6 +20,11 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
   static const String _legacyStorageKey = 'user_profile_storage';
 
+  /// Čistý nový profil (po přepnutí do uživatelského režimu): při ukládání se NESLUČUJE
+  /// se starým profilem uloženým v zařízení – jinak by se nový uživatel jmenoval po
+  /// někom, kdo zařízení používal dřív (4.11.2026: „Dobré ráno, Lukáš“).
+  bool _cistyProfil = false;
+
   // ==========================================================
   // Logging
   // ==========================================================
@@ -110,7 +115,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       final prefs = await SharedPreferences.getInstance();
       final key = _storageKeyForClient(currentState.clientId);
 
-      final existingStored = await _readProfileFromStorage(currentState.clientId);
+      final existingStored =
+          _cistyProfil ? null : await _readProfileFromStorage(currentState.clientId);
       final safeProfile = _mergeProfiles(
         base: existingStored,
         incoming: currentState,
@@ -208,6 +214,12 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   // ==========================================================
   // Public updates
   // ==========================================================
+
+  void setFirstName(String firstName) {
+    final current = state ?? const UserProfile();
+    state = current.copyWith(firstName: firstName.trim());
+    unawaited(_onStateChanged());
+  }
 
   void setBasicInfo({
     required int age,
@@ -326,6 +338,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
     if (clientId == null || clientId.trim().isEmpty) {
       state = const UserProfile();
+      _cistyProfil = true;
 
       _log(
         'SWITCH CLIENT DONE -> detached clean profile '
@@ -335,6 +348,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       return;
     }
 
+    _cistyProfil = false;
     final loaded = await _readProfileFromStorage(clientId);
 
     if (loaded != null) {

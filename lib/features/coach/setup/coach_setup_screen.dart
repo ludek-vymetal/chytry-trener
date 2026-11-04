@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:file_selector/file_selector.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +35,15 @@ class _CoachSetupScreenState
   bool _pinObscured = true;
   bool _confirmPinObscured = true;
 
+  // Na webu se archivy klientů do složky v počítači neukládají (prohlížeč ke složkám nemá přístup).
+  static const _webSlozka = 'web – archivy klientů jen v aplikaci';
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) _exportFolderController.text = _webSlozka;
+  }
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -58,11 +69,15 @@ class _CoachSetupScreenState
 
   Future<void> _pickExportFolder() async {
     final l10n = AppLocalizations.of(context)!;
+    if (kIsWeb) {
+      setState(() => _exportFolderController.text = _webSlozka);
+      return;
+    }
 
     try {
       String selectedPath;
 
-      if ((Platform.isIOS || Platform.isMacOS)) {
+      if ((!kIsWeb && (Platform.isIOS || Platform.isMacOS))) {
         selectedPath =
             await _getIosClientsFolderPath();
       } else {
@@ -94,7 +109,7 @@ class _CoachSetupScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            (Platform.isIOS || Platform.isMacOS)
+            (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
                 ? l10n.iosFolderInfo
                 : l10n.exportFolderSaved,
           ),
@@ -118,11 +133,15 @@ class _CoachSetupScreenState
   Future<void>
       _fillSuggestedDocumentsFolder() async {
     final l10n = AppLocalizations.of(context)!;
+    if (kIsWeb) {
+      setState(() => _exportFolderController.text = _webSlozka);
+      return;
+    }
 
     try {
       String suggested;
 
-      if ((Platform.isIOS || Platform.isMacOS)) {
+      if ((!kIsWeb && (Platform.isIOS || Platform.isMacOS))) {
         suggested =
             await _getIosClientsFolderPath();
       } else {
@@ -156,7 +175,7 @@ class _CoachSetupScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            (Platform.isIOS || Platform.isMacOS)
+            (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
                 ? l10n.iosFolderInfo
                 : l10n.customExportFolderRemoved,
           ),
@@ -418,7 +437,7 @@ class _CoachSetupScreenState
                           ),
                         ],
                         Text(
-                          (Platform.isIOS || Platform.isMacOS)
+                          (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
                               ? l10n
                                   .coachSetupIosDescription
                               : l10n
@@ -594,7 +613,7 @@ class _CoachSetupScreenState
                                     .folder_open,
                               ),
                               label: Text(
-                                (Platform.isIOS || Platform.isMacOS)
+                                (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
                                     ? l10n
                                         .useAppFolder
                                     : l10n
@@ -610,7 +629,7 @@ class _CoachSetupScreenState
                                 Icons.folder,
                               ),
                               label: Text(
-                                (Platform.isIOS || Platform.isMacOS)
+                                (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
                                     ? l10n
                                         .useClientsFolder
                                     : l10n
@@ -640,7 +659,7 @@ class _CoachSetupScreenState
                                 .surfaceContainerHighest,
                           ),
                           child: Text(
-                            (Platform.isIOS || Platform.isMacOS)
+                            (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
                                 ? l10n
                                     .iosFolderInfo
                                 : l10n
