@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../models/coach/coach_inbody_entry.dart';
 import '../../services/coach/coach_storage_service.dart';
+import '../user_profile_provider.dart';
 
 final coachInbodyControllerProvider =
     AsyncNotifierProvider<CoachInbodyController, List<CoachInbodyEntry>>(
@@ -56,6 +57,19 @@ class CoachInbodyController extends AsyncNotifier<List<CoachInbodyEntry>> {
     await CoachStorageService.saveInbodyAll(updated);
 
     state = AsyncData(updated.where((e) => !e.isDeleted).toList());
+
+    // Propsat do profilu klienta: váha, bazál a beztuková hmota pro výpočty.
+    await _syncProfile(newEntry.clientId);
+  }
+
+  Future<void> _syncProfile(String clientId) async {
+    try {
+      await ref
+          .read(userProfileProvider.notifier)
+          .syncBodyCompositionFromInbody(clientId);
+    } catch (_) {
+      // Profil se srovná při dalším otevření klienta.
+    }
   }
 
   Future<void> deleteEntry(String entryId) async {
@@ -80,6 +94,9 @@ class CoachInbodyController extends AsyncNotifier<List<CoachInbodyEntry>> {
       ..sort((a, b) => b.date.compareTo(a.date));
 
     state = AsyncData(visible);
+
+    final removed = allStored.where((e) => e.entryId == entryId);
+    if (removed.isNotEmpty) await _syncProfile(removed.first.clientId);
   }
 
   Future<List<CoachInbodyEntry>> _loadVisibleEntries() async {

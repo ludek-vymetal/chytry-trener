@@ -54,6 +54,12 @@ class PhasePlannerService {
     final accelerated = context.mode == PlanMode.accelerated &&
         goal?.reason != GoalReason.eatingDisorderSupport;
 
+    // Plán začíná dnem, kdy byl cíl nastaven (ne „dneškem“) – jinak by se
+    // dopředu počítané bloky (hubnutí 10 týdnů + diet break, budovací
+    // bloky, objem) každý den posouvaly a diet break by nikdy nepřišel.
+    final goalStart = goal == null ? now : _normalize(goal.startDate);
+    final anchor = goalStart.isBefore(now) ? goalStart : now;
+
     final type = goal?.type ?? GoalType.physique;
 
     var plans = <PhasePlan>[];
@@ -62,28 +68,30 @@ class PhasePlannerService {
       case GoalType.physique:
         final choice = goal?.phase;
         if (choice == GoalPhase.maintain) {
-          plans = _maintainOnly(now, target);
+          plans = _maintainOnly(anchor, target);
         } else if (choice == GoalPhase.build) {
-          plans = _buildOnly(now, target);
+          plans = _buildOnly(anchor, target);
         } else {
-          plans = _physiqueToForm(now, target, accelerated);
+          // Vždy plná periodizace (Luděk 6.11.2026): budování (hypertrofie
+          // ↔ síla + hypertrofie) → redukce → peak → forma → údržba.
+          plans = _physiqueToForm(anchor, target, accelerated);
         }
         break;
 
       case GoalType.weightLoss:
-        plans = _weightLoss(now, target, accelerated);
+        plans = _weightLoss(anchor, target, accelerated);
         break;
 
       case GoalType.strength:
-        plans = _strength(now, target);
+        plans = _strength(anchor, target);
         break;
 
       case GoalType.endurance:
-        plans = _endurance(now, target);
+        plans = _endurance(anchor, target);
         break;
 
       case GoalType.weightGainSupport:
-        plans = _gainSupport(now, target);
+        plans = _gainSupport(anchor, target);
         break;
     }
 

@@ -28,9 +28,12 @@ class CoachGoalProfileAdapter {
   }) {
     final now = DateTime.now();
 
+    // Cíl v profilu (s datem) je hlavní – podle něj se počítá i jídlo.
+    // Cíl z karty trenéra ho jen doplní, aby trénink a jídlo neběžely
+    // podle dvou různých cílů.
     return Goal(
-      type: _mapGoalType(coachGoal.goalType),
-      reason: _mapGoalReason(coachGoal),
+      type: fallbackGoal?.type ?? _mapGoalType(coachGoal.goalType),
+      reason: fallbackGoal?.reason ?? _mapGoalReason(coachGoal),
       startDate: fallbackGoal?.startDate ?? now,
       targetDate: fallbackGoal?.targetDate ?? now.add(const Duration(days: 112)),
       planMode: fallbackGoal?.planMode ?? _mapPlanMode(coachGoal),
@@ -88,13 +91,21 @@ class CoachGoalProfileAdapter {
     }
 
     if (_containsAny(haystack, const [
+      'léto',
+      'léta',
+      'leto',
+      'leta',
+      'plavky',
+      'summer',
+    ])) {
+      return GoalReason.summerShape;
+    }
+
+    if (_containsAny(haystack, const [
       'forma',
       'aesthetic',
       'estetika',
       'redukce tuku',
-      'léto',
-      'leto',
-      'summer',
     ])) {
       return GoalReason.aesthetic;
     }

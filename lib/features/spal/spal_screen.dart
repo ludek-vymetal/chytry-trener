@@ -192,6 +192,13 @@ class SpalPrehled extends ConsumerWidget {
               child: const Icon(Icons.notifications_none, size: 32),
             ),
           ),
+          TextButton.icon(
+            onPressed: () => spalOdhlasitDotaz(context),
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            icon: const Icon(Icons.power_settings_new, size: 26),
+            label: const Text('Odhlásit se'),
+          ),
+          const SizedBox(width: 6),
         ],
       ),
       body: Stack(children: [

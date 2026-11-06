@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -434,7 +435,7 @@ class _AppBootstrapState extends ConsumerState<AppBootstrap> {
   @override
   Widget build(BuildContext context) {
     if (_isBootstrapping) {
-      return const _FullscreenLoader();
+      return const _FullscreenLoader(kde: 'start aplikace');
     }
 
     if (_bootstrapError != null) {
@@ -458,7 +459,7 @@ class RoleGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref.watch(appRoleReadyProvider)) {
-      return const _FullscreenLoader();
+      return const _FullscreenLoader(kde: 'výběr režimu');
     }
 
     if (role == null) {
@@ -478,7 +479,7 @@ class RoleGate extends ConsumerWidget {
     final coachAuthAsync = ref.watch(coachAuthStateProvider);
 
     return subscriptionAsync.when(
-      loading: () => const _FullscreenLoader(),
+      loading: () => const _FullscreenLoader(kde: 'předplatné'),
       error: (e, _) => _FullscreenError(
         message: 'Chyba předplatného: $e',
       ),
@@ -507,7 +508,7 @@ class RoleGate extends ConsumerWidget {
         }
 
         return coachAuthAsync.when(
-          loading: () => const _FullscreenLoader(),
+          loading: () => const _FullscreenLoader(kde: 'přihlášení trenéra'),
           error: (e, _) => _FullscreenError(
             message: 'Chyba přihlášení trenéra: $e',
           ),
@@ -673,7 +674,19 @@ class _CoachSessionBootstrapState
         ref.invalidate(userProfileProvider);
       }
 
-      final report = await CoachCloudSyncService.safeReconcileLocalAndCloud();
+      // Web: když se synchronizace se zasekne (prohlížeč / Firestore), po 40 s pustit trenéra dál –
+      // data se pak dotáhnou průběžnou synchronizací (každých 60 s).
+      final report = kIsWeb
+          ? await CoachCloudSyncService.safeReconcileLocalAndCloud().timeout(
+              const Duration(seconds: 40),
+              onTimeout: () {
+                debugPrint('COACH SESSION SYNC -> TIMEOUT 40 s (web), pokračuji');
+                final t = DateTime.now();
+                return CoachCloudSyncReport(
+                    success: false, startedAt: t, finishedAt: t, processedKeys: const [],
+                    warnings: const ['timeout']);
+              })
+          : await CoachCloudSyncService.safeReconcileLocalAndCloud();
 
       debugPrint(
         'COACH SESSION SYNC -> success=${report.success} processed=${report.processedKeys} warnings=${report.warnings}',
@@ -702,7 +715,7 @@ class _CoachSessionBootstrapState
   @override
   Widget build(BuildContext context) {
     if (_isSyncing) {
-      return const _FullscreenLoader();
+      return const _FullscreenLoader(kde: 'synchronizace dat trenéra');
     }
 
     if (_syncError != null) {
@@ -716,7 +729,7 @@ class _CoachSessionBootstrapState
     final coachSetupAsync = ref.watch(coachSetupProvider);
 
     return coachSetupAsync.when(
-      loading: () => const _FullscreenLoader(),
+      loading: () => const _FullscreenLoader(kde: 'nastavení trenéra'),
       error: (e, _) => _FullscreenError(
         message: 'Chyba coach setupu: $e',
       ),
@@ -760,14 +773,48 @@ class AppProviderInvalidation {
   }
 }
 
-class _FullscreenLoader extends StatelessWidget {
-  const _FullscreenLoader();
+class _FullscreenLoader extends StatefulWidget {
+  const _FullscreenLoader({this.kde = ''});
+
+  /// Co se právě načítá – na webu se ukáže pod kolečkem (ladění, kde se aplikace zasekne).
+  final String kde;
+
+  @override
+  State<_FullscreenLoader> createState() => _FullscreenLoaderState();
+}
+
+class _FullscreenLoaderState extends State<_FullscreenLoader> {
+  final _od = DateTime.now();
+  Timer? _t;
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('NAČÍTÁM -> ${widget.kde}');
+    // na webu po 8 s ukázat, na čem to stojí (aby šlo poslat screenshot)
+    if (kIsWeb) _t = Timer.periodic(const Duration(seconds: 2), (_) { if (mounted) setState(() {}); });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    final s = DateTime.now().difference(_od).inSeconds;
+    return Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const CircularProgressIndicator(),
+          if (kIsWeb && s >= 8)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Text('Načítám: ${widget.kde} ($s s)',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            ),
+        ]),
       ),
     );
   }

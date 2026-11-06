@@ -17,6 +17,7 @@ class OnboardingStep1 extends ConsumerStatefulWidget {
 }
 
 class _OnboardingStep1State extends ConsumerState<OnboardingStep1> {
+  final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
@@ -24,6 +25,7 @@ class _OnboardingStep1State extends ConsumerState<OnboardingStep1> {
   String? _gender;
 
   bool get _isValid =>
+      _nameController.text.trim().isNotEmpty &&
       _ageController.text.trim().isNotEmpty &&
       _gender != null &&
       _heightController.text.trim().isNotEmpty &&
@@ -31,6 +33,7 @@ class _OnboardingStep1State extends ConsumerState<OnboardingStep1> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
@@ -67,6 +70,7 @@ class _OnboardingStep1State extends ConsumerState<OnboardingStep1> {
     }
 
     final notifier = ref.read(userProfileProvider.notifier);
+    notifier.setFirstName(_nameController.text);
     notifier.setBasicInfo(age: age, gender: _gender!);
     notifier.setBodyMetrics(height: height, weight: weight);
 
@@ -120,6 +124,21 @@ class _OnboardingStep1State extends ConsumerState<OnboardingStep1> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            _label(Localizations.localeOf(context).languageCode == 'cs'
+                ? 'Jak ti máme říkat?'
+                : 'What should we call you?'),
+            TextField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                hintText: Localizations.localeOf(context).languageCode == 'cs'
+                    ? 'Křestní jméno'
+                    : 'First name',
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 20),
             _label(l10n.gender),
             Wrap(
               spacing: 12,
