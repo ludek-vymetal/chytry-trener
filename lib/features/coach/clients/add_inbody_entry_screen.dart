@@ -166,9 +166,6 @@ class _AddInbodyEntryScreenState
   }
 
   Future<void> _save() async {
-    final l10n =
-        AppLocalizations.of(context)!;
-
     if (!_valid) {
       ScaffoldMessenger.of(context)
           .showSnackBar(
