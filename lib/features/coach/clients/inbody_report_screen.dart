@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/body/inbody_analysis.dart';
+import 'body_shape_figure.dart';
 import '../../../models/coach/coach_client.dart';
 import '../../../models/coach/coach_inbody_entry.dart';
 import '../../../providers/coach/coach_inbody_controller.dart';
@@ -82,12 +83,30 @@ class _InbodyReportScreenState extends ConsumerState<InbodyReportScreen> {
             age: widget.client.age,
           );
 
-          return ListView(
+          final figure = BodyShapeCard(
+            key: ValueKey(latest.entryId),
+            entry: latest,
+            male: widget.client.gender == 'male',
+          );
+
+          return LayoutBuilder(builder: (context, box) {
+          // Široká obrazovka: tvar postavy vedle rozboru, jinak nahoře.
+          final wide = box.maxWidth >= 900;
+          final list = ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
               if (items.length > 1) _datePicker(items, i),
               _header(context, latest, report),
               const SizedBox(height: 12),
+              if (!wide) ...[
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 360),
+                    child: figure,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               if (_hasExtras(latest)) ...[
                 _extrasCard(context, latest),
                 const SizedBox(height: 12),
@@ -115,6 +134,21 @@ class _InbodyReportScreenState extends ConsumerState<InbodyReportScreen> {
                 ),
             ],
           );
+          if (!wide) return list;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: list),
+              SizedBox(
+                width: 340,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(0, 8, 16, 32),
+                  child: figure,
+                ),
+              ),
+            ],
+          );
+          });
         },
       ),
     );
