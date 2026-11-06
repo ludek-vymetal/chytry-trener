@@ -2102,6 +2102,7 @@ class ClientDetailScreen extends ConsumerWidget {
           DataColumn(label: Text(l10n.weight)),
           DataColumn(label: Text(l10n.muscles)),
           DataColumn(label: Text(l10n.fatPercent)),
+          const DataColumn(label: Text('Zdroj')),
         ],
         rows: items
             .map(
@@ -2113,6 +2114,18 @@ class ClientDetailScreen extends ConsumerWidget {
                     Text('${e.skeletalMuscleMassKg.toStringAsFixed(1)} kg'),
                   ),
                   DataCell(Text('${e.percentBodyFat.toStringAsFixed(1)} %')),
+                  DataCell(
+                    e.isFromSpal
+                        ? const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.monitor_weight_outlined, size: 16),
+                              SizedBox(width: 4),
+                              Text('váha SPAL'),
+                            ],
+                          )
+                        : const Text('ručně'),
+                  ),
                 ],
               ),
             )
