@@ -45,6 +45,32 @@ class CoachInbodyEntry {
   final double? visceralFatLevel;
   final double? inbodyScore;
 
+  // -------------------------------------------------
+  // Doplňkové údaje (váha FitMao ve SPAL, nepovinné)
+  // -------------------------------------------------
+  /// Celková svalová hmota (kg) – FitMao „svalová hmota“
+  final double? totalMuscleKg;
+  /// Bílkoviny v těle (kg)
+  final double? proteinKg;
+  /// Minerály (kg)
+  final double? mineralKg;
+  /// Tělesný (biologický) věk
+  final double? bodyAge;
+  /// Voda v těle (%)
+  final double? waterPercent;
+  /// Doporučená úprava tuku (kg, záporné = ubrat)
+  final double? fatControlKg;
+  /// Doporučená úprava svalů (kg, kladné = přidat)
+  final double? muscleControlKg;
+  /// Doporučená úprava hmotnosti (kg)
+  final double? weightControlKg;
+
+  /// Odkud měření je: null / 'rucne' = zapsáno ručně, 'spal' = váha SPAL.
+  final String? source;
+
+  /// Id měření ve zdroji (u váhy SPAL) – aby se nepřevádělo dvakrát.
+  final String? externalId;
+
   // --------------------------
   // Sync metadata
   // --------------------------
@@ -80,6 +106,16 @@ class CoachInbodyEntry {
     required this.fatRightLegKg,
     this.visceralFatLevel,
     this.inbodyScore,
+    this.totalMuscleKg,
+    this.proteinKg,
+    this.mineralKg,
+    this.bodyAge,
+    this.waterPercent,
+    this.fatControlKg,
+    this.muscleControlKg,
+    this.weightControlKg,
+    this.source,
+    this.externalId,
     required this.createdAt,
     required this.updatedAt,
     required this.deletedAt,
@@ -98,6 +134,9 @@ class CoachInbodyEntry {
   double? get bmrKcal => bmr;
 
   bool get isDeleted => deletedAt != null;
+
+  /// Měření převedené z váhy ve fitku SPAL.
+  bool get isFromSpal => source == 'spal';
 
   CoachInbodyEntry copyWith({
     String? entryId,
@@ -125,6 +164,16 @@ class CoachInbodyEntry {
     double? fatRightLegKg,
     double? visceralFatLevel,
     double? inbodyScore,
+    double? totalMuscleKg,
+    double? proteinKg,
+    double? mineralKg,
+    double? bodyAge,
+    double? waterPercent,
+    double? fatControlKg,
+    double? muscleControlKg,
+    double? weightControlKg,
+    String? source,
+    String? externalId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -158,6 +207,16 @@ class CoachInbodyEntry {
       fatRightLegKg: fatRightLegKg ?? this.fatRightLegKg,
       visceralFatLevel: visceralFatLevel ?? this.visceralFatLevel,
       inbodyScore: inbodyScore ?? this.inbodyScore,
+      totalMuscleKg: totalMuscleKg ?? this.totalMuscleKg,
+      proteinKg: proteinKg ?? this.proteinKg,
+      mineralKg: mineralKg ?? this.mineralKg,
+      bodyAge: bodyAge ?? this.bodyAge,
+      waterPercent: waterPercent ?? this.waterPercent,
+      fatControlKg: fatControlKg ?? this.fatControlKg,
+      muscleControlKg: muscleControlKg ?? this.muscleControlKg,
+      weightControlKg: weightControlKg ?? this.weightControlKg,
+      source: source ?? this.source,
+      externalId: externalId ?? this.externalId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
@@ -192,6 +251,16 @@ class CoachInbodyEntry {
         'fatRightLegKg': fatRightLegKg,
         'visceralFatLevel': visceralFatLevel,
         'inbodyScore': inbodyScore,
+        'totalMuscleKg': totalMuscleKg,
+        'proteinKg': proteinKg,
+        'mineralKg': mineralKg,
+        'bodyAge': bodyAge,
+        'waterPercent': waterPercent,
+        'fatControlKg': fatControlKg,
+        'muscleControlKg': muscleControlKg,
+        'weightControlKg': weightControlKg,
+        'source': source,
+        'externalId': externalId,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
         'deletedAt': deletedAt?.toIso8601String(),
@@ -240,6 +309,16 @@ class CoachInbodyEntry {
       fatRightLegKg: d('fatRightLegKg'),
       visceralFatLevel: (json['visceralFatLevel'] as num?)?.toDouble(),
       inbodyScore: (json['inbodyScore'] as num?)?.toDouble(),
+      totalMuscleKg: (json['totalMuscleKg'] as num?)?.toDouble(),
+      proteinKg: (json['proteinKg'] as num?)?.toDouble(),
+      mineralKg: (json['mineralKg'] as num?)?.toDouble(),
+      bodyAge: (json['bodyAge'] as num?)?.toDouble(),
+      waterPercent: (json['waterPercent'] as num?)?.toDouble(),
+      fatControlKg: (json['fatControlKg'] as num?)?.toDouble(),
+      muscleControlKg: (json['muscleControlKg'] as num?)?.toDouble(),
+      weightControlKg: (json['weightControlKg'] as num?)?.toDouble(),
+      source: json['source'] as String?,
+      externalId: json['externalId'] as String?,
       createdAt:
           DateTime.tryParse((json['createdAt'] as String?) ?? '') ?? date,
       updatedAt:

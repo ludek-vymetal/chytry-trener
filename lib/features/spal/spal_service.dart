@@ -82,6 +82,12 @@ class SpalService {
       [for (final x in (v as List? ?? const [])) Map<String, dynamic>.from(x as Map)];
 
   static Future<Map<String, dynamic>> prehled() async => _m(await db.rpc('muj_spal'));
+
+  /// Měření z váhy FitMao ve fitku – jen vlastní (podle přihlášení),
+  /// nejnovější první. [od] = jen novější než tento čas.
+  static Future<List<Map<String, dynamic>>> mojeMereni({DateTime? od}) async => _l(
+        await db.rpc('moje_mereni', params: {'p_od': od?.toUtc().toIso8601String()}),
+      );
   static Future<Map<String, dynamic>> info() async => _m(await db.rpc('spal_info'));
   static Future<Map<String, dynamic>> ucet() async => _m(await db.rpc('muj_ucet'));
   static Future<Map<String, dynamic>> nabidka() async => _m(await db.rpc('nabidka_web'));

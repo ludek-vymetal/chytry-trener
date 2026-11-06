@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'spal_mereni.dart';
 import 'spal_screen.dart';
 import 'spal_service.dart';
 import 'spal_styl.dart';
@@ -67,6 +68,7 @@ class SpalMenu extends ConsumerWidget {
         polozka(Icons.qr_code_2, 'QR kód', () => otevritQr(context)),
         polozka(Icons.notifications_none, 'Oznámení', () => jdi(const SpalNovinky()), odznak: novinky.length),
         polozka(Icons.account_circle, 'Můj profil', () => jdi(const SpalProfil())),
+        polozka(Icons.monitor_weight_outlined, 'Moje měření z váhy', () => jdi(const SpalMereniScreen())),
         if (samostatne)
           polozka(Icons.fitness_center, 'Chytrý trenér – tréninky a jídelníček',
               () => otevritChytrehoTrenera(context))

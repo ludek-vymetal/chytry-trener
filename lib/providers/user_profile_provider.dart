@@ -522,7 +522,13 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
   /// a bílkovin, hmotnosti z měření do historie vážení a aktuální váhu,
   /// když je InBody nejnovější vážení. Funguje i pro klienta, který zrovna
   /// není otevřený (upraví jeho uložený profil).
-  Future<void> syncBodyCompositionFromInbody([String? clientId]) async {
+  ///
+  /// [toActive] = měření patří otevřenému profilu, i když se jeho clientId
+  /// liší (vlastní aplikace člena SPAL / online klienta).
+  Future<void> syncBodyCompositionFromInbody([
+    String? clientId,
+    bool toActive = false,
+  ]) async {
     final id = (clientId ?? state?.clientId)?.trim();
     if (id == null || id.isEmpty) return;
 
@@ -539,7 +545,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     if (entries.isEmpty) return;
 
     final active = state;
-    if (active != null && active.clientId == id) {
+    if (active != null && (toActive || active.clientId == id)) {
       final updated = applyInbodyEntries(active, entries);
       if (updated == null) return;
       state = updated;

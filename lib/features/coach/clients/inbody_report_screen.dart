@@ -88,6 +88,10 @@ class _InbodyReportScreenState extends ConsumerState<InbodyReportScreen> {
               if (items.length > 1) _datePicker(items, i),
               _header(context, latest, report),
               const SizedBox(height: 12),
+              if (_hasExtras(latest)) ...[
+                _extrasCard(context, latest),
+                const SizedBox(height: 12),
+              ],
               for (final s in report.sections) ...[
                 _sectionCard(context, s),
                 const SizedBox(height: 12),
@@ -171,7 +175,8 @@ class _InbodyReportScreenState extends ConsumerState<InbodyReportScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${widget.client.displayName} · ${_date(e.date)}',
+              '${widget.client.displayName} · ${_date(e.date)}'
+              '${e.isFromSpal ? ' · váha SPAL' : ''}',
               style: TextStyle(fontSize: 12, color: cs.onPrimaryContainer),
             ),
             const SizedBox(height: 4),
@@ -196,6 +201,77 @@ class _InbodyReportScreenState extends ConsumerState<InbodyReportScreen> {
               report.summary,
               style: TextStyle(color: cs.onPrimaryContainer, height: 1.35),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static bool _hasExtras(CoachInbodyEntry e) => [
+        e.totalMuscleKg,
+        e.proteinKg,
+        e.mineralKg,
+        e.bodyAge,
+        e.waterPercent,
+        e.fatControlKg,
+        e.muscleControlKg,
+        e.weightControlKg,
+        e.inbodyScore,
+        e.visceralFatLevel,
+      ].any((v) => v != null && v != 0);
+
+  /// Doplňkové údaje z váhy (FitMao): svaly celkem, bílkoviny, minerály,
+  /// tělesný věk, voda %, skóre a doporučená úprava tuku / svalů / váhy.
+  Widget _extrasCard(BuildContext context, CoachInbodyEntry e) {
+    final cs = Theme.of(context).colorScheme;
+    String n(double v, [int d = 1]) =>
+        v.toStringAsFixed(d).replaceAll('.', ',');
+    String signed(double v) => '${v > 0 ? '+' : v < 0 ? '−' : ''}${n(v.abs())}';
+
+    final rows = <(String, String)>[
+      if ((e.totalMuscleKg ?? 0) > 0)
+        ('Svalová hmota celkem', '${n(e.totalMuscleKg!)} kg'),
+      if ((e.proteinKg ?? 0) > 0) ('Bílkoviny', '${n(e.proteinKg!)} kg'),
+      if ((e.mineralKg ?? 0) > 0) ('Minerály', '${n(e.mineralKg!, 2)} kg'),
+      if ((e.waterPercent ?? 0) > 0) ('Voda', '${n(e.waterPercent!)} %'),
+      if ((e.visceralFatLevel ?? 0) > 0)
+        ('Viscerální tuk', n(e.visceralFatLevel!, 0)),
+      if ((e.bodyAge ?? 0) > 0) ('Tělesný věk', '${n(e.bodyAge!, 0)} let'),
+      if ((e.inbodyScore ?? 0) > 0) ('Skóre', '${n(e.inbodyScore!, 0)} / 100'),
+      if (e.fatControlKg != null && e.fatControlKg != 0)
+        ('Doporučená úprava tuku', '${signed(e.fatControlKg!)} kg'),
+      if (e.muscleControlKg != null && e.muscleControlKg != 0)
+        ('Doporučená úprava svalů', '${signed(e.muscleControlKg!)} kg'),
+      if (e.weightControlKg != null && e.weightControlKg != 0)
+        ('Doporučená úprava váhy', '${signed(e.weightControlKg!)} kg'),
+    ];
+
+    return Card(
+      elevation: 0,
+      color: cs.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Další údaje z měření',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            for (final r in rows)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(r.$1)),
+                    Text(
+                      r.$2,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

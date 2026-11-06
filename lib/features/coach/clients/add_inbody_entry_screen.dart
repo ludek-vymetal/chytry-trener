@@ -98,9 +98,27 @@ class _AddInbodyEntryScreenState
   final score =
       TextEditingController();
 
+  // Další údaje (váha FitMao a podobné, nepovinné)
+  final totalMuscle = TextEditingController();
+  final protein = TextEditingController();
+  final mineral = TextEditingController();
+  final waterPct = TextEditingController();
+  final bodyAge = TextEditingController();
+  final fatCtrl = TextEditingController();
+  final muscleCtrl = TextEditingController();
+  final weightCtrl = TextEditingController();
+
   @override
   void dispose() {
     for (final c in [
+      totalMuscle,
+      protein,
+      mineral,
+      waterPct,
+      bodyAge,
+      fatCtrl,
+      muscleCtrl,
+      weightCtrl,
       weight,
       smm,
       fatKg,
@@ -281,6 +299,15 @@ class _AddInbodyEntryScreenState
 
       inbodyScore:
           _d(score),
+      totalMuscleKg: _d(totalMuscle),
+      proteinKg: _d(protein),
+      mineralKg: _d(mineral),
+      waterPercent: _d(waterPct),
+      bodyAge: _d(bodyAge),
+      fatControlKg: _d(fatCtrl),
+      muscleControlKg: _d(muscleCtrl),
+      weightControlKg: _d(weightCtrl),
+      source: 'rucne',
 
       createdAt: now,
 
@@ -652,6 +679,30 @@ class _AddInbodyEntryScreenState
             l10n.inbodyScore,
           ),
 
+          const SizedBox(height: 10),
+          _num(totalMuscle, 'Svalová hmota celkem (kg)'),
+
+          const SizedBox(height: 10),
+          _num(protein, 'Bílkoviny (kg)'),
+
+          const SizedBox(height: 10),
+          _num(mineral, 'Minerály (kg)'),
+
+          const SizedBox(height: 10),
+          _num(waterPct, 'Voda (%)'),
+
+          const SizedBox(height: 10),
+          _num(bodyAge, 'Tělesný věk (roky)'),
+
+          const SizedBox(height: 10),
+          _num(fatCtrl, 'Doporučená úprava tuku (kg, − = ubrat)'),
+
+          const SizedBox(height: 10),
+          _num(muscleCtrl, 'Doporučená úprava svalů (kg)'),
+
+          const SizedBox(height: 10),
+          _num(weightCtrl, 'Doporučená úprava váhy (kg)'),
+
           const SizedBox(
             height: 18,
           ),
@@ -695,6 +746,7 @@ class _AddInbodyEntryScreenState
           const TextInputType
               .numberWithOptions(
         decimal: true,
+        signed: true,
       ),
 
       decoration:
