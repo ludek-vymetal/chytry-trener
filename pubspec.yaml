@@ -55,6 +55,7 @@ flutter:
 
   assets:
     - assets/fonts/
+    - assets/postavy/
 
 flutter_launcher_icons:
   android: true

@@ -18,8 +18,8 @@ BodyShape _tvar(Map<String, dynamic> m, {bool male = true}) {
 void main() {
   test('břišní tuk → jablko', () {
     final s = _tvar({
-      'hmotnost_kg': 110, 'tuk_pct': 32, 'kosterni_svaly_kg': 36,
-      'tuk_pp': 2, 'tuk_lp': 2, 'tuk_trup': 18, 'tuk_pn': 4, 'tuk_ln': 4,
+      'hmotnost_kg': 98, 'tuk_pct': 25, 'kosterni_svaly_kg': 38,
+      'tuk_pp': 2, 'tuk_lp': 2, 'tuk_trup': 17, 'tuk_pn': 4.5, 'tuk_ln': 4.5,
       'svaly_pp': 3.8, 'svaly_lp': 3.8, 'svaly_trup': 28, 'svaly_pn': 10, 'svaly_ln': 10,
     });
     expect(s.shapeLabel, 'Jablko');
@@ -41,6 +41,15 @@ void main() {
       'svaly_pp': 5.4, 'svaly_lp': 5.4, 'svaly_trup': 34, 'svaly_pn': 9.5, 'svaly_ln': 9.5,
     });
     expect(s.muscleLabel, 'Silný vršek, slabší nohy');
+  });
+
+  test('vysoký tuk v celém trupu → sud, obrázek existuje v seznamu', () {
+    final s = _tvar({
+      'hmotnost_kg': 115, 'tuk_pct': 33, 'kosterni_svaly_kg': 37,
+      'tuk_pp': 2.5, 'tuk_lp': 2.5, 'tuk_trup': 21, 'tuk_pn': 6.5, 'tuk_ln': 6.5,
+    });
+    expect(s.key, 'sud');
+    expect(BodyShape.types.map((t) => t.$1), contains(s.key));
   });
 
   test('bez segmentů se tvar odhadne a nespadne', () {

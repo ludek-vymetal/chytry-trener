@@ -1,286 +1,229 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
 import '../../../models/coach/coach_inbody_entry.dart';
 
-/// Tvar postavy podle měření InBody / váhy SPAL: černá silueta na bílém
-/// pozadí, která se pomalu otáčí kolem svislé osy (jde i otáčet tažením).
+/// Typ postavy podle měření InBody / váhy SPAL – 15 typů s kresbou
+/// (assets/postavy/<klic>.png): atletická, fit, normální, obdélník,
+/// obrácený trojúhelník, trojúhelník, přesýpací hodiny, jablko, hruška,
+/// sud, břišní, boky a zadek, horní část těla, dolní část těla, skinny fat.
 ///
-/// Z měření se bere:
-/// * BMI a % tuku → celková „mohutnost“,
-/// * rozložení tuku (trup × nohy) → jablko / hruška,
-/// * rozložení svalů (paže + trup × nohy) → silný vršek / silné nohy,
-/// * podíl kosterní svaloviny → ramena, paže, stehna.
-/// Bez segmentální analýzy se tvar odhadne jen z BMI a % tuku.
+/// Z měření se bere % tuku, podíl kosterní svaloviny, rozložení tuku
+/// (trup × nohy × paže) a rozložení svalů (paže + trup × nohy).
+/// Bez segmentální analýzy se typ určí jen z % tuku, svalů a BMI.
 class BodyShape {
-  BodyShape._(this._levels, this._legs, this._arms, this.head,
-      this.shapeLabel, this.muscleLabel, this.description);
+  const BodyShape._({
+    required this.key,
+    required this.shapeLabel,
+    required this.description,
+    required this.advice,
+    required this.muscleLabel,
+    required this.muscleLevel,
+    required this.fatType,
+    required this.fatPercent,
+  });
 
-  final List<_Level> _levels; // trup (shora dolů)
-  final List<_Level> _legs; // jedna noha (střed ve vzdálenosti cx)
-  final List<_Level> _arms; // jedna paže
-  final _Level head;
+  /// Klíč typu = název obrázku v assets/postavy.
+  final String key;
 
-  /// Hlavní tvar (Jablko, Hruška, …).
+  /// Název typu (Jablko, Hruška, …).
   final String shapeLabel;
+
+  /// Popis typu.
+  final String description;
+
+  /// Krátké doporučení.
+  final String advice;
 
   /// Rozložení svalů (Silný vršek, slabší nohy, …).
   final String muscleLabel;
 
-  /// Krátké vysvětlení pro klienta.
-  final String description;
+  /// Svalová hmota slovně (nízká / průměrná / nadprůměrná / vysoká).
+  final String muscleLevel;
+
+  /// Kde se ukládá tuk (rovnoměrně, břicho, boky…).
+  final String fatType;
+
+  final double fatPercent;
+
+  String get asset => 'assets/postavy/$key.png';
 
   static double _c(double v, double lo, double hi) =>
       v < lo ? lo : (v > hi ? hi : v);
+
+  /// Všechny typy (klíč, název, popis) – pro přehled typů.
+  static const types = <(String, String, String)>[
+    ('atleticka', 'Atletická', 'Nízký tuk, výrazná svalová hmota'),
+    ('fit', 'Fit', 'Sportovní, vyvážená postava'),
+    ('normalni', 'Normální', 'Průměrná postava bez výrazných disproporcí'),
+    ('obdelnik', 'Obdélník', 'Rovné linie, podobná šířka ramen, pasu a boků'),
+    ('obraceny_trojuhelnik', 'Obrácený trojúhelník', 'Široká ramena, užší boky'),
+    ('trojuhelnik', 'Trojúhelník', 'Užší ramena, širší boky'),
+    ('presypaci_hodiny', 'Přesýpací hodiny', 'Vyvážená ramena a boky, užší pas'),
+    ('jablko', 'Jablko', 'Více tuku v oblasti břicha (viscerální tuk), štíhlejší nohy'),
+    ('hruska', 'Hruška', 'Více tuku v bocích, stehnech a zadku, užší vršek těla'),
+    ('sud', 'Sud', 'Zvýšený tuk v celém trupu'),
+    ('bricni', 'Břišní (centrální)', 'Výrazný tuk v břiše, často i v oblasti hrudníku'),
+    ('boky_zadek', 'Boky a zadek', 'Tuk v bocích a zadku, relativně ploché břicho'),
+    ('horni_cast', 'Horní část těla', 'Více tuku na hrudníku, zádech a ramenou, štíhlejší nohy'),
+    ('dolni_cast', 'Dolní část těla', 'Více tuku na stehnech, bocích a lýtkách, štíhlejší vršek'),
+    ('skinny_fat', 'Skinny fat', 'Štíhlá postava, ale vyšší podíl tuku (hlavně v břiše) a méně svalů'),
+  ];
+
+  static const _advice = <String, String>{
+    'atleticka': 'Udržovat – síla, dostatek bílkovin a regenerace.',
+    'fit': 'Dobrý základ. Pro víc svalů progresivní silový trénink a mírný přebytek.',
+    'normalni': 'Pravidelný silový trénink 3× týdně a bílkoviny podle plánu.',
+    'obdelnik': 'Zúžit pas a rozšířit ramena: ramena, záda (přítahy), méně tuku v pase.',
+    'obraceny_trojuhelnik': 'Silný vršek – nezapomínat na nohy (dřepy, výpady, mrtvé tahy).',
+    'trojuhelnik': 'Silné nohy – přidat tlaky, přítahy a ramena pro vyvážení.',
+    'presypaci_hodiny': 'Vyvážená postava – udržovat sílu celého těla.',
+    'jablko': 'Břišní tuk je nejrizikovější, ale odchází první: mírný deficit, pohyb, spánek, méně alkoholu.',
+    'hruska': 'Tuk na stehnech odchází pomaleji – trpělivost, síla nohou a zadku, mírný deficit.',
+    'sud': 'Postupná redukce (0,5–0,75 % váhy týdně), denní kroky a silový trénink.',
+    'bricni': 'Vysoký viscerální tuk – redukce má přednost, kontrolovat tlak a cukr.',
+    'boky_zadek': 'Silový trénink nohou a zadku, mírný deficit, hodně kroků.',
+    'horni_cast': 'Redukce a silový trénink celého těla, posílit nohy.',
+    'dolni_cast': 'Redukce, silový trénink nohou i vršku, více kroků.',
+    'skinny_fat': 'Nehubnout dál – nabrat svaly: silový trénink 3–4× týdně, bílkoviny, jídlo na údržbě.',
+  };
 
   factory BodyShape.fromEntry(CoachInbodyEntry e, {required bool male}) {
     final h = e.heightCm > 0 ? e.heightCm / 100.0 : (male ? 1.78 : 1.66);
     final w = e.weightKg > 0 ? e.weightKg : (male ? 80.0 : 62.0);
     final bmi = w / (h * h);
-    final fatPct = e.bodyFatPercent > 0 ? e.bodyFatPercent : (male ? 18.0 : 27.0);
+    final fat = e.bodyFatPercent > 0 ? e.bodyFatPercent : (male ? 18.0 : 27.0);
 
-    // --- výchozí proporce (poloviční šířky a hloubky, výška postavy = 1)
-    var sh = male ? 0.125 : 0.106; // ramena
-    var ch = male ? 0.112 : 0.102; // hrudník
-    var chD = male ? 0.072 : 0.07;
-    var wa = male ? 0.090 : 0.077; // pas
-    var waD = 0.068;
-    var be = male ? 0.094 : 0.088; // podbřišek
-    var beD = 0.07;
-    var hi = male ? 0.100 : 0.114; // boky
-    var hiD = male ? 0.074 : 0.08;
-    var th = male ? 0.056 : 0.060; // stehno
-    var ca = male ? 0.040 : 0.038; // lýtko
-    var ua = male ? 0.034 : 0.030; // paže
-    var fa = male ? 0.028 : 0.024; // předloktí
-    var bellyZ = 0.0; // břicho dopředu
-    var gluteZ = -0.006; // hýždě dozadu
-    var chestZ = 0.004;
-
-    // --- celková mohutnost podle BMI
-    final size = _c(math.sqrt(bmi / 22.5), 0.82, 1.45);
-
-    // --- tuk: kolik nad „sportovní normou“
-    final refFat = male ? 15.0 : 25.0;
-    final fd = _c((fatPct - refFat) / 15, -0.6, 1.6);
-    final fatPlus = math.max(fd, 0.0);
-
-    // rozložení tuku
-    final segFat = e.fatLeftArmKg +
-        e.fatRightArmKg +
-        e.fatTrunkKg +
-        e.fatLeftLegKg +
-        e.fatRightLegKg;
-    var dTr = 0.0, dLeg = 0.0;
-    if (segFat > 0) {
-      dTr = e.fatTrunkKg / segFat - (male ? 0.52 : 0.45);
-      dLeg = (e.fatLeftLegKg + e.fatRightLegKg) / segFat - (male ? 0.32 : 0.40);
-    }
-
-    // rozložení svalů
-    final upper = e.muscleLeftArmKg + e.muscleRightArmKg + e.muscleTrunkKg;
-    final lower = e.muscleLeftLegKg + e.muscleRightLegKg;
-    var mu = 0.0;
-    if (upper > 0 && lower > 0) {
-      mu = _c(upper / lower / (male ? 1.85 : 1.7) - 1, -0.3, 0.3);
-    }
+    // svaly celkově (podíl kosterní svaloviny na váze)
     var mm = 0.0;
     if (e.smmKg > 0) {
       mm = _c((e.smmKg / w - (male ? 0.44 : 0.37)) / 0.08, -1, 1.5);
     }
 
-    // --- břicho (jablko)
-    final belly = 1 + 0.35 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
-    wa *= belly;
-    be *= belly;
-    waD *= 1 + 0.5 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
-    beD *= 1 + 0.55 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
-    bellyZ = 0.016 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
-    if (fd < 0) {
-      wa *= 1 + 0.18 * fd; // štíhlý pas
-      be *= 1 + 0.12 * fd;
+    // rozložení svalů: paže + trup × nohy
+    final upper = e.muscleLeftArmKg + e.muscleRightArmKg + e.muscleTrunkKg;
+    final lower = e.muscleLeftLegKg + e.muscleRightLegKg;
+    final hasSegMuscle = upper > 0 && lower > 0;
+    final mu = hasSegMuscle
+        ? _c(upper / lower / (male ? 1.85 : 1.7) - 1, -0.3, 0.3)
+        : 0.0;
+
+    // rozložení tuku
+    final arms = e.fatLeftArmKg + e.fatRightArmKg;
+    final legs = e.fatLeftLegKg + e.fatRightLegKg;
+    final segFat = arms + e.fatTrunkKg + legs;
+    var dTr = 0.0, dLeg = 0.0, dUpper = 0.0;
+    if (segFat > 0) {
+      dTr = e.fatTrunkKg / segFat - (male ? 0.52 : 0.45);
+      dLeg = legs / segFat - (male ? 0.32 : 0.40);
+      dUpper = (arms + e.fatTrunkKg) / segFat - (male ? 0.68 : 0.60);
     }
 
-    // --- boky a stehna (hruška)
-    final hips = 1 + 0.25 * fatPlus * (1 + 3 * math.max(dLeg, -0.2));
-    hi *= hips;
-    hiD *= hips;
-    th *= hips;
-    gluteZ -= 0.012 * fatPlus * (1 + 2 * math.max(dLeg, -0.2));
+    final lowFat = fat <= (male ? 12 : 22);
+    final okFat = fat <= (male ? 17 : 27);
+    final highFat = fat >= (male ? 20 : 30);
+    final veryHigh = fat >= (male ? 28 : 38);
 
-    // --- svaly
-    sh *= 1 + 0.12 * mm + 0.8 * mu;
-    ch *= 1 + 0.06 * mm + 0.25 * mu;
-    chD *= 1 + 0.10 * mm + 0.3 * mu;
-    chestZ += 0.006 * math.max(mm, 0);
-    ua *= 1 + 0.15 * mm + 0.9 * mu + 0.25 * fatPlus;
-    fa *= 1 + 0.12 * mm + 0.5 * mu;
-    th *= 1 + 0.12 * mm - 0.9 * mu;
-    ca *= 1 + 0.10 * mm - 0.8 * mu;
-
-    _Level t(double y, double a, double d, [double z = 0]) =>
-        _Level(y, a * size, d * size, z * size);
-
-    // Úrovně trupu – hustě u ramen, aby byla kulatá (ne hranatá).
-    final torso = [
-      t(0.118, 0.028, 0.032),
-      t(0.136, 0.034, 0.036),
-      t(0.147, sh * 0.45, 0.044),
-      t(0.158, sh * 0.72, 0.050),
-      t(0.172, sh * 0.90, 0.056),
-      t(0.190, sh * 0.99, chD * 0.88, chestZ * 0.3),
-      t(0.205, sh, chD * 0.9, chestZ * 0.4),
-      t(0.235, sh * 0.96, chD * 0.97, chestZ * 0.8),
-      t(0.270, ch, chD, chestZ),
-      t(0.335, (ch + wa) / 2, (chD + waD) / 2, (chestZ + bellyZ * 0.5) / 2),
-      t(0.385, wa, (waD + beD) / 2, bellyZ * 0.75),
-      t(0.430, (wa + be) / 2, beD, bellyZ),
-      t(0.470, be, (beD + hiD) / 2, bellyZ * 0.55),
-      t(0.505, hi, hiD, gluteZ * 0.5),
-      t(0.540, hi * 0.96, hiD * 0.95, gluteZ),
-      t(0.556, hi * 0.80, hiD * 0.85, gluteZ * 0.6),
-    ];
-
-    final legs = [
-      t(0.535, th, th * 1.08),
-      t(0.600, th * 0.93, th),
-      t(0.680, th * 0.72, th * 0.80),
-      t(0.735, 0.034, 0.038),
-      t(0.790, ca, ca * 1.1, -0.004),
-      t(0.860, ca * 0.75, ca * 0.8),
-      t(0.945, 0.022, 0.026),
-      t(0.968, 0.024, 0.045, 0.02),
-      t(0.985, 0.022, 0.050, 0.025),
-    ];
-
-    final arms = [
-      t(0.178, ua * 0.55, ua * 0.60),
-      t(0.195, ua * 1.05, ua * 1.00),
-      t(0.240, ua, ua),
-      t(0.310, ua * 0.85, ua * 0.88),
-      t(0.345, ua * 0.72, ua * 0.75),
-      t(0.400, fa, fa * 0.95),
-      t(0.490, 0.019, 0.017),
-      t(0.530, 0.025, 0.014),
-      t(0.585, 0.018, 0.011),
-    ];
-
-    final head = t(0.062, 0.050, 0.060, 0.004);
-
-    // --- popis
-    String shape;
-    String text;
-    final excess = fatPct >= refFat + 3;
-    if (excess && dTr > 0.04 && dTr >= dLeg) {
-      shape = 'Jablko';
-      text = 'Tuk se ukládá hlavně na břiše a trupu. Pomáhá redukce, '
-          'pohyb a spánek – břišní tuk jde dolů jako první.';
-    } else if (excess && dLeg > 0.04) {
-      shape = 'Hruška';
-      text = 'Tuk se ukládá hlavně na bocích a stehnech. Je zdravotně '
-          'méně rizikový, ale odchází nejpomaleji.';
-    } else if (excess) {
-      shape = 'Rovnoměrně rozložený tuk';
-      text = 'Tuk je rozložený po celém těle bez výrazné převahy.';
+    String key;
+    if (fat >= (male ? 18 : 28) && mm <= -0.3 && bmi < 25) {
+      key = 'skinny_fat';
+    } else if (highFat) {
+      if (dTr >= 0.08) {
+        key = 'bricni';
+      } else if (veryHigh && dTr >= -0.02) {
+        key = 'sud';
+      } else if (dTr >= 0.04) {
+        key = 'jablko';
+      } else if (dLeg >= 0.06) {
+        key = male ? 'dolni_cast' : 'hruska';
+      } else if (dLeg >= 0.03) {
+        key = male ? 'dolni_cast' : 'boky_zadek';
+      } else if (dUpper >= 0.04) {
+        key = 'horni_cast';
+      } else {
+        key = veryHigh ? 'sud' : 'normalni';
+      }
+    } else if (lowFat && mm >= 0.5) {
+      key = mu > 0.1 ? 'obraceny_trojuhelnik' : 'atleticka';
     } else if (mu > 0.1) {
-      shape = 'V-tvar';
-      text = 'Silná ramena a záda, pas užší. Nohy zaostávají – přidat '
-          'objem na dřepy, výpady a mrtvé tahy.';
-    } else if (mm > 0.5) {
-      shape = 'Atletická postava';
-      text = 'Nízký tuk a nadprůměrná svalová hmota.';
-    } else {
-      shape = 'Vyvážená postava';
-      text = 'Tuk ani svaly nejsou výrazně posunuté k jedné části těla.';
-    }
-
-    String muscle;
-    if (upper <= 0 || lower <= 0) {
-      muscle = 'Svaly po částech těla nejsou změřené';
-    } else if (mu > 0.1) {
-      muscle = 'Silný vršek, slabší nohy';
+      key = 'obraceny_trojuhelnik';
     } else if (mu < -0.1) {
-      muscle = 'Silné nohy, slabší vršek';
+      key = 'trojuhelnik';
+    } else if (okFat && mm >= 0) {
+      key = 'fit';
+    } else if (!male && dLeg > 0 && mu > -0.05) {
+      key = 'presypaci_hodiny';
+    } else if (male && mm < 0) {
+      key = 'obdelnik';
     } else {
-      muscle = 'Svaly rozložené vyváženě';
-    }
-    if (upper > 0 && lower > 0 && mu < -0.1 && !excess) {
-      text = 'Nohy jsou silné, horní polovina zaostává – přidat tlaky, '
-          'přítahy a ramena.';
+      key = 'normalni';
     }
 
-    return BodyShape._(torso, legs, arms, head, shape, muscle, text);
+    final t = types.firstWhere((x) => x.$1 == key);
+
+    final muscleLabel = !hasSegMuscle
+        ? 'Svaly po částech těla nejsou změřené'
+        : mu > 0.1
+            ? 'Silný vršek, slabší nohy'
+            : mu < -0.1
+                ? 'Silné nohy, slabší vršek'
+                : 'Svaly rozložené vyváženě';
+
+    final muscleLevel = e.smmKg <= 0
+        ? '–'
+        : mm >= 1.0
+            ? 'vysoké'
+            : mm >= 0.3
+                ? 'nadprůměrné'
+                : mm > -0.3
+                    ? 'průměrné'
+                    : 'nižší';
+
+    final fatType = segFat <= 0
+        ? '–'
+        : dTr >= 0.04
+            ? 'břišní (trup)'
+            : dLeg >= 0.03
+                ? 'boky a nohy'
+                : dUpper >= 0.04
+                    ? 'horní část těla'
+                    : 'rovnoměrný';
+
+    return BodyShape._(
+      key: key,
+      shapeLabel: t.$2,
+      description: t.$3,
+      advice: _advice[key] ?? '',
+      muscleLabel: muscleLabel,
+      muscleLevel: muscleLevel,
+      fatType: fatType,
+      fatPercent: fat,
+    );
   }
 }
 
-class _Level {
-  const _Level(this.y, this.a, this.d, this.z);
-
-  /// Výška od temene (0) k chodidlům (1).
-  final double y;
-
-  /// Poloviční šířka zepředu.
-  final double a;
-
-  /// Poloviční hloubka (zboku).
-  final double d;
-
-  /// Posun středu dopředu (+) / dozadu (−).
-  final double z;
-}
-
-/// Karta s otáčející se siluetou a popisem tvaru postavy.
-class BodyShapeCard extends StatefulWidget {
+/// Karta „Typ postavy“: kresba typu, popis, tuk / svaly / typ tuku
+/// a přehled všech typů.
+class BodyShapeCard extends StatelessWidget {
   const BodyShapeCard({super.key, required this.entry, required this.male});
 
   final CoachInbodyEntry entry;
   final bool male;
 
   @override
-  State<BodyShapeCard> createState() => _BodyShapeCardState();
-}
-
-class _BodyShapeCardState extends State<BodyShapeCard>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
-  Duration _last = Duration.zero;
-  double _angle = 0;
-  bool _drag = false;
-  bool _pauza = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = createTicker((elapsed) {
-      final dt = (elapsed - _last).inMicroseconds / 1e6;
-      _last = elapsed;
-      if (_drag || _pauza) return;
-      setState(() => _angle += dt * (2 * math.pi / 14)); // 1 otáčka / 14 s
-    })
-      ..start();
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
-
-  String get _pohled {
-    final a = (_angle % (2 * math.pi) + 2 * math.pi) % (2 * math.pi);
-    final deg = a * 180 / math.pi;
-    if (deg < 30 || deg >= 330) return 'zepředu';
-    if (deg < 150) return 'z boku';
-    if (deg < 210) return 'zezadu';
-    return 'z boku';
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final shape = BodyShape.fromEntry(widget.entry, male: widget.male);
+    final shape = BodyShape.fromEntry(entry, male: male);
     final cs = Theme.of(context).colorScheme;
+
+    Widget radek(String a, String b) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(children: [
+            SizedBox(width: 90, child: Text(a, style: TextStyle(color: cs.onSurfaceVariant))),
+            Expanded(child: Text(b, style: const TextStyle(fontWeight: FontWeight.w600))),
+          ]),
+        );
+
     return Card(
       elevation: 0,
       color: cs.surfaceContainerHighest,
@@ -290,198 +233,130 @@ class _BodyShapeCardState extends State<BodyShapeCard>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Tvar postavy',
+              'Typ postavy',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
             GestureDetector(
-              onHorizontalDragStart: (_) => setState(() => _drag = true),
-              onHorizontalDragUpdate: (d) =>
-                  setState(() => _angle += d.delta.dx / 90),
-              onHorizontalDragEnd: (_) => setState(() => _drag = false),
-              onDoubleTap: () => setState(() => _pauza = !_pauza),
-              child: AspectRatio(
-                aspectRatio: 0.62,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Semantics(
-                    label: 'Silueta postavy: ${shape.shapeLabel}',
-                    child: CustomPaint(
-                      painter: _BodyPainter(shape, _angle),
-                      size: Size.infinite,
-                    ),
+              onTap: () => _ukazatVse(context, shape.key),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: AspectRatio(
+                  aspectRatio: 450 / 720,
+                  child: Image.asset(
+                    shape.asset,
+                    fit: BoxFit.contain,
+                    semanticLabel: 'Typ postavy: ${shape.shapeLabel}',
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Pohled $_pohled · otoč tažením, dvojklik = zastavit',
-              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 10),
             Text(
               shape.shapeLabel,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
-            Text(shape.muscleLabel,
-                style: TextStyle(color: cs.onSurfaceVariant)),
-            const SizedBox(height: 6),
             Text(shape.description, style: const TextStyle(height: 1.35)),
+            const SizedBox(height: 8),
+            radek('Tuk', '${shape.fatPercent.toStringAsFixed(1).replaceAll('.', ',')} %'),
+            radek('Svaly', shape.muscleLevel),
+            radek('Typ tuku', shape.fatType),
+            radek('Rozložení', shape.muscleLabel),
+            const SizedBox(height: 8),
+            Text(shape.advice, style: const TextStyle(height: 1.35)),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _ukazatVse(context, shape.key),
+                icon: const Icon(Icons.grid_view),
+                label: const Text('Všechny typy postav'),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
 
-class _BodyPainter extends CustomPainter {
-  _BodyPainter(this.shape, this.angle);
-
-  final BodyShape shape;
-  final double angle;
-
-  /// Catmull-Rom mezi úrovněmi → hustý a hladký průběh (žádné hrany).
-  static List<_Level> _dense(List<_Level> ls, [double step = 0.004]) {
-    double cr(double p0, double p1, double p2, double p3, double t) =>
-        0.5 *
-        (2 * p1 +
-            (-p0 + p2) * t +
-            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
-            (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
-    final out = <_Level>[];
-    for (var i = 0; i < ls.length - 1; i++) {
-      final a = ls[i], b = ls[i + 1];
-      final p0 = i > 0 ? ls[i - 1] : a;
-      final p3 = i + 2 < ls.length ? ls[i + 2] : b;
-      final n = math.max(2, ((b.y - a.y) / step).floor());
-      for (var j = 0; j < n; j++) {
-        final t = j / n;
-        out.add(_Level(
-          a.y + (b.y - a.y) * t,
-          math.max(0.002, cr(p0.a, a.a, b.a, p3.a, t)),
-          math.max(0.002, cr(p0.d, a.d, b.d, p3.d, t)),
-          cr(p0.z, a.z, b.z, p3.z, t),
-        ));
-      }
-    }
-    out.add(ls.last);
-    return out;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final unit = size.height * 0.92;
-    final top = size.height * 0.04;
-    final cx = size.width / 2;
-    final cosA = math.cos(angle);
-    final sinA = math.sin(angle);
-    final paint = Paint()
-      ..color = Colors.black
-      ..isAntiAlias = true;
-
-    double half(_Level l) =>
-        math.sqrt(math.pow(l.a * cosA, 2) + math.pow(l.d * sinA, 2));
-
-    /// Obrys jedné části (otočení kolem svislé osy) se zaoblenými konci.
-    Path outline(List<_Level> ls, double Function(int i) xAt) {
-      final left = <Offset>[];
-      final right = <Offset>[];
-      for (var i = 0; i < ls.length; i++) {
-        final l = ls[i];
-        final center = xAt(i) * cosA + l.z * sinA;
-        final w = half(l);
-        final y = top + l.y * unit;
-        left.add(Offset(cx + (center - w) * unit, y));
-        right.add(Offset(cx + (center + w) * unit, y));
-      }
-      List<Offset> cap(Offset l, Offset r, bool up) {
-        final mx = (l.dx + r.dx) / 2;
-        final hw = (r.dx - l.dx) / 2;
-        final hh = math.min(hw, 0.018 * unit) * (up ? -1 : 1);
-        return [
-          for (var k = 1; k < 12; k++)
-            Offset(mx - hw * math.cos(math.pi * k / 12),
-                l.dy + hh * math.sin(math.pi * k / 12)),
-        ];
-      }
-
-      final pts = [
-        ...left.reversed,
-        ...cap(left.first, right.first, true),
-        ...right,
-        ...cap(left.last, right.last, false).reversed,
-      ];
-      final path = Path()..moveTo(pts.first.dx, pts.first.dy);
-      for (final p in pts.skip(1)) {
-        path.lineTo(p.dx, p.dy);
-      }
-      return path..close();
-    }
-
-    // trup
-    final torso = _dense(shape._levels);
-    canvas.drawPath(outline(torso, (_) => 0), paint);
-
-    // nohy (střed nohy = půlka šířky boků)
-    final hip = shape._levels[shape._levels.length - 2];
-    final legX = hip.a * 0.48;
-    final legs = _dense(shape._legs);
-    canvas.drawPath(outline(legs, (_) => -legX), paint);
-    canvas.drawPath(outline(legs, (_) => legX), paint);
-
-    // paže: u ramene napojené na deltový sval, níž s mezerou od trupu;
-    // poloha se vyhladí, aby paže nebyla zalomená
-    double torsoAt(double y) {
-      for (var i = 0; i < torso.length - 1; i++) {
-        if (y >= torso[i].y && y <= torso[i + 1].y) return torso[i].a;
-      }
-      return torso.last.a;
-    }
-
-    var shoulder = 0.0;
-    for (final l in shape._levels) {
-      if (l.y < 0.28 && l.a > shoulder) shoulder = l.a;
-    }
-    final arms = _dense(shape._arms);
-    final raw = [
-      for (final l in arms)
-        l.y < 0.2
-            ? shoulder - l.a * 0.75
-            : math.max(shoulder - l.a * 0.75, torsoAt(l.y) + l.a + 0.012),
-    ];
-    const k = 12;
-    final xs = <double>[];
-    for (var i = 0; i < raw.length; i++) {
-      final lo = math.max(0, i - k);
-      final hi = math.min(raw.length, i + k + 1);
-      var sum = 0.0;
-      for (var j = lo; j < hi; j++) {
-        sum += raw[j];
-      }
-      final avg = sum / (hi - lo);
-      xs.add(arms[i].y > 0.26 ? math.max(raw[i], avg) : avg);
-    }
-    canvas.drawPath(outline(arms, (i) => -xs[i]), paint);
-    canvas.drawPath(outline(arms, (i) => xs[i]), paint);
-
-    // hlava
-    final h = shape.head;
-    final hc = h.z * sinA;
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(cx + hc * unit, top + h.y * unit),
-        width: half(h) * 2 * unit,
-        height: 0.118 * unit,
-      ),
-      paint,
+  void _ukazatVse(BuildContext context, String aktualni) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final sirka = MediaQuery.sizeOf(ctx).width;
+        final sloupce = math.max(2, math.min(5, (sirka / 170).floor()));
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900, maxHeight: 760),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+                  child: Row(children: [
+                    const Expanded(
+                      child: Text('Typy postav',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    ),
+                    IconButton(
+                      tooltip: 'Zavřít',
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ]),
+                ),
+                Flexible(
+                  child: GridView.count(
+                    padding: const EdgeInsets.all(12),
+                    crossAxisCount: sloupce,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 0.5,
+                    children: [
+                      for (final t in BodyShape.types)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: t.$1 == aktualni ? Colors.red : Colors.black12,
+                              width: t.$1 == aktualni ? 3 : 1,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(6),
+                          child: Column(children: [
+                            Text(
+                              t.$2,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Expanded(child: Image.asset('assets/postavy/${t.$1}.png')),
+                            Text(
+                              t.$3,
+                              textAlign: TextAlign.center,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.black87, fontSize: 11),
+                            ),
+                          ]),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
-
-  @override
-  bool shouldRepaint(_BodyPainter old) =>
-      old.angle != angle || old.shape != shape;
 }
