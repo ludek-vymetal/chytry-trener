@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1339,6 +1340,9 @@ class ClientDetailScreen extends ConsumerWidget {
                   title: Text(l10n.editClientCard),
                 ),
               ),
+              // Na webu nejde ukládat do složek v počítači (export,
+              // archiv, import ze složky) – jen v aplikaci.
+              if (!kIsWeb) ...[
               PopupMenuItem(
                 value: 'export',
                 child: ListTile(
@@ -1360,7 +1364,9 @@ class ClientDetailScreen extends ConsumerWidget {
                   title: Text(l10n.importRestoreClient),
                 ),
               ),
+              ],
               const PopupMenuDivider(),
+              if (!kIsWeb)
               PopupMenuItem(
                 value: 'archiveDelete',
                 child: ListTile(

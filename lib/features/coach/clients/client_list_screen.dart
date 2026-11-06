@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -483,6 +484,7 @@ class _ClientListScreenState
                     title: Text(l10n.copyEmails),
                   ),
                 ),
+                if (!kIsWeb)
                 PopupMenuItem(
                   value: 'csv',
                   enabled: displayedClients.isNotEmpty,
@@ -499,6 +501,8 @@ class _ClientListScreenState
                     title: Text('Export PDF'),
                   ),
                 ),
+                // Import ze souboru v počítači jen v aplikaci (ne na webu).
+                if (!kIsWeb) ...[
                 const PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'importCsv',
@@ -514,6 +518,7 @@ class _ClientListScreenState
                     title: Text('Import JSON'),
                   ),
                 ),
+                ],
               ],
             ),
             const SizedBox(width: 4),

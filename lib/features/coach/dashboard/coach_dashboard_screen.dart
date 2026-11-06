@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -955,6 +956,7 @@ class _BackupPanel extends StatelessWidget {
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 6),
+            if (!kIsWeb)
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
