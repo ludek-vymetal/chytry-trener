@@ -97,7 +97,7 @@ class BodyShape {
     be *= belly;
     waD *= 1 + 0.5 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
     beD *= 1 + 0.55 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
-    bellyZ = 0.022 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
+    bellyZ = 0.016 * fatPlus * (1 + 3 * math.max(dTr, -0.2));
     if (fd < 0) {
       wa *= 1 + 0.18 * fd; // štíhlý pas
       be *= 1 + 0.12 * fd;
@@ -123,17 +123,21 @@ class BodyShape {
     _Level t(double y, double a, double d, [double z = 0]) =>
         _Level(y, a * size, d * size, z * size);
 
+    // Úrovně trupu – hustě u ramen, aby byla kulatá (ne hranatá).
     final torso = [
       t(0.118, 0.028, 0.032),
-      t(0.135, 0.034, 0.036),
-      t(0.152, sh * 0.62, 0.048),
-      t(0.170, sh * 0.90, 0.056),
-      t(0.195, sh, chD * 0.9, chestZ * 0.4), // ramena (index 4)
+      t(0.136, 0.034, 0.036),
+      t(0.147, sh * 0.45, 0.044),
+      t(0.158, sh * 0.72, 0.050),
+      t(0.172, sh * 0.90, 0.056),
+      t(0.190, sh * 0.99, chD * 0.88, chestZ * 0.3),
+      t(0.205, sh, chD * 0.9, chestZ * 0.4),
       t(0.235, sh * 0.96, chD * 0.97, chestZ * 0.8),
       t(0.270, ch, chD, chestZ),
-      t(0.335, (ch + wa) / 2, (chD + waD) / 2, (chestZ + bellyZ) / 2),
-      t(0.400, wa, waD, bellyZ * 0.8),
-      t(0.455, be, beD, bellyZ),
+      t(0.335, (ch + wa) / 2, (chD + waD) / 2, (chestZ + bellyZ * 0.5) / 2),
+      t(0.385, wa, (waD + beD) / 2, bellyZ * 0.75),
+      t(0.430, (wa + be) / 2, beD, bellyZ),
+      t(0.470, be, (beD + hiD) / 2, bellyZ * 0.55),
       t(0.505, hi, hiD, gluteZ * 0.5),
       t(0.540, hi * 0.96, hiD * 0.95, gluteZ),
       t(0.556, hi * 0.80, hiD * 0.85, gluteZ * 0.6),
@@ -152,11 +156,11 @@ class BodyShape {
     ];
 
     final arms = [
-      t(0.165, ua * 0.80, ua * 0.90),
-      t(0.190, ua * 1.12, ua * 1.05),
+      t(0.178, ua * 0.55, ua * 0.60),
+      t(0.195, ua * 1.05, ua * 1.00),
       t(0.240, ua, ua),
       t(0.310, ua * 0.85, ua * 0.88),
-      t(0.345, 0.025, 0.026),
+      t(0.345, ua * 0.72, ua * 0.75),
       t(0.400, fa, fa * 0.95),
       t(0.490, 0.019, 0.017),
       t(0.530, 0.025, 0.014),
@@ -340,6 +344,34 @@ class _BodyPainter extends CustomPainter {
   final BodyShape shape;
   final double angle;
 
+  /// Catmull-Rom mezi úrovněmi → hustý a hladký průběh (žádné hrany).
+  static List<_Level> _dense(List<_Level> ls, [double step = 0.004]) {
+    double cr(double p0, double p1, double p2, double p3, double t) =>
+        0.5 *
+        (2 * p1 +
+            (-p0 + p2) * t +
+            (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
+            (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+    final out = <_Level>[];
+    for (var i = 0; i < ls.length - 1; i++) {
+      final a = ls[i], b = ls[i + 1];
+      final p0 = i > 0 ? ls[i - 1] : a;
+      final p3 = i + 2 < ls.length ? ls[i + 2] : b;
+      final n = math.max(2, ((b.y - a.y) / step).floor());
+      for (var j = 0; j < n; j++) {
+        final t = j / n;
+        out.add(_Level(
+          a.y + (b.y - a.y) * t,
+          math.max(0.002, cr(p0.a, a.a, b.a, p3.a, t)),
+          math.max(0.002, cr(p0.d, a.d, b.d, p3.d, t)),
+          cr(p0.z, a.z, b.z, p3.z, t),
+        ));
+      }
+    }
+    out.add(ls.last);
+    return out;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final unit = size.height * 0.92;
@@ -354,61 +386,87 @@ class _BodyPainter extends CustomPainter {
     double half(_Level l) =>
         math.sqrt(math.pow(l.a * cosA, 2) + math.pow(l.d * sinA, 2));
 
-    // Svislý „válec“ z úrovní: střed (x, z) v prostoru, otočení kolem osy y.
-    Path part(List<_Level> levels, double offX) {
+    /// Obrys jedné části (otočení kolem svislé osy) se zaoblenými konci.
+    Path outline(List<_Level> ls, double Function(int i) xAt) {
       final left = <Offset>[];
       final right = <Offset>[];
-      for (final l in levels) {
-        final center = offX * cosA + l.z * sinA;
+      for (var i = 0; i < ls.length; i++) {
+        final l = ls[i];
+        final center = xAt(i) * cosA + l.z * sinA;
         final w = half(l);
         final y = top + l.y * unit;
         left.add(Offset(cx + (center - w) * unit, y));
         right.add(Offset(cx + (center + w) * unit, y));
       }
-      final pts = [...left, ...right.reversed];
-      return _smooth(pts);
+      List<Offset> cap(Offset l, Offset r, bool up) {
+        final mx = (l.dx + r.dx) / 2;
+        final hw = (r.dx - l.dx) / 2;
+        final hh = math.min(hw, 0.018 * unit) * (up ? -1 : 1);
+        return [
+          for (var k = 1; k < 12; k++)
+            Offset(mx - hw * math.cos(math.pi * k / 12),
+                l.dy + hh * math.sin(math.pi * k / 12)),
+        ];
+      }
+
+      final pts = [
+        ...left.reversed,
+        ...cap(left.first, right.first, true),
+        ...right,
+        ...cap(left.last, right.last, false).reversed,
+      ];
+      final path = Path()..moveTo(pts.first.dx, pts.first.dy);
+      for (final p in pts.skip(1)) {
+        path.lineTo(p.dx, p.dy);
+      }
+      return path..close();
     }
 
     // trup
-    canvas.drawPath(part(shape._levels, 0), paint);
+    final torso = _dense(shape._levels);
+    canvas.drawPath(outline(torso, (_) => 0), paint);
 
     // nohy (střed nohy = půlka šířky boků)
     final hip = shape._levels[shape._levels.length - 2];
     final legX = hip.a * 0.48;
-    canvas.drawPath(part(shape._legs, -legX), paint);
-    canvas.drawPath(part(shape._legs, legX), paint);
+    final legs = _dense(shape._legs);
+    canvas.drawPath(outline(legs, (_) => -legX), paint);
+    canvas.drawPath(outline(legs, (_) => legX), paint);
 
-    // paže: odsazené od trupu, aby byla vidět mezera v pase
+    // paže: u ramene napojené na deltový sval, níž s mezerou od trupu;
+    // poloha se vyhladí, aby paže nebyla zalomená
     double torsoAt(double y) {
-      final ls = shape._levels;
-      for (var i = 0; i < ls.length - 1; i++) {
-        if (y >= ls[i].y && y <= ls[i + 1].y) {
-          final t = (y - ls[i].y) / (ls[i + 1].y - ls[i].y);
-          return ls[i].a + (ls[i + 1].a - ls[i].a) * t;
-        }
+      for (var i = 0; i < torso.length - 1; i++) {
+        if (y >= torso[i].y && y <= torso[i + 1].y) return torso[i].a;
       }
-      return ls.last.a;
+      return torso.last.a;
     }
 
-    for (final side in [-1.0, 1.0]) {
-      final left = <Offset>[];
-      final right = <Offset>[];
-      final shoulder = shape._levels[4].a;
-      for (final l in shape._arms) {
-        // u ramene se paže napojí na deltový sval, níž drží mezeru od trupu
-        final atShoulder = shoulder - l.a * 0.7;
-        var x = l.y < 0.25
-            ? atShoulder
-            : math.max(atShoulder, torsoAt(l.y) + l.a + 0.012);
-        x *= side;
-        final center = x * cosA + l.z * sinA;
-        final w = half(l);
-        final y = top + l.y * unit;
-        left.add(Offset(cx + (center - w) * unit, y));
-        right.add(Offset(cx + (center + w) * unit, y));
-      }
-      canvas.drawPath(_smooth([...left, ...right.reversed]), paint);
+    var shoulder = 0.0;
+    for (final l in shape._levels) {
+      if (l.y < 0.28 && l.a > shoulder) shoulder = l.a;
     }
+    final arms = _dense(shape._arms);
+    final raw = [
+      for (final l in arms)
+        l.y < 0.2
+            ? shoulder - l.a * 0.75
+            : math.max(shoulder - l.a * 0.75, torsoAt(l.y) + l.a + 0.012),
+    ];
+    const k = 12;
+    final xs = <double>[];
+    for (var i = 0; i < raw.length; i++) {
+      final lo = math.max(0, i - k);
+      final hi = math.min(raw.length, i + k + 1);
+      var sum = 0.0;
+      for (var j = lo; j < hi; j++) {
+        sum += raw[j];
+      }
+      final avg = sum / (hi - lo);
+      xs.add(arms[i].y > 0.26 ? math.max(raw[i], avg) : avg);
+    }
+    canvas.drawPath(outline(arms, (i) => -xs[i]), paint);
+    canvas.drawPath(outline(arms, (i) => xs[i]), paint);
 
     // hlava
     final h = shape.head;
@@ -421,23 +479,6 @@ class _BodyPainter extends CustomPainter {
       ),
       paint,
     );
-  }
-
-  /// Uzavřená hladká křivka přes body (kvadratické Bézierovy oblouky
-  /// mezi středy sousedních úseček).
-  static Path _smooth(List<Offset> pts) {
-    final path = Path();
-    if (pts.length < 3) return path;
-    Offset mid(Offset a, Offset b) => Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
-    path.moveTo(mid(pts.last, pts.first).dx, mid(pts.last, pts.first).dy);
-    for (var i = 0; i < pts.length; i++) {
-      final p = pts[i];
-      final n = pts[(i + 1) % pts.length];
-      final m = mid(p, n);
-      path.quadraticBezierTo(p.dx, p.dy, m.dx, m.dy);
-    }
-    path.close();
-    return path;
   }
 
   @override
