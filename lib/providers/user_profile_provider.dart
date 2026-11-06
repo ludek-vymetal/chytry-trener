@@ -8,9 +8,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/training/intake/training_intake.dart';
 import '../core/training/training_split.dart';
 import '../models/body_circumference.dart';
+import '../models/body_composition.dart';
+import '../models/coach/coach_inbody_entry.dart';
 import '../models/goal.dart';
 import '../models/measurement.dart';
 import '../models/user_profile.dart';
+import '../services/coach/coach_storage_service.dart';
+import '../services/macro_service.dart';
 import '../services/coach/extra_backup_service.dart';
 
 class UserProfileNotifier extends StateNotifier<UserProfile?> {
@@ -66,6 +70,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       );
 
       state = UserProfile.fromJson(jsonData);
+      await _reviewAfterLoad();
+      unawaited(syncBodyCompositionFromInbody());
 
       _log(
         'LOAD LEGACY OK -> '
@@ -192,7 +198,21 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hollywoodShootDate:
           incoming.hollywoodShootDate ?? base.hollywoodShootDate,
       bikiniMeetDate: incoming.bikiniMeetDate ?? base.bikiniMeetDate,
+      bodyComposition: _newerBodyComposition(
+        incoming.bodyComposition,
+        base.bodyComposition,
+      ),
+      energyAdjustment: incoming.energyAdjustment ?? base.energyAdjustment,
     );
+  }
+
+  static BodyComposition? _newerBodyComposition(
+    BodyComposition? a,
+    BodyComposition? b,
+  ) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a.date.isBefore(b.date) ? b : a;
   }
 
   Future<UserProfile> _buildSafeProfileForClient({
@@ -353,6 +373,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 
     if (loaded != null) {
       state = loaded;
+      await _reviewAfterLoad();
+      unawaited(syncBodyCompositionFromInbody(clientId));
 
       _log(
         'SWITCH CLIENT DONE -> loaded clientId=${state?.clientId} '
@@ -464,8 +486,151 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
     await _saveToPrefs();
   }
 
-  void _recalculateMacros() {
-    // Tady proběhne výpočet makroživin, pokud je potřeba
+  /// Týdenní kontrola vážení: když váha jde jinak, než plán fáze
+  /// předpokládá, posune se cíl kalorií (MacroService.weeklyReview).
+  /// Vrací true, když se profil změnil.
+  bool _recalculateMacros() {
+    final p = state;
+    if (p == null) return false;
+    try {
+      final next = MacroService.weeklyReview(p);
+      if (next == null) return false;
+      state = p.copyWith(energyAdjustment: next);
+      _log(
+        'ENERGY ADJUSTMENT -> ${next.kcal} kcal '
+        '(actual=${next.actualKgPerWeek} expected=${next.expectedKgPerWeek})',
+      );
+      return true;
+    } catch (e) {
+      _log('ENERGY ADJUSTMENT ERROR -> $e');
+      return false;
+    }
+  }
+
+  /// Kontrola vážení po načtení profilu – uloží se jen při změně (aby se
+  /// zbytečně neměnil čas úpravy profilu pro online coaching).
+  Future<void> _reviewAfterLoad() async {
+    if (_recalculateMacros()) await _saveToPrefs();
+  }
+
+  // ==========================================================
+  // InBody → profil (složení těla, váha)
+  // ==========================================================
+
+  /// Propíše nejnovější InBody klienta (záznamy trenéra; u online klienta
+  /// stažené z cloudu) do jeho profilu: složení těla pro výpočet bazálu
+  /// a bílkovin, hmotnosti z měření do historie vážení a aktuální váhu,
+  /// když je InBody nejnovější vážení. Funguje i pro klienta, který zrovna
+  /// není otevřený (upraví jeho uložený profil).
+  ///
+  /// [toActive] = měření patří otevřenému profilu, i když se jeho clientId
+  /// liší (vlastní aplikace člena SPAL / online klienta).
+  Future<void> syncBodyCompositionFromInbody([
+    String? clientId,
+    bool toActive = false,
+  ]) async {
+    final id = (clientId ?? state?.clientId)?.trim();
+    if (id == null || id.isEmpty) return;
+
+    final List<CoachInbodyEntry> entries;
+    try {
+      entries = (await CoachStorageService.loadInbodyAll())
+          .where((e) => e.clientId == id && !e.isDeleted && e.weightKg > 0)
+          .toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+    } catch (e) {
+      _log('INBODY SYNC ERROR -> $e');
+      return;
+    }
+    if (entries.isEmpty) return;
+
+    final active = state;
+    if (active != null && (toActive || active.clientId == id)) {
+      final updated = applyInbodyEntries(active, entries);
+      if (updated == null) return;
+      state = updated;
+      await _onStateChanged();
+      _log('INBODY SYNC -> active client $id updated');
+      return;
+    }
+
+    final stored = await _readProfileFromStorage(id);
+    if (stored == null) return;
+    final updated = applyInbodyEntries(stored, entries);
+    if (updated == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _storageKeyForClient(id),
+      json.encode(updated.toJson()),
+    );
+    await prefs.setString(
+      'profile_updated_at_$id',
+      DateTime.now().toUtc().toIso8601String(),
+    );
+    ExtraBackupService.schedulePush();
+    _log('INBODY SYNC -> stored client $id updated');
+  }
+
+  /// Vrátí profil doplněný o InBody měření, nebo `null`, když není co měnit.
+  /// [entries] = měření klienta, nejnovější první.
+  static UserProfile? applyInbodyEntries(
+    UserProfile profile,
+    List<CoachInbodyEntry> entries,
+  ) {
+    if (entries.isEmpty) return null;
+    var changed = false;
+
+    // 1) složení těla z nejnovějšího měření s beztukovou hmotou
+    BodyComposition? comp = profile.bodyComposition;
+    for (final e in entries) {
+      if (e.leanMassKg <= 0) continue;
+      final candidate = BodyComposition(
+        date: e.date,
+        weightKg: e.weightKg,
+        leanMassKg: e.leanMassKg,
+        bodyFatPercent: e.bodyFatPercent,
+        bmrKcal: e.bmr,
+        smmKg: e.smmKg,
+      );
+      if (comp == null ||
+          comp.date.isBefore(candidate.date) ||
+          (comp.date.isAtSameMomentAs(candidate.date) &&
+              (comp.leanMassKg != candidate.leanMassKg ||
+                  comp.bmrKcal != candidate.bmrKcal))) {
+        comp = candidate;
+        changed = true;
+      }
+      break;
+    }
+
+    // 2) hmotnosti z InBody do historie vážení (1 záznam za den)
+    String day(DateTime d) => '${d.year}-${d.month}-${d.day}';
+    final days = profile.measurements.map((m) => day(m.date)).toSet();
+    final measurements = [...profile.measurements];
+    for (final e in entries) {
+      if (days.add(day(e.date))) {
+        measurements.add(Measurement(date: e.date, weight: e.weightKg));
+        changed = true;
+      }
+    }
+    measurements.sort((a, b) => a.date.compareTo(b.date));
+
+    // 3) aktuální váha = nejnovější vážení
+    var weight = profile.weight;
+    if (measurements.isNotEmpty) {
+      final last = measurements.last.weight;
+      if (last > 0 && (last - weight).abs() > 0.001) {
+        weight = last;
+        changed = true;
+      }
+    }
+
+    if (!changed) return null;
+    return profile.copyWith(
+      bodyComposition: comp,
+      measurements: measurements,
+      weight: weight,
+    );
   }
 
   // ==========================================================
@@ -491,4 +656,4 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
 final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfile?>(
   (ref) => UserProfileNotifier(),
-);
+);

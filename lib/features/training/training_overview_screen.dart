@@ -102,7 +102,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
 
                   children: [
                     Text(
-                      prescription.title,
+                      _localizeKeys(l10n, prescription.title),
 
                       style: TextStyle(
                         fontSize: 20,
@@ -115,7 +115,7 @@ class TrainingOverviewScreen extends ConsumerWidget {
                     const SizedBox(height: 8),
 
                     Text(
-                      prescription.note,
+                      _localizeKeys(l10n, prescription.note),
 
                       style: TextStyle(
                         color: colorScheme
@@ -394,4 +394,20 @@ class _InfoBox extends StatelessWidget {
       ),
     );
   }
+}
+
+/// TrainingService vrací v textech klíče překladů (např.
+/// „trainingPeakMode“) – tady se nahradí přeloženým textem, aby uživatel
+/// neviděl interní názvy.
+String _localizeKeys(AppLocalizations l10n, String text) {
+  final map = <String, String>{
+    'trainingCompetitionMode': l10n.trainingCompetitionMode,
+    'trainingDeficitStrength': l10n.trainingDeficitStrength,
+    'trainingPeakMode': l10n.trainingPeakMode,
+    'trainingGeneralTitle': l10n.trainingGeneralTitle,
+    'trainingGeneralNote': l10n.trainingGeneralNote,
+  };
+  var out = text;
+  map.forEach((key, value) => out = out.replaceAll(key, value));
+  return out;
 }

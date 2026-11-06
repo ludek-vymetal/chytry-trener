@@ -252,20 +252,20 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
     final now = DateTime.now();
     final daysToTarget = _date.difference(now).inDays;
 
-    final isWinter = now.month >= 11 || now.month <= 2;
     final userWantsCut = _phase == GoalPhase.cut;
     final targetSoon = daysToTarget < 90;
 
-    if (isWinter && userWantsCut && targetSoon) {
+    if (userWantsCut && targetSoon) {
       final result = await showDialog<_PhysiqueDecision>(
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text('Nereálné načasování'),
+            title: const Text('Málo času do cíle'),
             content: const Text(
-              'Teď je období nabírání (zima) a do cíle je málo času.\n\n'
-              'V normální periodizaci by rýsování začalo až později.\n'
-              'Chceš upravit datum, nebo zapnout zrychlený režim?',
+              'Do cíle je méně než 13 týdnů. Plnou přípravu (21 týdnů) '
+              'nestihneš, plán proto začne rovnou v pozdější fázi rýsování.\n\n'
+              'Zrychlený režim přidá k tempu úbytku 0,25 % váhy týdně '
+              '(max. 1 % týdně). Chceš upravit datum, nebo zapnout zrychlený režim?',
             ),
             actions: [
               TextButton(
@@ -619,4 +619,4 @@ enum _PhysiqueDecision {
   editDate,
   accelerated,
   keepAnyway,
-}
+}

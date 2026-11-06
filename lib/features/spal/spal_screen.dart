@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/coach/app_role_provider.dart';
 import '../role/role_select_screen.dart';
 import 'spal_menu.dart';
+import 'spal_mereni.dart';
 import 'spal_rezervace.dart';
 import 'spal_service.dart';
 import 'spal_styl.dart';
@@ -68,6 +69,15 @@ class SpalDomov extends ConsumerStatefulWidget {
 
 class _SpalDomovState extends ConsumerState<SpalDomov> {
   int _i = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Nová měření z váhy ve fitku → InBody v Chytrém trenérovi (na pozadí).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      SpalMereniSync.nacist(ref).catchError((Object _) => null);
+    });
+  }
 
   void prepnout(int i) => setState(() => _i = i);
 

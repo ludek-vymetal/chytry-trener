@@ -31,7 +31,12 @@ class TrainingStrategyAdapter {
         );
 
       case GoalType.physique:
-        return _physiqueByPhase(phase, safeMode, goal.reason);
+        return _physiqueByPhase(
+          phase,
+          safeMode,
+          goal.reason,
+          blockLabel: activePhase.label,
+        );
 
       case GoalType.weightLoss:
         return _weightLossByPhase(phase, safeMode, goal.reason);
@@ -41,7 +46,12 @@ class TrainingStrategyAdapter {
 
       // sem se prakticky nedostaneme (mapujeme na physique), ale necháme pro jistotu:
       case GoalType.weightGainSupport:
-        return _physiqueByPhase(phase, safeMode, goal.reason);
+        return _physiqueByPhase(
+          phase,
+          safeMode,
+          goal.reason,
+          blockLabel: activePhase.label,
+        );
     }
   }
 
@@ -168,13 +178,34 @@ class TrainingStrategyAdapter {
   static TrainingStrategy _physiqueByPhase(
     PhaseType phase,
     PlanMode mode,
-    GoalReason reason,
-  ) {
+    GoalReason reason, {
+    String? blockLabel,
+  }) {
     final isAccel = mode == PlanMode.accelerated;
 
     late final TrainingStrategy base;
 
     switch (phase) {
+      case PhaseType.gaining when blockLabel == 'Síla + hypertrofie':
+        // Silový blok v nabírání: těžké základní cviky v nižších
+        // opakováních, doplňky v hypertrofním rozsahu.
+        base = const TrainingStrategy(
+          label: 'Postava (síla + hypertrofie)',
+          rationale: 'Silový blok: základní cviky 4–6 opakování, doplňkové '
+              '8–12, delší pauzy u hlavních cviků.',
+          repsMin: 4,
+          repsMax: 10,
+          setsMin: 10,
+          setsMax: 16,
+          rirMin: 1.0,
+          rirMax: 2.5,
+          volumeMultiplier: 0.95,
+          allowDeload: true,
+          deloadVolume: 0.7,
+          isPeaking: false,
+        );
+        break;
+
       case PhaseType.gaining:
         base = TrainingStrategy(
           label: isAccel ? 'Postava (objem – rychleji)' : 'Postava (objem)',
@@ -328,4 +359,4 @@ class TrainingStrategyAdapter {
     }
     return base;
   }
-}
+}

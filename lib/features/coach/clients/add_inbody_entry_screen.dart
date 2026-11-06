@@ -98,9 +98,27 @@ class _AddInbodyEntryScreenState
   final score =
       TextEditingController();
 
+  // Další údaje (váha FitMao a podobné, nepovinné)
+  final totalMuscle = TextEditingController();
+  final protein = TextEditingController();
+  final mineral = TextEditingController();
+  final waterPct = TextEditingController();
+  final bodyAge = TextEditingController();
+  final fatCtrl = TextEditingController();
+  final muscleCtrl = TextEditingController();
+  final weightCtrl = TextEditingController();
+
   @override
   void dispose() {
     for (final c in [
+      totalMuscle,
+      protein,
+      mineral,
+      waterPct,
+      bodyAge,
+      fatCtrl,
+      muscleCtrl,
+      weightCtrl,
       weight,
       smm,
       fatKg,
@@ -139,26 +157,11 @@ class _AddInbodyEntryScreenState
     );
   }
 
+  /// Povinná je jen hmotnost a jedno z: % tuku, množství tuku, čistá hmota
+  /// (ostatní se dopočítá) – stačí i váha bez segmentální analýzy.
   bool get _valid =>
-      _d(weight) != null &&
-      _d(smm) != null &&
-      _d(fatKg) != null &&
-      _d(water) != null &&
-      _d(lean) != null &&
-      _d(bmi) != null &&
-      _d(pbf) != null &&
-      _d(whr) != null &&
-      _d(bmr) != null &&
-      _d(mLA) != null &&
-      _d(mRA) != null &&
-      _d(mTR) != null &&
-      _d(mLL) != null &&
-      _d(mRL) != null &&
-      _d(fLA) != null &&
-      _d(fRA) != null &&
-      _d(fTR) != null &&
-      _d(fLL) != null &&
-      _d(fRL) != null;
+      (_d(weight) ?? 0) > 0 &&
+      ((_d(pbf) ?? 0) > 0 || (_d(fatKg) ?? 0) > 0 || (_d(lean) ?? 0) > 0);
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -181,15 +184,13 @@ class _AddInbodyEntryScreenState
   }
 
   Future<void> _save() async {
-    final l10n =
-        AppLocalizations.of(context)!;
-
     if (!_valid) {
       ScaffoldMessenger.of(context)
           .showSnackBar(
         SnackBar(
-          content: Text(
-            l10n.fillAllInbodyValues,
+          content: const Text(
+            'Vyplň aspoň hmotnost a % tuku (nebo množství tuku / čistou hmotu). '
+            'Ostatní hodnoty jsou nepovinné.',
           ),
         ),
       );
@@ -207,6 +208,20 @@ class _AddInbodyEntryScreenState
         await CoachStorageService
                 .loadDeviceId() ??
             'local_device';
+
+    // Dopočítání chybějících hodnot (váha bez segmentální analýzy).
+    final wKg = _d(weight)!;
+    double fatMass = _d(fatKg) ?? 0;
+    double pct = _d(pbf) ?? 0;
+    double leanKg = _d(lean) ?? 0;
+    if (fatMass <= 0 && pct > 0) fatMass = wKg * pct / 100;
+    if (fatMass <= 0 && leanKg > 0) fatMass = wKg - leanKg;
+    if (fatMass < 0) fatMass = 0;
+    if (leanKg <= 0) leanKg = wKg - fatMass;
+    if (pct <= 0 && wKg > 0) pct = fatMass / wKg * 100;
+    final hM = widget.heightCm / 100.0;
+    final bmiValue =
+        (_d(bmi) ?? 0) > 0 ? _d(bmi)! : (hM > 0 ? wKg / (hM * hM) : 0.0);
 
     final entry =
         CoachInbodyEntry(
@@ -226,64 +241,73 @@ class _AddInbodyEntryScreenState
           widget.heightCm,
 
       weightKg:
-          _d(weight)!,
+          wKg,
 
       smmKg:
-          _d(smm)!,
+          (_d(smm) ?? 0),
 
       fatKg:
-          _d(fatKg)!,
+          fatMass,
 
       waterKg:
-          _d(water)!,
+          (_d(water) ?? 0),
 
       leanMassKg:
-          _d(lean)!,
+          leanKg,
 
-      bmi: _d(bmi)!,
+      bmi: bmiValue,
 
       bodyFatPercent:
-          _d(pbf)!,
+          pct,
 
-      whr: _d(whr)!,
+      whr: (_d(whr) ?? 0),
 
-      bmr: _d(bmr)!,
+      bmr: (_d(bmr) ?? 0),
 
       muscleLeftArmKg:
-          _d(mLA)!,
+          (_d(mLA) ?? 0),
 
       muscleRightArmKg:
-          _d(mRA)!,
+          (_d(mRA) ?? 0),
 
       muscleTrunkKg:
-          _d(mTR)!,
+          (_d(mTR) ?? 0),
 
       muscleLeftLegKg:
-          _d(mLL)!,
+          (_d(mLL) ?? 0),
 
       muscleRightLegKg:
-          _d(mRL)!,
+          (_d(mRL) ?? 0),
 
       fatLeftArmKg:
-          _d(fLA)!,
+          (_d(fLA) ?? 0),
 
       fatRightArmKg:
-          _d(fRA)!,
+          (_d(fRA) ?? 0),
 
       fatTrunkKg:
-          _d(fTR)!,
+          (_d(fTR) ?? 0),
 
       fatLeftLegKg:
-          _d(fLL)!,
+          (_d(fLL) ?? 0),
 
       fatRightLegKg:
-          _d(fRL)!,
+          (_d(fRL) ?? 0),
 
       visceralFatLevel:
           _d(visceral),
 
       inbodyScore:
           _d(score),
+      totalMuscleKg: _d(totalMuscle),
+      proteinKg: _d(protein),
+      mineralKg: _d(mineral),
+      waterPercent: _d(waterPct),
+      bodyAge: _d(bodyAge),
+      fatControlKg: _d(fatCtrl),
+      muscleControlKg: _d(muscleCtrl),
+      weightControlKg: _d(weightCtrl),
+      source: 'rucne',
 
       createdAt: now,
 
@@ -425,7 +449,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             smm,
-            '${l10n.muscleMass} *',
+            l10n.muscleMass,
           ),
 
           const SizedBox(
@@ -434,7 +458,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             fatKg,
-            '${l10n.bodyFatMass} *',
+            l10n.bodyFatMass,
           ),
 
           const SizedBox(
@@ -443,7 +467,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             water,
-            '${l10n.bodyWater} *',
+            l10n.bodyWater,
           ),
 
           const SizedBox(
@@ -452,7 +476,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             lean,
-            '${l10n.leanBodyMass} *',
+            l10n.leanBodyMass,
           ),
 
           const SizedBox(
@@ -475,7 +499,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             bmi,
-            'BMI *',
+            'BMI',
           ),
 
           const SizedBox(
@@ -484,7 +508,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             pbf,
-            '${l10n.bodyFatPercentage} *',
+            l10n.bodyFatPercentage,
           ),
 
           const SizedBox(
@@ -493,7 +517,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             whr,
-            '${l10n.waistHipRatio} *',
+            l10n.waistHipRatio,
           ),
 
           const SizedBox(
@@ -502,7 +526,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             bmr,
-            '${l10n.basalMetabolism} *',
+            l10n.basalMetabolism,
           ),
 
           const SizedBox(
@@ -525,7 +549,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             mLA,
-            '${l10n.leftArmMuscle} *',
+            l10n.leftArmMuscle,
           ),
 
           const SizedBox(
@@ -534,7 +558,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             mRA,
-            '${l10n.rightArmMuscle} *',
+            l10n.rightArmMuscle,
           ),
 
           const SizedBox(
@@ -543,7 +567,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             mTR,
-            '${l10n.trunkMuscle} *',
+            l10n.trunkMuscle,
           ),
 
           const SizedBox(
@@ -552,7 +576,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             mLL,
-            '${l10n.leftLegMuscle} *',
+            l10n.leftLegMuscle,
           ),
 
           const SizedBox(
@@ -561,7 +585,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             mRL,
-            '${l10n.rightLegMuscle} *',
+            l10n.rightLegMuscle,
           ),
 
           const SizedBox(
@@ -584,7 +608,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             fLA,
-            '${l10n.leftArmFat} *',
+            l10n.leftArmFat,
           ),
 
           const SizedBox(
@@ -593,7 +617,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             fRA,
-            '${l10n.rightArmFat} *',
+            l10n.rightArmFat,
           ),
 
           const SizedBox(
@@ -602,7 +626,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             fTR,
-            '${l10n.trunkFat} *',
+            l10n.trunkFat,
           ),
 
           const SizedBox(
@@ -611,7 +635,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             fLL,
-            '${l10n.leftLegFat} *',
+            l10n.leftLegFat,
           ),
 
           const SizedBox(
@@ -620,7 +644,7 @@ class _AddInbodyEntryScreenState
 
           _num(
             fRL,
-            '${l10n.rightLegFat} *',
+            l10n.rightLegFat,
           ),
 
           const SizedBox(
@@ -654,6 +678,30 @@ class _AddInbodyEntryScreenState
             score,
             l10n.inbodyScore,
           ),
+
+          const SizedBox(height: 10),
+          _num(totalMuscle, 'Svalová hmota celkem (kg)'),
+
+          const SizedBox(height: 10),
+          _num(protein, 'Bílkoviny (kg)'),
+
+          const SizedBox(height: 10),
+          _num(mineral, 'Minerály (kg)'),
+
+          const SizedBox(height: 10),
+          _num(waterPct, 'Voda (%)'),
+
+          const SizedBox(height: 10),
+          _num(bodyAge, 'Tělesný věk (roky)'),
+
+          const SizedBox(height: 10),
+          _num(fatCtrl, 'Doporučená úprava tuku (kg, − = ubrat)'),
+
+          const SizedBox(height: 10),
+          _num(muscleCtrl, 'Doporučená úprava svalů (kg)'),
+
+          const SizedBox(height: 10),
+          _num(weightCtrl, 'Doporučená úprava váhy (kg)'),
 
           const SizedBox(
             height: 18,
@@ -698,6 +746,7 @@ class _AddInbodyEntryScreenState
           const TextInputType
               .numberWithOptions(
         decimal: true,
+        signed: true,
       ),
 
       decoration:
@@ -719,4 +768,4 @@ class _AddInbodyEntryScreenState
   ) {
     return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
   }
-}
+}

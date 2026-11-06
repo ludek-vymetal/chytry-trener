@@ -5,6 +5,8 @@ import 'diet_preference.dart';
 import 'goal.dart';
 import 'measurement.dart';
 import 'body_circumference.dart';
+import 'body_composition.dart';
+import 'energy_adjustment.dart';
 import '../core/training/intake/training_intake.dart';
 
 class UserProfile {
@@ -50,6 +52,12 @@ class UserProfile {
   /// Datum závodu pro jídelníček Bikini fitness.
   final DateTime? bikiniMeetDate;
 
+  /// Poslední měření složení těla (InBody) – pro bazál a bílkoviny.
+  final BodyComposition? bodyComposition;
+
+  /// Úprava kalorií podle skutečného vývoje váhy (týdenní kontrola).
+  final EnergyAdjustment? energyAdjustment;
+
   const UserProfile({
     this.clientId,
     this.firstName = '',
@@ -73,6 +81,8 @@ class UserProfile {
     this.budgetMeals,
     this.hollywoodShootDate,
     this.bikiniMeetDate,
+    this.bodyComposition,
+    this.energyAdjustment,
   });
 
   String get displayName {
@@ -121,6 +131,8 @@ class UserProfile {
     bool? budgetMeals,
     DateTime? hollywoodShootDate,
     DateTime? bikiniMeetDate,
+    BodyComposition? bodyComposition,
+    EnergyAdjustment? energyAdjustment,
   }) {
     return UserProfile(
       clientId: clientId ?? this.clientId,
@@ -151,6 +163,8 @@ class UserProfile {
       budgetMeals: budgetMeals ?? this.budgetMeals,
       hollywoodShootDate: hollywoodShootDate ?? this.hollywoodShootDate,
       bikiniMeetDate: bikiniMeetDate ?? this.bikiniMeetDate,
+      bodyComposition: bodyComposition ?? this.bodyComposition,
+      energyAdjustment: energyAdjustment ?? this.energyAdjustment,
     );
   }
 
@@ -220,6 +234,8 @@ class UserProfile {
         'budgetMeals': budgetMeals,
         'hollywoodShootDate': hollywoodShootDate?.toIso8601String(),
         'bikiniMeetDate': bikiniMeetDate?.toIso8601String(),
+        'bodyComposition': bodyComposition?.toJson(),
+        'energyAdjustment': energyAdjustment?.toJson(),
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -350,6 +366,8 @@ class UserProfile {
       bikiniMeetDate: json['bikiniMeetDate'] is String
           ? DateTime.tryParse(json['bikiniMeetDate'] as String)
           : null,
+      bodyComposition: BodyComposition.fromJson(json['bodyComposition']),
+      energyAdjustment: EnergyAdjustment.fromJson(json['energyAdjustment']),
     );
   }
-}
+}
