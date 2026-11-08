@@ -3,19 +3,29 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../providers/subscription/subscription_provider.dart'
+    show AppTier, tierFromString;
+
 /// Výsledek uplatnění kódu.
 class RedeemResult {
   final int months;
+
+  /// Druh předplatného z kódu: Klient PRO / Trenér PRO.
+  final AppTier tier;
   final String? error;
 
-  const RedeemResult.ok(this.months) : error = null;
-  const RedeemResult.fail(this.error) : months = 0;
+  const RedeemResult.ok(this.months, [this.tier = AppTier.trener])
+      : error = null;
+  const RedeemResult.fail(this.error)
+      : months = 0,
+        tier = AppTier.trener;
 }
 
 /// Aktivační kódy na předplatné (pro klienty, kteří platí přímo trenérce).
 ///
 /// Kód je dokument `license_codes/{KÓD}` ve Firestore:
-/// `{ months: 1|3|6|12, createdAt, createdBy, usedBy: null, usedAt: null }`.
+/// `{ months: 1|3|6|12, tier: 'klient'|'trener', createdAt, createdBy,
+///    usedBy: null, usedAt: null }` – bez `tier` = Trenér PRO (starší kódy).
 /// Každý kód jde použít jen jednou.
 class LicenseCodeService {
   LicenseCodeService._();
@@ -86,7 +96,7 @@ class LicenseCodeService {
             'usedAt': FieldValue.serverTimestamp(),
           });
         }
-        return RedeemResult.ok(months);
+        return RedeemResult.ok(months, tierFromString(data['tier'] as String?));
       });
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
@@ -107,6 +117,7 @@ class LicenseCodeService {
   /// Vygeneruje [count] nových kódů na [months] měsíců (jen pro správce).
   static Future<List<String>> generate({
     required int months,
+    AppTier tier = AppTier.trener,
     int count = 1,
     String? note,
   }) async {
@@ -123,6 +134,7 @@ class LicenseCodeService {
       codes.add(format(code));
       batch.set(db.collection(_collection).doc(code), {
         'months': months,
+        'tier': tier.name,
         'createdAt': FieldValue.serverTimestamp(),
         'createdBy': user.uid,
         'note': note,

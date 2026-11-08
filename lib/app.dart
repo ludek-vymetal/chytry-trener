@@ -484,6 +484,13 @@ class RoleGate extends ConsumerWidget {
         message: 'Chyba předplatného: $e',
       ),
       data: (sub) {
+        // Zkušební týden začíná až prvním otevřením Chytrého trenéra.
+        if (sub.plan == AppPlan.trial && sub.trialEndsAt == null) {
+          Future.microtask(() => ref
+              .read(subscriptionProvider.notifier)
+              .startTrialIfNeeded());
+        }
+
         if (!sub.isActive) {
           return PaywallScreen(
             target: role == AppRole.coach

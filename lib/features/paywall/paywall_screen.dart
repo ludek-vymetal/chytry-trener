@@ -285,7 +285,7 @@ class PaywallScreen extends ConsumerWidget {
                     children: [
                       row('', 'Zkušební', 'Plná verze'),
                       const Divider(),
-                      row('Klienti', '1', 'neomezeně'),
+                      row('Klienti (trenér)', '1', 'neomezeně (Trenér PRO)'),
                       row('Jídelníček', '1 den', 'celý týden, levná varianta'),
                       row('Nákupní seznam', '–', 'ano'),
                       row('Programy', 'náhled', 'Hollywood, Bikini, Kulatý zadek, '
@@ -293,6 +293,35 @@ class PaywallScreen extends ConsumerWidget {
                       row('InBody', 'zadání a skóre', 'podrobný rozbor a plán'),
                       row('PDF souhrn', 's nápisem „Zkušební“',
                           'čistý, barevný i černobílý'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Předplatné',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 8),
+                      row('Klient PRO', '200 Kč / měsíc',
+                          'plný uživatelský mód'),
+                      row('Trenér PRO', '500 Kč / měsíc',
+                          'trenérský mód bez omezení + uživatelský mód'),
+                      row('Klient trenéra', 'zdarma',
+                          'kód KL-… od trenéra – platí, dokud trenér '
+                              'spolupráci neukončí'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Prvních 7 dní od otevření Chytrého trenéra je vše '
+                        'zdarma. Sekce SPAL (vstup, permanentky) je pro '
+                        'členy fitka vždy zdarma.',
+                        style: TextStyle(color: cs.onSurfaceVariant),
+                      ),
                     ],
                   ),
                 ),

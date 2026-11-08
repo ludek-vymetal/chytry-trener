@@ -327,6 +327,44 @@ class OnlineCoachingService {
     }
   }
 
+  /// Ověří, že propojení s trenérem pořád platí.
+  ///
+  /// `true` = platí, `false` = trenér spolupráci ukončil (propojení se
+  /// v telefonu smaže – klient ztratí přístup od trenéra, jeho data
+  /// v telefonu zůstanou), `null` = nejde ověřit (bez internetu) –
+  /// přístup se zatím ponechá.
+  static Future<bool?> verifyClientLink() async {
+    final link = await localClientLink();
+    if (link == null) return false;
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final snap = await _db.collection(_links).doc(link.linkId).get();
+      // Bez internetu vrátí Firestore jen uložená data – podle nich
+      // klienta neodpojovat.
+      if (snap.metadata.isFromCache) return null;
+      final clientUid = snap.data()?['clientUid'] as String?;
+      final platne = snap.exists && (uid == null || clientUid == uid);
+      if (!platne) {
+        debugPrint('COACHING -> trenér ukončil spolupráci, odpojuji klienta');
+        await leave();
+        revision.value++;
+        return false;
+      }
+      return true;
+    } on FirebaseException catch (e) {
+      // Smazaný dokument: pravidla k němu klienta už nepustí.
+      if (e.code == 'permission-denied' || e.code == 'not-found') {
+        debugPrint('COACHING -> propojení už neplatí (${e.code})');
+        await leave();
+        revision.value++;
+        return false;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Klient se odpojí (data v telefonu zůstanou).
   static Future<void> leave() async {
     final prefs = await SharedPreferences.getInstance();

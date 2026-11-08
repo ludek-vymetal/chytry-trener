@@ -17,6 +17,7 @@ import '../../providers/coach/custom_training_plan_provider.dart';
 import '../../providers/daily_history_provider.dart';
 import '../../providers/daily_intake_provider.dart';
 import '../../providers/performance_provider.dart';
+import '../../providers/subscription/subscription_provider.dart';
 import '../../providers/training_session_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/coach/online_coaching_service.dart';
@@ -517,6 +518,8 @@ class _JoinCoachScreenState extends ConsumerState<JoinCoachScreen> {
     await ref.read(activeClientIdProvider.notifier).setActive(info.clientId);
     await ref.read(userProfileProvider.notifier).switchToClient(info.clientId);
     OnlineCoachingService.revision.value++;
+    // Klient trenéra má plný uživatelský mód zdarma.
+    ref.invalidate(subscriptionProvider);
     if (!mounted) return;
     final coach = (info.coachName ?? '').trim();
     await showDialog<void>(
