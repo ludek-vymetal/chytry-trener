@@ -1,11 +1,15 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dart_application_1/app.dart';
 
 void main() {
   testWidgets('app starts', (tester) async {
+    // V testu neběží skutečné úložiště telefonu → prázdné náhradní.
+    SharedPreferences.setMockInitialValues({});
+
     // Aplikace při startu spouští úlohy na pozadí (načítání profilu,
     // synchronizace, zálohy) s vlastními časovači. Ve „falešném čase“ testu
     // by zůstaly nevyřízené („A Timer is still pending“), proto se aplikace
