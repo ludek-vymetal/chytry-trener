@@ -88,6 +88,10 @@ class SpalService {
   static Future<List<Map<String, dynamic>>> mojeMereni({DateTime? od}) async => _l(
         await db.rpc('moje_mereni', params: {'p_od': od?.toUtc().toIso8601String()}),
       );
+  /// Trenér: měření z váhy zákazníků, kteří mu na recepci dali souhlas se sdílením.
+  static Future<List<Map<String, dynamic>>> mereniMychKlientu({DateTime? od}) async => _l(
+        await db.rpc('mereni_mych_klientu', params: {'p_od': od?.toUtc().toIso8601String()}),
+      );
   static Future<Map<String, dynamic>> info() async => _m(await db.rpc('spal_info'));
   static Future<Map<String, dynamic>> ucet() async => _m(await db.rpc('muj_ucet'));
   static Future<Map<String, dynamic>> nabidka() async => _m(await db.rpc('nabidka_web'));

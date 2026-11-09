@@ -132,6 +132,89 @@ class SpalMereniSync {
   static String _norm(String s) =>
       s.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
 
+  static const _bezDiakritiky = {
+    'á': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e', 'í': 'i', 'ň': 'n',
+    'ó': 'o', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u', 'ů': 'u', 'ý': 'y',
+    'ž': 'z', 'ä': 'a', 'ö': 'o', 'ü': 'u', 'ľ': 'l', 'ĺ': 'l', 'ŕ': 'r',
+  };
+
+  /// Jméno pro porovnání: malá písmena, bez diakritiky, slova seřazená
+  /// (SPAL má „Příjmení Jméno“, aplikace „Jméno Příjmení“).
+  static String _jmenoKlic(String s) {
+    final b = StringBuffer();
+    for (final ch in _norm(s).split('')) {
+      b.write(_bezDiakritiky[ch] ?? ch);
+    }
+    final slova = b.toString().split(' ').where((w) => w.isNotEmpty).toList()
+      ..sort();
+    return slova.join(' ');
+  }
+
+  /// Zákazníci SPAL, jejichž měření trenér dostal (souhlas na recepci),
+  /// ale v aplikaci k nim nenašel klienta (jiný e-mail i jméno).
+  static List<String> nesparovani = const [];
+
+  /// Trenér: měření zákazníků, kteří mu na recepci SPAL dali souhlas se
+  /// sdílením (`mereni_mych_klientu`). Každé se uloží ke klientovi trenéra
+  /// se stejným e-mailem, jinak se stejným jménem (jen jednoznačná shoda).
+  static Future<int> _nacistKlientyTrenera(WidgetRef ref, String deviceId) async {
+    final data = await SpalService.mereniMychKlientu();
+    if (data.isEmpty) {
+      nesparovani = const [];
+      return 0;
+    }
+    final klienti = (await CoachStorageService.loadClients())
+        .where((c) => !c.isDeleted)
+        .toList();
+    final vse = await CoachStorageService.loadInbodyAll();
+    final znama = {
+      for (final e in vse)
+        if (e.externalId != null) '${e.clientId}|${e.externalId}',
+    };
+
+    String? najdi(Map<String, dynamic> m) {
+      final email = _norm('${m['klient_email'] ?? ''}');
+      if (email.isNotEmpty) {
+        final s = klienti.where((c) => _norm(c.email) == email).toList();
+        if (s.length == 1) return s.first.clientId;
+      }
+      final jmeno = _jmenoKlic('${m['klient_jmeno'] ?? ''} ${m['klient_prijmeni'] ?? ''}');
+      if (jmeno.isEmpty) return null;
+      final s = klienti
+          .where((c) => _jmenoKlic('${c.firstName} ${c.lastName}') == jmeno)
+          .toList();
+      return s.length == 1 ? s.first.clientId : null;
+    }
+
+    final nova = <CoachInbodyEntry>[];
+    final dotceni = <String>{};
+    final chybi = <String>{};
+    for (final m in data) {
+      final clientId = najdi(m);
+      if (clientId == null) {
+        chybi.add('${m['klient_prijmeni'] ?? ''} ${m['klient_jmeno'] ?? ''}'.trim());
+        continue;
+      }
+      final vyska = klienti.firstWhere((c) => c.clientId == clientId).heightCm;
+      final e = prevest(m, clientId: clientId, heightCm: vyska, deviceId: deviceId);
+      if (e == null || !znama.add('$clientId|${e.externalId}')) continue;
+      nova.add(e);
+      dotceni.add(clientId);
+    }
+    nesparovani = chybi.toList()..sort();
+
+    if (nova.isNotEmpty) {
+      final ulozit = [...nova, ...vse]..sort((a, b) => b.date.compareTo(a.date));
+      await CoachStorageService.saveInbodyAll(ulozit);
+      ref.invalidate(coachInbodyControllerProvider);
+      for (final id in dotceni) {
+        await ref.read(userProfileProvider.notifier).syncBodyCompositionFromInbody(id, false);
+      }
+      unawaited(OnlineCoachingService.syncNow());
+    }
+    return nova.length;
+  }
+
   static Future<String?> _klientTrenera() async {
     final klienti = (await CoachStorageService.loadClients())
         .where((c) => !c.isDeleted)
@@ -158,7 +241,8 @@ class SpalMereniSync {
 
   /// Načte nová měření z váhy a uloží je jako InBody.
   /// Vrací počet nově převedených měření, `null` = nic se nedělalo
-  /// (nepřihlášen, zařízení trenéra, nedávno už načteno).
+  /// (nepřihlášen, nedávno už načteno). Na zařízení trenéra navíc převede
+  /// měření klientů, kteří mu na recepci dali souhlas se sdílením.
   static Future<int?> nacist(WidgetRef ref, {bool vynutit = false}) async {
     if (!SpalService.prihlasen || _bezi) return null;
     final ted = DateTime.now();
@@ -168,8 +252,29 @@ class SpalMereniSync {
       return null;
     }
 
+    // Trenér: měření klientů, kteří mu na recepci dali souhlas se sdílením.
+    var odKlientu = 0;
+    if (ref.read(appRoleProvider) == AppRole.coach) {
+      _bezi = true;
+      try {
+        var dev = await CoachStorageService.loadDeviceId();
+        if (dev == null || dev.trim().isEmpty) {
+          dev = const Uuid().v4();
+          await CoachStorageService.saveDeviceId(dev);
+        }
+        odKlientu = await _nacistKlientyTrenera(ref, dev);
+      } catch (e) {
+        debugPrint('SPAL MERENI KLIENTU ERROR -> $e');
+      } finally {
+        _bezi = false;
+      }
+    }
+
     final clientId = await _cilovyKlient(ref);
-    if (clientId == null) return null;
+    if (clientId == null) {
+      _naposled = ted;
+      return odKlientu;
+    }
 
     _bezi = true;
     try {
@@ -223,7 +328,7 @@ class SpalMereniSync {
             .syncBodyCompositionFromInbody(clientId, !trener);
       }
       if (nova.isNotEmpty) unawaited(OnlineCoachingService.syncNow());
-      return nova.length;
+      return nova.length + odKlientu;
     } catch (e) {
       debugPrint('SPAL MERENI SYNC ERROR -> $e');
       rethrow;
@@ -280,10 +385,10 @@ class _SpalMereniScreenState extends ConsumerState<SpalMereniScreen> {
     final ulozena = await SpalMereniSync.ulozena(ref);
     if (!mounted) return;
     if (ref.read(appRoleProvider) == AppRole.coach &&
-        await SpalMereniSync._cilovyKlient(ref) == null) {
-      _chyba ??= 'V režimu trenéra se měření uloží do karty klienta, který je '
-          'stejná osoba jako tento účet SPAL (stejný e-mail nebo jméno). '
-          'Takového klienta jsem nenašel.';
+        SpalMereniSync.nesparovani.isNotEmpty) {
+      _chyba ??= 'Měření těchto zákazníků SPAL nemám ke komu uložit – v aplikaci '
+          'nemáš klienta se stejným e-mailem ani jménem: '
+          '${SpalMereniSync.nesparovani.join(', ')}. Oprav e-mail nebo jméno u klienta.';
     }
     setState(() {
       _mereni = ulozena;
@@ -320,9 +425,10 @@ class _SpalMereniScreenState extends ConsumerState<SpalMereniScreen> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
           Text(
-            _trener
-                ? 'Na zařízení v režimu trenéra se měření nepřevádějí. '
-                    'Klient je uvidí ve své aplikaci a k tobě se dostanou přes online coaching.'
+            ref.read(appRoleProvider) == AppRole.coach
+                ? 'Měření z váhy tvých klientů, kteří ti na recepci SPAL dali souhlas '
+                    'se sdílením, se samy uloží do jejich karet (InBody, „váha SPAL“). '
+                    'Klienta poznám podle e-mailu, případně podle jména.'
                 : 'Měření z váhy ve fitku se samy převádějí do Chytrého trenéra '
                     '(Tělo / InBody). Podle nich se počítá bazál a jídlo, a když '
                     'jsi propojený s trenérem, uvidí je i on.',
