@@ -1,10 +1,22 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart'
+    show kDebugMode, kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/subscription/subscription_provider.dart';
 
 enum PaywallTarget { client, coach }
+
+/// Aplikace z App Store / Google Play: obchody nedovolí odemykat funkce
+/// placením mimo jejich nákup v aplikaci (Apple 3.1.1, Google Play Billing),
+/// ani ukazovat ceny a odkazovat na placení jinde. Dokud nákup přes obchod
+/// není hotový (rozhodnutí 21.11.2026: varianta B), se na telefonu ceny,
+/// předplatné a aktivační kódy NEukazují. Kód od trenéra pro klienta
+/// (KL-…, zdarma) zůstává. Na webu / počítači se vše ukazuje jako dřív.
+bool get prodejSkrytVObchode =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android);
 
 /// Nabídne plnou verzi, když uživatel narazí na zamčenou funkci.
 /// Vrací `true`, pokud se po zavření okna plná verze odemkla.
@@ -60,7 +72,9 @@ class _UpgradeSheet extends ConsumerWidget {
             Text(
               'Ve zkušební verzi si můžeš vyzkoušet kousek od každé funkce. '
               'Plná verze odemkne všechno – neomezeně klientů, celé programy, '
-              'týdenní jídelníčky, podrobný rozbor InBody a PDF souhrny.',
+              'týdenní jídelníčky, podrobný rozbor InBody a PDF souhrny.'
+              '${prodejSkrytVObchode ? ' Klienti připojení ke svému trenérovi '
+                  'kódem KL-… mají plnou verzi zdarma.' : ''}',
               style: TextStyle(color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 18),
@@ -68,7 +82,7 @@ class _UpgradeSheet extends ConsumerWidget {
               width: double.infinity,
               child: FilledButton.icon(
                 icon: const Icon(Icons.lock_open),
-                label: const Text('Zobrazit plnou verzi'),
+                label: const Text('Srovnání verzí'),
                 onPressed: () {
                   final nav = Navigator.of(context);
                   nav.pop();
@@ -81,18 +95,20 @@ class _UpgradeSheet extends ConsumerWidget {
                 },
               ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.key_outlined),
-                label: const Text('Mám aktivační kód'),
-                onPressed: () async {
-                  final ok = await showRedeemCodeDialog(context, ref);
-                  if (ok && context.mounted) Navigator.pop(context);
-                },
+            if (!prodejSkrytVObchode) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.key_outlined),
+                  label: const Text('Mám aktivační kód'),
+                  onPressed: () async {
+                    final ok = await showRedeemCodeDialog(context, ref);
+                    if (ok && context.mounted) Navigator.pop(context);
+                  },
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -285,7 +301,8 @@ class PaywallScreen extends ConsumerWidget {
                     children: [
                       row('', 'Zkušební', 'Plná verze'),
                       const Divider(),
-                      row('Klienti (trenér)', '1', 'neomezeně (Trenér PRO)'),
+                      row('Klienti (trenér)', '1',
+                          prodejSkrytVObchode ? 'neomezeně' : 'neomezeně (Trenér PRO)'),
                       row('Jídelníček', '1 den', 'celý týden, levná varianta'),
                       row('Nákupní seznam', '–', 'ano'),
                       row('Programy', 'náhled', 'Hollywood, Bikini, Kulatý zadek, '
@@ -298,52 +315,59 @@ class PaywallScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Předplatné',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 8),
-                      row('Klient PRO', '200 Kč / měsíc',
-                          'plný uživatelský mód'),
-                      row('Trenér PRO', '500 Kč / měsíc',
-                          'trenérský mód bez omezení + uživatelský mód'),
-                      row('Klient trenéra', 'zdarma',
-                          'kód KL-… od trenéra – platí, dokud trenér '
-                              'spolupráci neukončí'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Prvních 7 dní od otevření Chytrého trenéra je vše '
-                        'zdarma. Sekce SPAL (vstup, permanentky) je pro '
-                        'členy fitka vždy zdarma.',
-                        style: TextStyle(color: cs.onSurfaceVariant),
-                      ),
-                    ],
+              if (prodejSkrytVObchode)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Prvních 7 dní od otevření Chytrého trenéra je vše '
+                      'zdarma. Klient připojený ke svému trenérovi kódem KL-… '
+                      'má plnou verzi zdarma, dokud trenér spolupráci neukončí. '
+                      'Sekce SPAL (vstup, permanentky) je pro členy fitka vždy '
+                      'zdarma.',
+                      style: TextStyle(color: cs.onSurfaceVariant),
+                    ),
+                  ),
+                )
+              else ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Předplatné',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        row('Klient PRO', '200 Kč / měsíc',
+                            'plný uživatelský mód'),
+                        row('Trenér PRO', '500 Kč / měsíc',
+                            'trenérský mód bez omezení + uživatelský mód'),
+                        row('Klient trenéra', 'zdarma',
+                            'kód KL-… od trenéra – platí, dokud trenér '
+                                'spolupráci neukončí'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Prvních 7 dní od otevření Chytrého trenéra je vše '
+                          'zdarma. Sekce SPAL (vstup, permanentky) je pro '
+                          'členy fitka vždy zdarma.',
+                          style: TextStyle(color: cs.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.shopping_bag_outlined),
-                  label: const Text('Předplatné v obchodě – brzy'),
-                  onPressed: null,
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.key_outlined),
+                    label: const Text('Mám aktivační kód'),
+                    onPressed: () => showRedeemCodeDialog(context, ref),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.key_outlined),
-                  label: const Text('Mám aktivační kód'),
-                  onPressed: () => showRedeemCodeDialog(context, ref),
-                ),
-              ),
+              ],
               if (kDebugMode) ...[
                 const SizedBox(height: 24),
                 Text(
@@ -399,7 +423,9 @@ class PlanStatusCard extends ConsumerWidget {
         ),
         title: Text(sub.label),
         subtitle: days == null
-            ? const Text('Srovnání verzí a aktivační kód')
+            ? Text(prodejSkrytVObchode
+                ? 'Srovnání verzí'
+                : 'Srovnání verzí a aktivační kód')
             : Text('Zbývá $days ${days == 1 ? 'den' : days < 5 ? 'dny' : 'dní'}'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(

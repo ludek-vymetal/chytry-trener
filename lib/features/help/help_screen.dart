@@ -567,15 +567,17 @@ const helpArticles = <HelpArticle>[
   HelpArticle(
     id: 'plan',
     icon: Icons.workspace_premium_outlined,
-    title: 'Plná verze a aktivační kód',
+    title: 'Zkušební a plná verze',
     summary: 'Co obsahuje zkušební a plná verze.',
+    // bez cen a placení mimo obchod – pravidla App Store / Google Play (21.11.2026)
     steps: [
-      ('Zkušební doba', 'Prvních 14 dní máš plnou verzi zdarma.'),
+      ('Zkušební doba', 'Prvních 7 dní od otevření Chytrého trenéra máš '
+          'plnou verzi zdarma.'),
       ('Zkušební verze', 'Potom 1 klient a od každé funkce kousek – ať víš, '
           'co aplikace umí.'),
-      ('Aktivační kód', 'Nastavení → karta plánu → „Mám aktivační kód“. Kód '
-          've tvaru CT-XXXX-XXXX ti dá trenér/ka po zaplacení.'),
-      ('Prodloužení', 'Další kód se přičte ke zbývajícímu předplatnému.'),
+      ('Klient trenéra', 'S kódem KL-… od svého trenéra máš plnou verzi '
+          'zdarma, dokud trenér spolupráci neukončí.'),
+      ('Srovnání verzí', 'Nastavení → karta plánu.'),
     ],
   ),
   HelpArticle(
