@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA4N0-YwjZGUHYM3oAklj_CPbcWuQ3gDo0',
-    appId: '1:975656862720:android:0829f526683ef9fce084e5',
+    appId: '1:975656862720:android:1710429b4272ab39e084e5',
     messagingSenderId: '975656862720',
     projectId: 'fitness-app-spal',
     storageBucket: 'fitness-app-spal.firebasestorage.app',
