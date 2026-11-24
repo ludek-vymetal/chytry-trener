@@ -2148,7 +2148,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get useDocumentsClients => 'Use Documents/Clients';
 
   @override
-  String get iosFolderInfo => 'On iPhone, Apple does not allow selecting arbitrary folders like on desktop computers. Archives will therefore be stored in the internal Clients folder of the application.';
+  String get iosFolderInfo => 'On a phone, client archives are saved automatically to the Clients folder inside the app – there is nothing to choose or create.';
 
   @override
   String get desktopFolderRecommendation => 'Recommendation: choose your own archive folder, ideally inside a Google Drive or OneDrive synchronized folder. This way your client archives will also be available outside this computer.';

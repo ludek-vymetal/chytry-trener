@@ -775,7 +775,7 @@
 "selectClientArchiveFolder": "Select a folder for client archives",
 "selectCustomFolder": "Select custom folder",
 "useDocumentsClients": "Use Documents/Clients",
-"iosFolderInfo": "On iPhone, Apple does not allow selecting arbitrary folders like on desktop computers. Archives will therefore be stored in the internal Clients folder of the application.",
+"iosFolderInfo": "On a phone, client archives are saved automatically to the Clients folder inside the app – there is nothing to choose or create.",
 "desktopFolderRecommendation": "Recommendation: choose your own archive folder, ideally inside a Google Drive or OneDrive synchronized folder. This way your client archives will also be available outside this computer.",
 "finishSetup": "Finish setup",
 "coachSetupSaved": "Coach setup has been saved.",

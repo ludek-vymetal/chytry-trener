@@ -2148,7 +2148,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get useDocumentsClients => 'Použít Dokumenty/Klienti';
 
   @override
-  String get iosFolderInfo => 'Na iPhonu Apple nedovoluje vybírat libovolné složky jako na počítači. Archivy se proto uloží do interní složky aplikace Klienti.';
+  String get iosFolderInfo => 'Na telefonu se archivy klientů ukládají automaticky do složky Klienti uvnitř aplikace – nic nemusíš vybírat ani zakládat.';
 
   @override
   String get desktopFolderRecommendation => 'Doporučení: vyber si vlastní archivní složku, ideálně v Google Drive nebo OneDrive synchronizované složce. Pak budeš mít klientské archivy dostupné i mimo tento počítač.';

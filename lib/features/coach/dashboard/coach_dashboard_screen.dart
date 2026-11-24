@@ -4,6 +4,8 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as pth;
+import 'package:path_provider/path_provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../models/coach/coach_client.dart';
@@ -210,8 +212,13 @@ class _CoachDashboardScreenState extends ConsumerState<CoachDashboardScreen> {
     if (_folderBusy) return;
     setState(() => _folderBusy = true);
     try {
-      final selectedPath =
-          await getDirectoryPath(confirmButtonText: l10n.selectFolder);
+      // Telefon: výběr složky na Androidu padá a na iPhonu není možný → složka Klienti uvnitř aplikace
+      final String? selectedPath;
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        selectedPath = pth.join((await getApplicationDocumentsDirectory()).path, 'Klienti');
+      } else {
+        selectedPath = await getDirectoryPath(confirmButtonText: l10n.selectFolder);
+      }
       if (selectedPath == null || selectedPath.trim().isEmpty) return;
       final dir = Directory(selectedPath);
       if (!dir.existsSync()) await dir.create(recursive: true);

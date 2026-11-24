@@ -38,10 +38,23 @@ class _CoachSetupScreenState
   // Na webu se archivy klientů do složky v počítači neukládají (prohlížeč ke složkám nemá přístup).
   static const _webSlozka = 'web – archivy klientů jen v aplikaci';
 
+  // Telefon (Android, iPhone) a Mac: archivy klientů do složky Klienti uvnitř aplikace – nic se nevybírá.
+  // Na Androidu výběr složky přes systémové okno padal („storage volume 0000-0000 is unsupported“, 24.11.2026).
+  static bool get _slozkaAplikace =>
+      Platform.isIOS || Platform.isMacOS || Platform.isAndroid;
+
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) _exportFolderController.text = _webSlozka;
+    if (kIsWeb) {
+      _exportFolderController.text = _webSlozka;
+    } else if (Platform.isIOS || Platform.isAndroid) {
+      _getIosClientsFolderPath().then((cesta) {
+        if (mounted && _exportFolderController.text.trim().isEmpty) {
+          setState(() => _exportFolderController.text = cesta);
+        }
+      }).catchError((_) {});
+    }
   }
 
   @override
@@ -77,7 +90,7 @@ class _CoachSetupScreenState
     try {
       String selectedPath;
 
-      if ((!kIsWeb && (Platform.isIOS || Platform.isMacOS))) {
+      if ((!kIsWeb && _slozkaAplikace)) {
         selectedPath =
             await _getIosClientsFolderPath();
       } else {
@@ -109,7 +122,7 @@ class _CoachSetupScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+            (!kIsWeb && _slozkaAplikace)
                 ? l10n.iosFolderInfo
                 : l10n.exportFolderSaved,
           ),
@@ -141,7 +154,7 @@ class _CoachSetupScreenState
     try {
       String suggested;
 
-      if ((!kIsWeb && (Platform.isIOS || Platform.isMacOS))) {
+      if ((!kIsWeb && _slozkaAplikace)) {
         suggested =
             await _getIosClientsFolderPath();
       } else {
@@ -175,7 +188,7 @@ class _CoachSetupScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+            (!kIsWeb && _slozkaAplikace)
                 ? l10n.iosFolderInfo
                 : l10n.customExportFolderRemoved,
           ),
@@ -437,7 +450,7 @@ class _CoachSetupScreenState
                           ),
                         ],
                         Text(
-                          (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+                          (!kIsWeb && _slozkaAplikace)
                               ? l10n
                                   .coachSetupIosDescription
                               : l10n
@@ -599,6 +612,7 @@ class _CoachSetupScreenState
                         const SizedBox(
                           height: 12,
                         ),
+                        if (kIsWeb || !(Platform.isIOS || Platform.isAndroid))
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
@@ -613,7 +627,7 @@ class _CoachSetupScreenState
                                     .folder_open,
                               ),
                               label: Text(
-                                (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+                                (!kIsWeb && _slozkaAplikace)
                                     ? l10n
                                         .useAppFolder
                                     : l10n
@@ -629,7 +643,7 @@ class _CoachSetupScreenState
                                 Icons.folder,
                               ),
                               label: Text(
-                                (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+                                (!kIsWeb && _slozkaAplikace)
                                     ? l10n
                                         .useClientsFolder
                                     : l10n
@@ -659,7 +673,7 @@ class _CoachSetupScreenState
                                 .surfaceContainerHighest,
                           ),
                           child: Text(
-                            (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+                            (!kIsWeb && _slozkaAplikace)
                                 ? l10n
                                     .iosFolderInfo
                                 : l10n

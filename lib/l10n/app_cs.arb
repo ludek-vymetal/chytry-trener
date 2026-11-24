@@ -723,7 +723,7 @@
 "exportClientFolder": "Exportní složka klientů",
 "useAppFolder": "Použít složku aplikace",
 "useClientsFolder": "Použít složku Klienti",
-"iosFolderInfo": "Na iPhonu Apple nedovoluje vybírat libovolné složky jako na počítači. Archivy se proto uloží do interní složky aplikace Klienti.",
+"iosFolderInfo": "Na telefonu se archivy klientů ukládají automaticky do složky Klienti uvnitř aplikace – nic nemusíš vybírat ani zakládat.",
 "finishSetup": "Dokončit nastavení",
 "enterFirstName": "Zadej své křestní jméno.",
 "firstNameTooShort": "Jméno je příliš krátké.",
