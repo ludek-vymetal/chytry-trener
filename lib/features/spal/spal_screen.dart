@@ -35,7 +35,7 @@ class SpalScreen extends ConsumerWidget {
                 title: const Text('SPAL Strength Gym'),
                 automaticallyImplyLeading: !samostatne,
               ),
-              body: const SpalPrihlaseni(),
+              body: SpalPrihlaseni(nabidnoutTrenera: samostatne),
             ),
     );
   }
@@ -477,7 +477,11 @@ class _SpalQrKartaState extends State<SpalQrKarta> with WidgetsBindingObserver {
 // ---------------------------------------------------------------------
 
 class SpalPrihlaseni extends ConsumerStatefulWidget {
-  const SpalPrihlaseni({super.key});
+  const SpalPrihlaseni({super.key, this.nabidnoutTrenera = false});
+
+  /// Úvodní stránka aplikace (25.11.2026, Luděk: „aplikace má být jako první spalovská“) – pod přihlášením
+  /// do fitka cesta do Chytrého trenéra (uživatelský / trenérský režim) i pro toho, kdo člen SPAL není.
+  final bool nabidnoutTrenera;
   @override
   ConsumerState<SpalPrihlaseni> createState() => _SpalPrihlaseniState();
 }
@@ -590,6 +594,28 @@ class _SpalPrihlaseniState extends ConsumerState<SpalPrihlaseni> {
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.grey),
         ),
+        if (widget.nabidnoutTrenera) ...[
+          const SizedBox(height: 28),
+          const Divider(),
+          const SizedBox(height: 12),
+          const Text('Chytrý trenér',
+              textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          const Text(
+            'Tréninky, jídelníček a měření – pro sebe (uživatelský režim) nebo pro své klienty (trenérský režim).',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _pracuji ? null : () => otevritChytrehoTrenera(context),
+            icon: const Icon(Icons.fitness_center),
+            label: const Text('Pokračovat do Chytrého trenéra'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: spalTmava,
+              minimumSize: const Size.fromHeight(50),
+            ),
+          ),
+        ],
       ],
     );
   }

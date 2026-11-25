@@ -13,7 +13,6 @@ import 'features/coach/setup/coach_setup_screen.dart';
 import 'features/home/user_shell.dart';
 import 'features/onboarding/onboarding_profile_screen.dart';
 import 'features/paywall/paywall_screen.dart';
-import 'features/role/role_select_screen.dart';
 import 'features/spal/spal_screen.dart';
 import 'features/spal/spal_service.dart';
 import 'providers/coach/app_role_provider.dart';
@@ -463,10 +462,9 @@ class RoleGate extends ConsumerWidget {
     }
 
     if (role == null) {
-      // Člen fitka propojený se SPAL, který si nevybral režim → rovnou QR pro vstup
-      final spal = ref.watch(spalPrihlasenProvider).valueOrNull ?? SpalService.prihlasen;
-      if (spal) return const SpalScreen(samostatne: true);
-      return const RoleSelectScreen();
+      // Aplikace začíná stránkou SPAL (25.11.2026, Luděk): propojený člen rovnou QR a účet,
+      // ostatní přihlášení do fitka + „Pokračovat do Chytrého trenéra“ (výběr uživatel / trenér).
+      return const SpalScreen(samostatne: true);
     }
 
     // Člen fitka propojený se SPAL: nejdřív stránka SPAL, do Chytrého trenéra
