@@ -152,10 +152,11 @@ class _TrainingLogScreenState extends ConsumerState<TrainingLogScreen> {
       appBar: AppBar(
         title: Text('Log: ${widget.exercise.name}'),
       ),
-      body: Padding(
+      // Plán a série se rolují spolu (dlouhé pokyny trenéra nesmí odsunout série mimo obrazovku),
+      // tlačítka Přidat sérii / Uložit zůstávají vždy dole.
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
+        children: [
             if (planned.isNotEmpty) ...[
               const Align(
                 alignment: Alignment.centerLeft,
@@ -165,9 +166,16 @@ class _TrainingLogScreenState extends ConsumerState<TrainingLogScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              for (final p in planned)
-                Text(
-                  '${p.weightKg?.toStringAsFixed(1) ?? '-'} kg × ${p.reps > 0 ? p.reps : '-'} ${p.note != null ? "(${p.note})" : ""}',
+              for (var i = 0; i < planned.length; i++)
+                Text('${i + 1}. série: ${planned[i].weightKg?.toStringAsFixed(1) ?? '-'} kg × ${planned[i].reps > 0 ? planned[i].reps : '-'}'),
+              // poznámka k plánu (fáze, pauzy, kardio…) jen jednou – u všech sérií bývá stejná
+              for (final n in {
+                for (final p in planned)
+                  if (p.note != null && p.note!.trim().isNotEmpty) p.note!.trim()
+              })
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(n, style: TextStyle(color: Theme.of(context).hintColor)),
                 ),
               const SizedBox(height: 16),
             ],
@@ -179,43 +187,42 @@ class _TrainingLogScreenState extends ConsumerState<TrainingLogScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                itemCount: rows.length,
-                itemBuilder: (_, i) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: rows[i].weightCtrl,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: const InputDecoration(labelText: 'kg'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: rows[i].repsCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'opakování',
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed:
-                            rows.length > 1 ? () => _removeSet(i) : null,
-                        icon: const Icon(Icons.delete_outline),
-                      ),
-                    ],
-                  );
-                },
+            for (var i = 0; i < rows.length; i++)
+              Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: rows[i].weightCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: 'kg'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: rows[i].repsCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'opakování',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed:
+                      rows.length > 1 ? () => _removeSet(i) : null,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
               ),
-            ),
-            Row(
+          ],
+        ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Row(
               children: [
                 TextButton.icon(
                   onPressed: _addSet,
@@ -229,7 +236,6 @@ class _TrainingLogScreenState extends ConsumerState<TrainingLogScreen> {
                 ),
               ],
             ),
-          ],
         ),
       ),
     );
