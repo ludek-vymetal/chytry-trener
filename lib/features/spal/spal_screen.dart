@@ -67,19 +67,42 @@ class SpalDomov extends ConsumerStatefulWidget {
   ConsumerState<SpalDomov> createState() => _SpalDomovState();
 }
 
-class _SpalDomovState extends ConsumerState<SpalDomov> {
+class _SpalDomovState extends ConsumerState<SpalDomov> with WidgetsBindingObserver {
   int _i = 0;
+  Timer? _obnova;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Nová měření z váhy ve fitku → InBody v Chytrém trenérovi (na pozadí).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SpalMereniSync.nacist(ref).catchError((Object _) => null);
     });
+    // Účet, členství a permanentky se načítají samy (25.11.2026, Luděk): zákazník zaplatí na recepci
+    // nebo v bráně a hned otevře členství / QR – nesmí ho nutit vracet se šipkou pro obnovení.
+    _obnova = Timer.periodic(const Duration(seconds: 45), (_) {
+      if (mounted) spalObnovit(ref);
+    });
   }
 
-  void prepnout(int i) => setState(() => _i = i);
+  @override
+  void dispose() {
+    _obnova?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // návrat do aplikace (z brány GoPay, z recepce, po zamčení telefonu) → čerstvá data
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) spalObnovit(ref);
+  }
+
+  void prepnout(int i) {
+    setState(() => _i = i);
+    spalObnovit(ref); // přepnutí záložky (Přehled / Rezervace / Účet) vždy načte aktuální stav
+  }
 
   @override
   Widget build(BuildContext context) {

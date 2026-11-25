@@ -45,6 +45,7 @@ class SpalUcet extends ConsumerWidget {
           ),
         ),
         body: data.when(
+          skipError: true, // výpadek při obnově na pozadí nesmaže zobrazené členství
           loading: () => const Center(child: CircularProgressIndicator(color: spalZluta)),
           error: (e, _) => Center(child: Text(SpalService.chyba(e))),
           data: (u) => TabBarView(children: [
