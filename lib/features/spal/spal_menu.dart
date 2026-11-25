@@ -203,7 +203,7 @@ class SpalProfil extends ConsumerWidget {
           controller: c,
           obscureText: true,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Aspoň 6 znaků'),
+          decoration: const InputDecoration(labelText: 'Aspoň 8 znaků'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(d), child: const Text('Zrušit')),
@@ -212,8 +212,8 @@ class SpalProfil extends ConsumerWidget {
       ),
     );
     if (heslo == null || !context.mounted) return;
-    if (heslo.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Heslo musí mít aspoň 6 znaků')));
+    if (heslo.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Heslo musí mít aspoň 8 znaků')));
       return;
     }
     try {
