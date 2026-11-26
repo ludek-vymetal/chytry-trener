@@ -77,7 +77,18 @@ class SpalService {
     }
   }
 
-  static Map<String, dynamic> _m(Object? v) => Map<String, dynamic>.from(v as Map);
+  /// Smaže přihlašovací účet SPAL (požadavek Google Play / App Store). Karta zákazníka
+  /// s doklady zůstává ve fitku, obsluha dostane úkol údaje do 30 dnů smazat.
+  static Future<void> smazatUcet() async {
+    await db.rpc('smazat_muj_ucet');
+    try {
+      await odhlasit();
+    } catch (_) {
+      // účet už neexistuje – odhlášení na serveru může selhat, v telefonu se session smaže i tak
+    }
+  }
+
+  static Map<String, dynamic> _m(Object? v) =>Map<String, dynamic>.from(v as Map);
   static List<Map<String, dynamic>> _l(Object? v) =>
       [for (final x in (v as List? ?? const [])) Map<String, dynamic>.from(x as Map)];
 

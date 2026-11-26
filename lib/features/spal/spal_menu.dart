@@ -26,6 +26,83 @@ Future<void> spalOdhlasitDotaz(BuildContext context) async {
   if (ok == true) await SpalService.odhlasit();
 }
 
+/// Smazání účtu SPAL z aplikace (požadavek Google Play a App Store). Dvě potvrzení.
+Future<void> spalSmazatUcetDotaz(BuildContext context) async {
+  final cs = Theme.of(context).colorScheme;
+  final prvni = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: const Text('Smazat účet SPAL?'),
+      content: const SingleChildScrollView(
+        child: Text(
+          'Přihlašovací účet do aplikace se hned smaže a už se do něj nepřihlásíš. '
+          'QR kód pro vstup přestane platit.\n\n'
+          'Zaplacené členství a permanentky ve fitku nepropadají – vstup ti na recepci půjde dál čipem. '
+          'Osobní údaje, které už nepotřebujeme, smažeme do 30 dnů; účetní doklady musíme podle zákona uchovat.\n\n'
+          'Data v Chytrém trenérovi (tréninky, jídelníčky) smažeš zvlášť: Profil → Smazat všechna moje data.',
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Zrušit')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: cs.error, foregroundColor: cs.onError),
+          onPressed: () => Navigator.pop(c, true),
+          child: const Text('Pokračovat'),
+        ),
+      ],
+    ),
+  );
+  if (prvni != true || !context.mounted) return;
+
+  final ctrl = TextEditingController();
+  final druhe = await showDialog<bool>(
+    context: context,
+    builder: (c) => StatefulBuilder(
+      builder: (c, set) {
+        final ok = ctrl.text.trim().toUpperCase() == 'SMAZAT';
+        return AlertDialog(
+          title: const Text('Opravdu smazat?'),
+          content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Pro potvrzení napiš SMAZAT.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              textCapitalization: TextCapitalization.characters,
+              onChanged: (_) => set(() {}),
+              decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'SMAZAT'),
+            ),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Zrušit')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: cs.error, foregroundColor: cs.onError),
+              onPressed: ok ? () => Navigator.pop(c, true) : null,
+              child: const Text('Smazat účet'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+  ctrl.dispose();
+  if (druhe != true || !context.mounted) return;
+
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    await SpalService.smazatUcet();
+    messenger.showSnackBar(const SnackBar(
+      content: Text('Účet byl smazán.'),
+      duration: Duration(seconds: 6),
+    ));
+  } catch (e) {
+    messenger.showSnackBar(SnackBar(
+      content: Text('Účet se nepodařilo smazat: ${SpalService.chyba(e)}'),
+      duration: const Duration(seconds: 8),
+    ));
+  }
+}
+
 class SpalMenu extends ConsumerWidget {
   const SpalMenu({super.key, required this.samostatne});
   final bool samostatne;
@@ -86,6 +163,11 @@ class SpalMenu extends ConsumerWidget {
           final web = info?['web'] as String?;
           if (web != null) _otevrit(web.startsWith('http') ? web : 'https://$web');
         }),
+        ListTile(
+          leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error, size: 28),
+          title: Text('Smazat účet', style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.error)),
+          onTap: () => spalSmazatUcetDotaz(context),
+        ),
         const SizedBox(height: 90),
       ]),
     );
