@@ -1,6 +1,7 @@
 // Jídelníčky k tréninkovým programům:
 //  - Hollywood training (příprava postavy na natáčení / focení),
 //  - Bikini fitness (příprava na závody),
+//  - Letní forma (32týdenní transformace postavy k datu),
 //  - Kulatý zadek (růst hýždí),
 //  - Silová příprava (bench press / trojboj).
 //
@@ -187,6 +188,99 @@ class BikiniPrep {
   }
 }
 
+/// Letní forma – 32týdenní transformace postavy k datu (léto, dovolená,
+/// focení). Dlouhá a šetrná příprava: nejdřív rekompozice (svaly se
+/// budují v jen mírném deficitu), pak dvě fáze rýsování oddělené diet
+/// breakem na údržbě, krátké finální rýsování a peak týden.
+///
+/// Tempo úbytku je záměrně pomalé (0,2 → 0,4 → 0,5 → 0,6 % hmotnosti
+/// týdně) – při 32 týdnech není důvod spěchat a pomalé tempo nejlépe drží
+/// svaly i sílu (vhodné i pro masters a silové sportovce).
+class SummerFormPrep {
+  /// Hodnota `UserProfile.selectedPlan` pro jídelníček Letní forma.
+  static const String planKey = 'SummerForm';
+
+  static const String name = 'Letní forma';
+
+  static const int totalWeeks = 32;
+
+  static int? weekFor(DateTime targetDate, [DateTime? now]) =>
+      PrepCalendar.weekFor(targetDate, totalWeeks, now);
+
+  static DateTime startDate(DateTime targetDate) =>
+      PrepCalendar.startDate(targetDate, totalWeeks);
+
+  /// Fáze přípravy – stejné rozdělení jako tréninkový plán:
+  /// 1–8 rekompozice, 9–16 rýsování I, 17–18 diet break (údržba),
+  /// 19–28 rýsování II, 29–31 finální rýsování, 32 peak / focení.
+  static PrepPhase phaseFor(int week) {
+    if (week <= 8) {
+      return PrepPhase(
+        week: week,
+        label: 'Rekompozice',
+        weeklyLossPct: 0.2,
+        proteinGPerKg: 2.2,
+        fatGPerKg: 0.9,
+      );
+    }
+    if (week <= 16) {
+      return PrepPhase(
+        week: week,
+        label: 'Rýsování I',
+        weeklyLossPct: 0.4,
+        proteinGPerKg: 2.2,
+        fatGPerKg: 0.8,
+      );
+    }
+    if (week <= 18) {
+      // Diet break: 2 týdny na údržbě – doplnění glykogenu, hormonů
+      // (leptin, testosteron) a psychiky před druhou polovinou rýsování.
+      return PrepPhase(
+        week: week,
+        label: 'Diet break – údržba',
+        weeklyLossPct: null,
+        proteinGPerKg: 2.0,
+        fatGPerKg: 0.9,
+      );
+    }
+    if (week <= 28) {
+      return PrepPhase(
+        week: week,
+        label: 'Rýsování II',
+        weeklyLossPct: 0.5,
+        proteinGPerKg: 2.4,
+        fatGPerKg: 0.7,
+      );
+    }
+    if (week <= 31) {
+      return PrepPhase(
+        week: week,
+        label: 'Finální rýsování',
+        weeklyLossPct: 0.6,
+        proteinGPerKg: 2.4,
+        fatGPerKg: 0.7,
+      );
+    }
+    return PrepPhase(
+      week: week,
+      label: 'Peak / focení',
+      weeklyLossPct: null,
+      proteinGPerKg: 2.2,
+      fatGPerKg: 0.7,
+    );
+  }
+}
+
+/// Luďkův jídelníček – makra a fáze přesně podle [SummerFormPrep]
+/// (stejné cílové datum `UserProfile.summerFormDate`), ale jídla se
+/// skládají jen z Luďkových oblíbených jednoduchých jídel (vejce, kuře,
+/// vepřové, rýže, brambory, rizoto, řízek, tuňákové špagety, párky…).
+class LudekMealPlan {
+  static const String planKey = 'LudekMeals';
+
+  static const String name = 'Luďkův jídelníček';
+}
+
 /// Kulatý zadek – jídelníček pro růst hýždí.
 ///
 /// Svaly nerostou v deficitu: mírný přebytek 7,5 % nad TDEE (střed
@@ -238,6 +332,10 @@ class ProgramDiets {
         return HollywoodPrep.name;
       case BikiniPrep.planKey:
         return BikiniPrep.name;
+      case SummerFormPrep.planKey:
+        return SummerFormPrep.name;
+      case LudekMealPlan.planKey:
+        return LudekMealPlan.name;
       case GlutePlan.planKey:
         return GlutePlan.name;
       case StrengthPlan.planKey:

@@ -198,6 +198,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hollywoodShootDate:
           incoming.hollywoodShootDate ?? base.hollywoodShootDate,
       bikiniMeetDate: incoming.bikiniMeetDate ?? base.bikiniMeetDate,
+      summerFormDate: incoming.summerFormDate ?? base.summerFormDate,
       bodyComposition: _newerBodyComposition(
         incoming.bodyComposition,
         base.bodyComposition,

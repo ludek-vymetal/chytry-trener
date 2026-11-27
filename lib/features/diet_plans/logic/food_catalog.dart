@@ -437,6 +437,52 @@ class FoodCatalog {
     maxGrams: 400, step: 10,
   );
 
+  // ----------------------------------------------------------------
+  // Luďkův jídelníček (jednoduchá česká jídla)
+  // ----------------------------------------------------------------
+  static const eggWhites = NutritionFood(
+    id: 'egg_whites',
+    name: 'Vaječné bílky',
+    kcal: 48, protein: 10.9, carbs: 0.7, fat: 0.2,
+    maxGrams: 300, minGrams: 60, step: 10,
+  );
+  static const sausagesHam = NutritionFood(
+    id: 'sausages_ham',
+    name: 'Párky šunkové / drůbeží (min. 80 % masa)',
+    kcal: 190, protein: 16.0, carbs: 1.5, fat: 13.5,
+    maxGrams: 200, minGrams: 80, step: 10,
+  );
+  static const grillSausage = NutritionFood(
+    id: 'grill_sausage',
+    name: 'Klobása kvalitní (min. 80 % masa)',
+    kcal: 270, protein: 17.0, carbs: 1.0, fat: 22.0,
+    maxGrams: 150, minGrams: 80, step: 10,
+  );
+  static const mayonnaise = NutritionFood(
+    id: 'mayonnaise',
+    name: 'Majonéza',
+    kcal: 680, protein: 1.0, carbs: 2.0, fat: 74.0,
+    maxGrams: 30, minGrams: 10,
+  );
+  static const breadcrumbs = NutritionFood(
+    id: 'breadcrumbs',
+    name: 'Strouhanka',
+    kcal: 370, protein: 12.0, carbs: 72.0, fat: 3.0,
+    maxGrams: 40, minGrams: 15,
+  );
+  static const parmesan = NutritionFood(
+    id: 'parmesan',
+    name: 'Parmazán',
+    kcal: 400, protein: 35.0, carbs: 0, fat: 29.0,
+    maxGrams: 30, minGrams: 10,
+  );
+  static const tomatoes = NutritionFood(
+    id: 'tomatoes',
+    name: 'Rajčata',
+    kcal: 20, protein: 0.9, carbs: 3.5, fat: 0.2,
+    maxGrams: 400, step: 10,
+  );
+
   static const List<NutritionFood> all = [
     chickenBreast,
     turkeyBreast,
@@ -496,6 +542,13 @@ class FoodCatalog {
     whiteYogurt,
     rapeseedOil,
     vegetablesBudget,
+    eggWhites,
+    sausagesHam,
+    grillSausage,
+    mayonnaise,
+    breadcrumbs,
+    parmesan,
+    tomatoes,
   ];
 
   /// Klíčová slova vyloučení (z výběru "nechci jíst") → potraviny.
@@ -513,7 +566,7 @@ class FoodCatalog {
     'mlék': _dairy,
     'mléč': _dairy,
     'lakt': _dairy,
-    'sýr': ['gouda', 'cottage', 'mozzarella_light'],
+    'sýr': ['gouda', 'cottage', 'mozzarella_light', 'parmesan'],
     'jogurt': ['greek_yogurt', 'white_yogurt', 'skyr'],
     'tvaroh': ['quark_low_fat'],
     'syrovátk': ['whey'],
@@ -525,8 +578,10 @@ class FoodCatalog {
     'oves': ['oats'],
     'vločk': ['oats'],
     // vejce
-    'vejc': ['eggs'],
-    'vaj': ['eggs'],
+    'vejc': ['eggs', 'egg_whites', 'mayonnaise'],
+    'vaj': ['eggs', 'egg_whites', 'mayonnaise'],
+    'majon': ['mayonnaise'],
+    'rajč': ['tomatoes'],
     // skořápkové plody a arašídy
     // „ořechy“ z opatrnosti včetně arašídů (u alergie častá zkřížená reakce)
     'ořech': ['almonds', 'walnuts', 'cashews', 'peanut_butter'],
@@ -553,7 +608,11 @@ class FoodCatalog {
     'cizr': ['chickpeas'],
     'fazol': ['red_beans'],
     // maso
-    'vepř': ['pork_tenderloin', 'pork_leg', 'ham'],
+    'vepř': [
+      'pork_tenderloin', 'pork_leg', 'ham', 'sausages_ham', 'grill_sausage',
+    ],
+    'párk': ['sausages_ham'],
+    'klobás': ['grill_sausage'],
     'šunk': ['ham'],
     'hověz': ['beef_lean', 'beef_ribeye', 'beef_ground_5'],
     'kuř': ['chicken_breast', 'chicken_thigh'],
@@ -569,11 +628,11 @@ class FoodCatalog {
 
   static const List<String> _dairy = [
     'milk', 'quark_low_fat', 'skyr', 'greek_yogurt', 'white_yogurt',
-    'cottage', 'gouda', 'mozzarella_light', 'butter', 'whey',
+    'cottage', 'gouda', 'mozzarella_light', 'butter', 'whey', 'parmesan',
   ];
   static const List<String> _gluten = [
     'oats', 'wholegrain_bread', 'rye_bread', 'pasta', 'tortilla',
-    'couscous', 'bulgur', 'seitan',
+    'couscous', 'bulgur', 'seitan', 'breadcrumbs',
   ];
   static const List<String> _soy = [
     'tofu', 'tempeh', 'soy_protein', 'soy_yogurt',

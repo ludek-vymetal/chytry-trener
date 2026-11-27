@@ -495,6 +495,100 @@ class DietStrategyScreen extends ConsumerWidget {
     );
   }
 
+  /// Letní forma: cílové datum → jídelníček podle fáze 32týdenní přípravy.
+  Future<void> _activateSummerFormPlan(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final current = ref.read(userProfileProvider);
+
+    if (current == null) return;
+
+    if (!await _confirmLeaveProgram(
+      context,
+      current,
+      SummerFormPrep.planKey,
+      l10n,
+    )) {
+      return;
+    }
+    if (!context.mounted) return;
+
+    final picked = await _pickProgramDate(
+      context,
+      saved: current.summerFormDate,
+      fromPlan: _dateFromTrainingPlan(
+        ref,
+        current.clientId,
+        (p) => p.isSummerFormPrep,
+      ),
+      totalWeeks: SummerFormPrep.totalWeeks,
+      helpText: 'Cílové datum formy',
+    );
+
+    if (picked == null || !context.mounted) return;
+
+    final updated = current.copyWith(
+      selectedPlan: SummerFormPrep.planKey,
+      summerFormDate: picked,
+    );
+
+    _openProgramPlan(
+      context,
+      ref,
+      updated,
+      CarbCyclingCalculator.createSummerFormPlan(profile: updated, l10n: l10n),
+    );
+  }
+
+  /// Luďkův jídelníček: fáze Letní formy, jídla z Luďkových oblíbených.
+  Future<void> _activateLudekPlan(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l10n,
+  ) async {
+    final current = ref.read(userProfileProvider);
+
+    if (current == null) return;
+
+    if (!await _confirmLeaveProgram(
+      context,
+      current,
+      LudekMealPlan.planKey,
+      l10n,
+    )) {
+      return;
+    }
+    if (!context.mounted) return;
+
+    final picked = await _pickProgramDate(
+      context,
+      saved: current.summerFormDate,
+      fromPlan: _dateFromTrainingPlan(
+        ref,
+        current.clientId,
+        (p) => p.isSummerFormPrep,
+      ),
+      totalWeeks: SummerFormPrep.totalWeeks,
+      helpText: 'Cílové datum formy',
+    );
+
+    if (picked == null || !context.mounted) return;
+
+    final updated = current.copyWith(
+      selectedPlan: LudekMealPlan.planKey,
+      summerFormDate: picked,
+    );
+
+    _openProgramPlan(
+      context,
+      ref,
+      updated,
+      CarbCyclingCalculator.createLudekPlan(profile: updated, l10n: l10n),
+    );
+  }
+
   /// Silová příprava: údržba s vysokými sacharidy (bench / trojboj).
   Future<void> _activateStrengthPlan(
     BuildContext context,
@@ -602,6 +696,16 @@ class DietStrategyScreen extends ConsumerWidget {
         ).mealPlan;
       case BikiniPrep.planKey:
         return CarbCyclingCalculator.createBikiniPlan(
+          profile: profile,
+          l10n: l10n,
+        ).mealPlan;
+      case SummerFormPrep.planKey:
+        return CarbCyclingCalculator.createSummerFormPlan(
+          profile: profile,
+          l10n: l10n,
+        ).mealPlan;
+      case LudekMealPlan.planKey:
+        return CarbCyclingCalculator.createLudekPlan(
           profile: profile,
           l10n: l10n,
         ).mealPlan;
@@ -1062,6 +1166,56 @@ class DietStrategyScreen extends ConsumerWidget {
                   ),
                   icon: const Icon(Icons.event),
                   label: Text(l10n.bikiniSelectDate),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: SummerFormPrep.name,
+            description:
+                '32týdenní transformace postavy k datu (léto, dovolená, '
+                'focení): rekompozice → rýsování → diet break → rýsování → '
+                'peak. Pomalé tempo, které drží svaly i sílu.',
+            icon: Icons.wb_sunny_outlined,
+            isActive: profile?.selectedPlan == SummerFormPrep.planKey,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.icon(
+                  onPressed: () => _activateSummerFormPlan(
+                    context,
+                    ref,
+                    l10n,
+                  ),
+                  icon: const Icon(Icons.event),
+                  label: const Text('Vybrat cílové datum'),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          _StrategyCard(
+            title: LudekMealPlan.name,
+            description:
+                'Fáze a makra jako Letní forma, ale jen jednoduchá jídla: '
+                'vejce k snídani, kuře nebo vepřové s rýží či bramborem, '
+                'rizoto, řízek, tuňákové špagety, párky s rajčaty.',
+            icon: Icons.restaurant,
+            isActive: profile?.selectedPlan == LudekMealPlan.planKey,
+            actions: [
+              _fullWidthButton(
+                child: FilledButton.icon(
+                  onPressed: () => _activateLudekPlan(
+                    context,
+                    ref,
+                    l10n,
+                  ),
+                  icon: const Icon(Icons.event),
+                  label: const Text('Vybrat cílové datum'),
                 ),
               ),
             ],

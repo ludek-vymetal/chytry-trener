@@ -312,6 +312,24 @@ class MacroService {
           (w) => BikiniPrep.phaseFor(w).label,
         );
         break;
+      case SummerFormPrep.planKey:
+      case LudekMealPlan.planKey:
+        final targetDate = profile.summerFormDate;
+        final formWeek =
+            targetDate == null ? null : SummerFormPrep.weekFor(targetDate, now);
+        if (formWeek == null) return null;
+        name = profile.selectedPlan == LudekMealPlan.planKey
+            ? LudekMealPlan.name
+            : SummerFormPrep.name;
+        phase = SummerFormPrep.phaseFor(formWeek);
+        weekText = 'týden $formWeek/${SummerFormPrep.totalWeeks}';
+        weeksLeft = SummerFormPrep.totalWeeks - formWeek;
+        phaseStart = _programPhaseStart(
+          SummerFormPrep.startDate(targetDate!),
+          formWeek,
+          (w) => SummerFormPrep.phaseFor(w).label,
+        );
+        break;
       case GlutePlan.planKey:
         name = GlutePlan.name;
         phase = GlutePlan.phase;

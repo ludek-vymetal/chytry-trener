@@ -235,4 +235,4 @@ class _Row {
   final TextEditingController repsCtrl;
 
   _Row({required this.weightCtrl, required this.repsCtrl});
-}
+}

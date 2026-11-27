@@ -127,6 +127,10 @@ class MealComposer {
     /// Úsporná varianta: levné suroviny a večeře ze stejného vaření jako
     /// oběd (jen jiná gramáž).
     bool budget = false,
+
+    /// Luďkův jídelníček: jídla jen z Luďkových oblíbených jednoduchých
+    /// jídel (viz [_chooseTemplate]).
+    bool ownMeals = false,
   }) {
     final v = variant ?? currentVariant();
     var carryP = 0.0, carryC = 0.0, carryF = 0.0;
@@ -161,9 +165,11 @@ class MealComposer {
 
     // Výběr jídla pro každý slot (v pořadí dne).
     final choices = <int>[];
+    final ordinals = <int>[];
     for (final slot in slots) {
       final ordinal = kindOrdinal[slot.kind] ?? 0;
       kindOrdinal[slot.kind] = ordinal + 1;
+      ordinals.add(ordinal);
       // Úsporná varianta vybírá jen oběd (večeře je z něj), proto se
       // hlavní jídlo posouvá o 1 za den, aby se vystřídaly všechny možnosti.
       final perDay = (budget && slot.kind == MealKind.main)
@@ -209,6 +215,8 @@ class MealComposer {
             choice: choice,
             preference: preference,
             budget: budget,
+            ownMeals: ownMeals,
+            dinner: slot.kind == MealKind.main && ordinals[i] >= 1,
             // Poslední počítané jídlo dne už nemá kam přenést odchylku –
             // z možností (v pořadí střídání) se vezme první, která cíl
             // opravdu trefí.
@@ -346,6 +354,8 @@ class MealComposer {
     required int choice,
     required DietPreference preference,
     required bool budget,
+    bool ownMeals = false,
+    bool dinner = false,
     _Fit? fit,
   }) {
     // Potravina je povolená, když ji klient nevyloučil a odpovídá jeho
@@ -398,6 +408,90 @@ class MealComposer {
 
     final proteinPowder =
         ok(FoodCatalog.whey) ? FoodCatalog.whey : FoodCatalog.soyProtein;
+
+    // ---------------- Luďkův jídelníček ----------------
+    // Jen jednoduchá jídla, která Luděk opravdu jí: k snídani vejce,
+    // obědy kuře / vepřové s rýží nebo bramborem, rizoto, řízek, tuňákové
+    // špagety; večeře párky, klobása, omeleta, kuře s rajčaty, tvaroh.
+    // Gramáže dopočítá PortionSolver podle fáze (makra dne).
+    if (ownMeals && style == DietStyle.standard) {
+      const tom150 = FoodPortion(FoodCatalog.tomatoes, 150);
+      const tom200 = FoodPortion(FoodCatalog.tomatoes, 200);
+      const ham50 = FoodPortion(FoodCatalog.ham, 50);
+      const gouda20 = FoodPortion(FoodCatalog.gouda, 20);
+      const apple100 = FoodPortion(FoodCatalog.apple, 100);
+      const banana100 = FoodPortion(FoodCatalog.banana, 100);
+      const blueberries100 = FoodPortion(FoodCatalog.blueberries, 100);
+      const oneEgg = FoodPortion(FoodCatalog.eggs, 55);
+      const crumbs25 = FoodPortion(FoodCatalog.breadcrumbs, 25);
+      const yogurt100 = FoodPortion(FoodCatalog.whiteYogurt, 100);
+      const oil5 = FoodPortion(FoodCatalog.rapeseedOil, 5);
+
+      final List<_Tpl?> own;
+      switch (kind) {
+        case MealKind.breakfast:
+          own = [
+            // míchaná vejce se šunkou a chlebem
+            tpl(const [FoodCatalog.eggs, FoodCatalog.eggWhites, FoodCatalog.ryeBread], const [ham50, veg100]),
+            // omeleta se sýrem a rajčaty
+            tpl(const [FoodCatalog.eggs, FoodCatalog.eggWhites, FoodCatalog.ryeBread], const [gouda20, tom150]),
+            // vejce + ovesné vločky s borůvkami
+            tpl(const [FoodCatalog.eggs, FoodCatalog.eggWhites, FoodCatalog.oats], const [blueberries100]),
+            // volská oka na chlebu + jablko
+            tpl(const [FoodCatalog.eggs, FoodCatalog.eggWhites, FoodCatalog.ryeBread], const [oil5, apple100]),
+            // vejce s brambory z trouby
+            tpl(const [FoodCatalog.eggs, FoodCatalog.eggWhites, FoodCatalog.potatoes], const [oil5, veg100]),
+          ];
+          break;
+        case MealKind.snack:
+          own = [
+            tpl(const [FoodCatalog.quarkLowFat, FoodCatalog.oats], const [banana100]),
+            tpl(const [FoodCatalog.ham, FoodCatalog.ryeBread], const [veg100]),
+            tpl(const [FoodCatalog.skyr, FoodCatalog.almonds], const [apple100]),
+            tpl(const [FoodCatalog.cottage, FoodCatalog.riceCakes], const [veg100]),
+            tpl([proteinPowder, FoodCatalog.banana]),
+            tpl(const [FoodCatalog.eggs, FoodCatalog.ryeBread], const [tom150]),
+          ];
+          break;
+        case MealKind.main:
+          own = dinner
+              ? [
+                  // párky s chlebem a rajčaty (+ cottage na bílkoviny)
+                  tpl(const [FoodCatalog.sausagesHam, FoodCatalog.ryeBread, FoodCatalog.cottage], const [tom200]),
+                  // kuře s rajčaty a rýží
+                  tpl(const [FoodCatalog.chickenBreast, FoodCatalog.rice, FoodCatalog.rapeseedOil], const [tom200]),
+                  // omeleta se šunkou
+                  tpl(const [FoodCatalog.eggs, FoodCatalog.ham, FoodCatalog.ryeBread], const [tom150]),
+                  // klobása z trouby s bramborem
+                  tpl(const [FoodCatalog.grillSausage, FoodCatalog.potatoes, FoodCatalog.cottage], const [tom200]),
+                  // tvarohová večeře
+                  tpl(const [FoodCatalog.quarkLowFat, FoodCatalog.ryeBread], const [tom200]),
+                  // párky podruhé v týdnu
+                  tpl(const [FoodCatalog.sausagesHam, FoodCatalog.potatoes, FoodCatalog.cottage], const [tom200]),
+                  // kuřecí rizoto (menší porce)
+                  tpl(const [FoodCatalog.chickenBreast, FoodCatalog.rice, FoodCatalog.parmesan], const [oil5, veg100]),
+                ]
+              : [
+                  // kuře s rýží
+                  tpl(const [FoodCatalog.chickenBreast, FoodCatalog.rice, FoodCatalog.rapeseedOil], const [veg200]),
+                  // vepřová panenka s bramborem
+                  tpl(const [FoodCatalog.porkTenderloin, FoodCatalog.potatoes, FoodCatalog.rapeseedOil], const [veg200]),
+                  // kuřecí rizoto
+                  tpl(const [FoodCatalog.chickenBreast, FoodCatalog.rice, FoodCatalog.parmesan], const [oil5, veg200]),
+                  // tuňákové špagety (vejce, majonéza napůl s jogurtem)
+                  tpl(const [FoodCatalog.tuna, FoodCatalog.pasta, FoodCatalog.mayonnaise], const [oneEgg, yogurt100]),
+                  // kuře s bramborem
+                  tpl(const [FoodCatalog.chickenBreast, FoodCatalog.potatoes, FoodCatalog.rapeseedOil], const [veg200]),
+                  // řízek s bramborem (vejce + strouhanka na obalení)
+                  tpl(const [FoodCatalog.porkLeg, FoodCatalog.potatoes, FoodCatalog.rapeseedOil], const [oneEgg, crumbs25, veg100]),
+                  // vepřové s rýží
+                  tpl(const [FoodCatalog.porkLeg, FoodCatalog.rice, FoodCatalog.rapeseedOil], const [veg200]),
+                ];
+          break;
+      }
+      final valid = own.whereType<_Tpl>().toList();
+      if (valid.isNotEmpty) return choose(own, valid.first);
+    }
 
     // Sójový izolát jen tam, kde nejde whey (vegan / vyloučený whey) –
     // aby na nákupním seznamu nebyly dva různé proteinové prášky.

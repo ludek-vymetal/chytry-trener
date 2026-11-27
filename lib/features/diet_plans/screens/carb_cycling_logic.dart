@@ -136,6 +136,68 @@ class CarbCyclingCalculator {
     );
   }
 
+  /// Letní forma – makra podle fáze 32týdenní transformace postavy
+  /// (viz [SummerFormPrep]). Profil musí mít
+  /// `selectedPlan == SummerFormPrep.planKey` a cílové datum.
+  static CarbCyclingPlan createSummerFormPlan({
+    required UserProfile profile,
+    required AppLocalizations l10n,
+  }) {
+    final target = profile.summerFormDate;
+    final String status;
+    if (target == null) {
+      status = 'Není nastavené cílové datum – vyber ho v Jídelníčcích '
+          '(Letní forma) nebo vlož tréninkový program Letní forma.';
+    } else if (SummerFormPrep.weekFor(target) == null) {
+      final start = SummerFormPrep.startDate(target);
+      status = DateTime.now().isBefore(start)
+          ? 'Příprava začíná ${_fmt(start)} (cíl ${_fmt(target)}). '
+              'Do té doby se jí podle běžného cíle.'
+          : 'Příprava skončila ${_fmt(target)}.';
+    } else {
+      status = '${DietMacroService.base(profile).rationale}\n'
+          'Cílové datum: ${_fmt(target)}';
+    }
+
+    return _programPlan(
+      profile: profile,
+      l10n: l10n,
+      planKey: SummerFormPrep.planKey,
+      note: '${SummerFormPrep.name}\n$status',
+    );
+  }
+
+  /// Luďkův jídelníček – makra podle fází Letní formy (stejné cílové
+  /// datum), jídla jen z Luďkových oblíbených jídel (viz [LudekMealPlan]).
+  static CarbCyclingPlan createLudekPlan({
+    required UserProfile profile,
+    required AppLocalizations l10n,
+  }) {
+    final target = profile.summerFormDate;
+    final String status;
+    if (target == null) {
+      status = 'Není nastavené cílové datum – vyber ho v Jídelníčcích '
+          '(Luďkův jídelníček).';
+    } else if (SummerFormPrep.weekFor(target) == null) {
+      final start = SummerFormPrep.startDate(target);
+      status = DateTime.now().isBefore(start)
+          ? 'Příprava začíná ${_fmt(start)} (cíl ${_fmt(target)}).'
+          : 'Příprava skončila ${_fmt(target)}.';
+    } else {
+      status = '${DietMacroService.base(profile).rationale}\n'
+          'Cílové datum: ${_fmt(target)}';
+    }
+
+    return _programPlan(
+      profile: profile,
+      l10n: l10n,
+      planKey: LudekMealPlan.planKey,
+      note: '${LudekMealPlan.name}\n'
+          'Vejce, kuře, vepřové, rýže, brambory, rizoto, řízek, tuňákové '
+          'špagety, párky – gramáže podle fáze Letní formy.\n$status',
+    );
+  }
+
   /// Kulatý zadek – mírný přebytek pro růst hýždí (viz [GlutePlan]).
   /// Profil musí mít `selectedPlan == GlutePlan.planKey`.
   static CarbCyclingPlan createGlutePlan({
@@ -190,6 +252,7 @@ class CarbCyclingCalculator {
         preference: profile.diet,
         budget: profile.budget,
         noteOverride: note,
+        ownMeals: planKey == LudekMealPlan.planKey,
       ),
     );
   }
@@ -204,6 +267,7 @@ class CarbCyclingCalculator {
     String? noteOverride,
     DietPreference preference = DietPreference.none,
     bool budget = false,
+    bool ownMeals = false,
   }) {
     final localizedDays = days(l10n);
 
@@ -219,6 +283,7 @@ class CarbCyclingCalculator {
         dayIndex: index,
         preference: preference,
         budget: budget,
+        ownMeals: ownMeals,
       ),
     );
 
@@ -292,6 +357,7 @@ class CarbCyclingCalculator {
     int dayIndex = 0,
     DietPreference preference = DietPreference.none,
     bool budget = false,
+    bool ownMeals = false,
   }) {
     return MealComposer.composeDay(
       dayName: dayName,
@@ -309,6 +375,7 @@ class CarbCyclingCalculator {
       dayIndex: dayIndex,
       preference: preference,
       budget: budget,
+      ownMeals: ownMeals,
     );
   }
 

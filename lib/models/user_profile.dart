@@ -52,6 +52,9 @@ class UserProfile {
   /// Datum závodu pro jídelníček Bikini fitness.
   final DateTime? bikiniMeetDate;
 
+  /// Cílové datum programu Letní forma (32týdenní transformace).
+  final DateTime? summerFormDate;
+
   /// Poslední měření složení těla (InBody) – pro bazál a bílkoviny.
   final BodyComposition? bodyComposition;
 
@@ -81,6 +84,7 @@ class UserProfile {
     this.budgetMeals,
     this.hollywoodShootDate,
     this.bikiniMeetDate,
+    this.summerFormDate,
     this.bodyComposition,
     this.energyAdjustment,
   });
@@ -131,6 +135,7 @@ class UserProfile {
     bool? budgetMeals,
     DateTime? hollywoodShootDate,
     DateTime? bikiniMeetDate,
+    DateTime? summerFormDate,
     BodyComposition? bodyComposition,
     EnergyAdjustment? energyAdjustment,
   }) {
@@ -163,6 +168,7 @@ class UserProfile {
       budgetMeals: budgetMeals ?? this.budgetMeals,
       hollywoodShootDate: hollywoodShootDate ?? this.hollywoodShootDate,
       bikiniMeetDate: bikiniMeetDate ?? this.bikiniMeetDate,
+      summerFormDate: summerFormDate ?? this.summerFormDate,
       bodyComposition: bodyComposition ?? this.bodyComposition,
       energyAdjustment: energyAdjustment ?? this.energyAdjustment,
     );
@@ -234,6 +240,7 @@ class UserProfile {
         'budgetMeals': budgetMeals,
         'hollywoodShootDate': hollywoodShootDate?.toIso8601String(),
         'bikiniMeetDate': bikiniMeetDate?.toIso8601String(),
+        'summerFormDate': summerFormDate?.toIso8601String(),
         'bodyComposition': bodyComposition?.toJson(),
         'energyAdjustment': energyAdjustment?.toJson(),
       };
@@ -365,6 +372,9 @@ class UserProfile {
           : null,
       bikiniMeetDate: json['bikiniMeetDate'] is String
           ? DateTime.tryParse(json['bikiniMeetDate'] as String)
+          : null,
+      summerFormDate: json['summerFormDate'] is String
+          ? DateTime.tryParse(json['summerFormDate'] as String)
           : null,
       bodyComposition: BodyComposition.fromJson(json['bodyComposition']),
       energyAdjustment: EnergyAdjustment.fromJson(json['energyAdjustment']),

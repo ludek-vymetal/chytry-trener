@@ -22,6 +22,7 @@ part 'custom_plan_prep_programs.dart';
 part 'custom_plan_glute_bench.dart';
 part 'custom_plan_classic_programs.dart';
 part 'custom_plan_detail_screen.dart';
+part 'custom_plan_summer_form.dart';
 
 class CustomTrainingPlanScreen extends ConsumerWidget {
   const CustomTrainingPlanScreen({super.key});
@@ -589,6 +590,17 @@ class _ProgramCatalogScreen extends ConsumerWidget {
             'peak week.',
         diet: 'Jídelníček ${BikiniPrep.name}',
         insert: _insertBikiniPlan,
+      ),
+      _ProgramInfo(
+        icon: Icons.wb_sunny_outlined,
+        title: SummerFormPrep.name,
+        length: '32 týdnů k cílovému datu',
+        description:
+            'Kompletní transformace postavy (léto, dovolená, focení): '
+            'rekompozice, rýsování s diet breakem, peak. Síla se udržuje, '
+            'důraz na ramena, paže a horní hrudník.',
+        diet: 'Jídelníček ${SummerFormPrep.name}',
+        insert: _insertSummerFormPlan,
       ),
       _ProgramInfo(
         icon: Icons.favorite_outline,

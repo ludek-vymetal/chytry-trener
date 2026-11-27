@@ -130,6 +130,7 @@ class CoachRecommendations {
     final cutGoal = i.goalType == GoalType.weightLoss ||
         i.planType == CustomTrainingPlanType.hollywoodPrep ||
         i.planType == CustomTrainingPlanType.bikiniMeetPrep ||
+        i.planType == CustomTrainingPlanType.summerFormPrep ||
         (b?.fatHigh ?? false);
     final hasIntake = i.avgKcal != null && i.loggedDays > 0;
     final hasTarget = i.targetKcal != null && i.targetKcal! > 0;
@@ -296,7 +297,8 @@ class CoachRecommendations {
     final isStrengthMeet = i.planType == CustomTrainingPlanType.benchMeetPrep ||
         i.planType == CustomTrainingPlanType.powerliftingMeetPrep;
     final isStageEvent = i.planType == CustomTrainingPlanType.bikiniMeetPrep ||
-        i.planType == CustomTrainingPlanType.hollywoodPrep;
+        i.planType == CustomTrainingPlanType.hollywoodPrep ||
+        i.planType == CustomTrainingPlanType.summerFormPrep;
     if (days != null && days >= 0 && (isStrengthMeet || isStageEvent)) {
       final weeks = (days / 7).ceil();
       if (isStrengthMeet) {

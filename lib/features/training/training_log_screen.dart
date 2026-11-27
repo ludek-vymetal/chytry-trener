@@ -250,4 +250,4 @@ class _Row {
     required this.weightCtrl,
     required this.repsCtrl,
   });
-}
+}
